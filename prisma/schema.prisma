@@ -1,0 +1,344 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  
+  
+}
+
+
+// =====================================================
+// ENUMS
+// =====================================================
+
+enum UserRole {
+  VISITOR
+  HOST
+  ADMIN
+}
+
+enum PlaceType {
+  CAFE
+  RESTAURANT
+  OTHER
+}
+
+// =====================================================
+// USER
+// =====================================================
+
+model User {
+  id           String   @id @default(cuid())
+  phoneNumber  String   @unique
+  fullName     String
+  profileImage String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  roles UserRole[]
+
+  visitor Visitor?
+  host    Host?
+
+  comments Comment[]
+
+  savedPlaces SavedPlace[]
+  savedEvents SavedEvent[]
+
+  @@index([phoneNumber])
+}
+
+// =====================================================
+// VISITOR
+// =====================================================
+
+model Visitor {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// =====================================================
+// HOST
+// =====================================================
+
+model Host {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Version 1:
+  // Each Host can have at most one Place.
+  place Place?
+}
+
+// =====================================================
+// PLACE / CAFE
+// =====================================================
+
+model Place {
+  id     String @id @default(cuid())
+  hostId String @unique
+
+  placeName   String
+  placePhone  String?
+  placeType   PlaceType @default(CAFE)
+  placeCity   String?
+  instagramId String?
+  description String?
+
+  locationId String?   @unique
+  location   Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+
+  host Host @relation(fields: [hostId], references: [id], onDelete: Cascade)
+
+  images   PlaceImage[]
+  comments Comment[]
+  savedBy  SavedPlace[]
+  events   Event[]
+
+  filterValues PlaceFilterValue[]
+
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  showOnPagePlaces ShowOnPagePlace[]
+
+  @@index([placeName])
+  @@index([placeCity])
+  @@index([placeType])
+}
+
+// =====================================================
+// PLACE IMAGES
+// =====================================================
+
+model PlaceImage {
+  id        String   @id @default(cuid())
+  placeId   String
+  url       String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  place Place @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@index([placeId])
+}
+
+// =====================================================
+// LOCATION
+// =====================================================
+
+model Location {
+  id        String  @id @default(cuid())
+  title     String?
+  latitude  Float
+  longitude Float
+  address   String?
+
+  place Place?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// =====================================================
+// FILTER
+// =====================================================
+
+model Filter {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  values FilterValue[]
+}
+
+// =====================================================
+// FILTER VALUE
+// =====================================================
+
+model FilterValue {
+  id       String @id @default(cuid())
+  filterId String
+  name     String
+
+  filter Filter @relation(fields: [filterId], references: [id], onDelete: Cascade)
+
+  places PlaceFilterValue[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([filterId, name])
+  @@index([filterId])
+}
+
+// =====================================================
+// PLACE <-> FILTER VALUE
+// =====================================================
+
+model PlaceFilterValue {
+  placeId       String
+  filterValueId String
+
+  place       Place       @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  filterValue FilterValue @relation(fields: [filterValueId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([placeId, filterValueId])
+  @@index([filterValueId])
+}
+
+// =====================================================
+// EVENT
+// =====================================================
+
+model Event {
+  id      String @id @default(cuid())
+  placeId String
+
+  eventName String
+  date      DateTime
+  hour      String?
+  price     Decimal? @db.Decimal(12, 2)
+
+  description String?
+  rule        String?
+  info        String?
+  suitable    String?
+
+  place Place @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  plans    EventPlan[]
+  comments Comment[]
+  savedBy  SavedEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([placeId])
+  @@index([date])
+}
+
+// =====================================================
+// EVENT PLAN
+// =====================================================
+
+model EventPlan {
+  id      String  @id @default(cuid())
+  eventId String
+  hour    String?
+  plan    String
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eventId])
+}
+
+// =====================================================
+// COMMENTS
+// =====================================================
+
+model Comment {
+  id     String @id @default(cuid())
+  userId String
+
+  placeId String?
+  eventId String?
+
+  content String
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  place Place? @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  event Event? @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([placeId])
+  @@index([eventId])
+}
+
+// =====================================================
+// SAVED PLACES
+// =====================================================
+
+model SavedPlace {
+  userId  String
+  placeId String
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  place Place @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([userId, placeId])
+  @@index([placeId])
+}
+
+// =====================================================
+// SAVED EVENTS
+// =====================================================
+
+model SavedEvent {
+  userId  String
+  eventId String
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([userId, eventId])
+  @@index([eventId])
+}
+
+// =====================================================
+// SHOW ON PAGE
+// =====================================================
+
+model ShowOnPage {
+  id        String  @id @default(cuid())
+  title     String
+  sortOrder Int     @default(0)
+  isActive  Boolean @default(true)
+
+  places ShowOnPagePlace[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+// =====================================================
+// SHOW ON PAGE <-> PLACE
+// =====================================================
+
+model ShowOnPagePlace {
+  showOnPageId String
+  placeId      String
+
+  showOnPage ShowOnPage @relation(fields: [showOnPageId], references: [id], onDelete: Cascade)
+  place      Place      @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  sortOrder Int @default(0)
+
+  @@id([showOnPageId, placeId])
+  @@index([placeId])
+}
