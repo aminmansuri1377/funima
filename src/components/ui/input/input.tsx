@@ -1,87 +1,105 @@
 "use client";
 
-import {
-  forwardRef,
-  type InputHTMLAttributes,
-  type ReactNode,
-} from "react";
+import { forwardRef, type InputHTMLAttributes, type ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
 
-type InputProps =
-  InputHTMLAttributes<HTMLInputElement> & {
-    error?: boolean;
-    startIcon?: ReactNode;
-    endIcon?: ReactNode;
-  };
+export type InputState = "default" | "error" | "success";
 
-export const Input =
-  forwardRef<
-    HTMLInputElement,
-    InputProps
-  >(function Input(
-    {
-      error = false,
-      startIcon,
-      endIcon,
-      className,
-      disabled,
-      ...props
-    },
-    ref,
-  ) {
-    return (
-      <div
-        className={cn(
-          "flex h-14 w-full items-center gap-3",
-          "rounded-[var(--radius-full)]",
-          "border bg-white px-5",
-          "transition-colors",
-          error
-            ? "border-[var(--color-error-500)]"
-            : "border-[var(--color-text-primary)]",
-          "focus-within:border-[var(--color-brand-500)]",
-          disabled &&
-            "bg-[var(--color-gray-100)] opacity-70",
-          className,
-        )}
-      >
-        {startIcon && (
-          <span
-            className="
-              shrink-0
+export type InputProps = InputHTMLAttributes<HTMLInputElement> & {
+  state?: InputState;
+  startIcon?: ReactNode;
+  endIcon?: ReactNode;
+};
+
+const stateClasses: Record<InputState, string> = {
+  default: cn(
+    "border-[var(--color-border-strong)]",
+    "focus-within:border-[var(--color-brand-500)]",
+  ),
+
+  error: cn(
+    "border-[var(--color-error-500)]",
+    "focus-within:border-[var(--color-error-500)]",
+  ),
+
+  success: cn(
+    "border-[var(--color-success-500)]",
+    "focus-within:border-[var(--color-success-500)]",
+  ),
+};
+
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
+  { state = "default", startIcon, endIcon, className, disabled, ...props },
+  ref,
+) {
+  return (
+    <div
+      className={cn(
+        "flex h-14 w-full items-center gap-3",
+        "rounded-[var(--radius-full)]",
+        "border",
+        "bg-[var(--color-surface)]",
+        "px-5",
+
+        "transition-[border-color,box-shadow,background-color]",
+        "duration-[var(--duration-normal)]",
+
+        "focus-within:ring-2",
+        "focus-within:ring-[var(--color-brand-100)]",
+
+        stateClasses[state],
+
+        disabled &&
+          cn(
+            "cursor-not-allowed",
+            "border-[var(--color-border)]",
+            "bg-[var(--color-gray-100)]",
+            "text-[var(--color-text-disabled)]",
+          ),
+
+        className,
+      )}
+    >
+      {startIcon && (
+        <span
+          className="
+              flex shrink-0 items-center
               text-[var(--color-text-secondary)]
             "
-          >
-            {startIcon}
-          </span>
-        )}
+        >
+          {startIcon}
+        </span>
+      )}
 
-        <input
-          ref={ref}
-          disabled={disabled}
-          className="
+      <input
+        ref={ref}
+        disabled={disabled}
+        className="
             min-w-0 flex-1
             bg-transparent
             text-[16px]
             text-[var(--color-text-primary)]
             outline-none
-            placeholder:text-[var(--color-text-secondary)]
-            disabled:cursor-not-allowed
-          "
-          {...props}
-        />
 
-        {endIcon && (
-          <span
-            className="
-              shrink-0
+            placeholder:text-[var(--color-text-secondary)]
+
+            disabled:cursor-not-allowed
+            disabled:text-[var(--color-text-disabled)]
+          "
+        {...props}
+      />
+
+      {endIcon && (
+        <span
+          className="
+              flex shrink-0 items-center
               text-[var(--color-text-secondary)]
             "
-          >
-            {endIcon}
-          </span>
-        )}
-      </div>
-    );
-  });
+        >
+          {endIcon}
+        </span>
+      )}
+    </div>
+  );
+});

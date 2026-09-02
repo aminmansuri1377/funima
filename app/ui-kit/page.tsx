@@ -9,6 +9,7 @@ import {
   Input,
   OTPInput,
   Text,
+  Textarea,
 } from "@/components/ui";
 
 export default function UIKitPage() {
@@ -112,16 +113,42 @@ export default function UIKitPage() {
         </div>
       </section>
 
-      <section className="space-y-4">
-        <Text variant="heading-xl">Input</Text>
+      <section className="space-y-8">
+        <Text variant="heading-xl">Form Controls</Text>
 
-        <FormField label="شماره تماس" description="مثال: 09123456789">
-          <Input placeholder="شماره تماس" />
-        </FormField>
+        <div className="grid gap-6 md:grid-cols-2">
+          <FormField
+            label="شماره تماس"
+            description="مثال: 09123456789"
+            required
+          >
+            <Input placeholder="شماره تماس" />
+          </FormField>
 
-        <FormField label="نام و نام خانوادگی" error="این فیلد الزامی است">
-          <Input error placeholder="نام و نام خانوادگی" />
-        </FormField>
+          <FormField label="نام و نام خانوادگی" success="مقدار معتبر است">
+            <Input state="success" defaultValue="امین منصوری" />
+          </FormField>
+
+          <FormField label="شماره تماس" error="شماره تماس معتبر نیست">
+            <Input state="error" defaultValue="0912" />
+          </FormField>
+
+          <FormField label="فیلد غیرفعال">
+            <Input disabled value="امکان ویرایش وجود ندارد" readOnly />
+          </FormField>
+        </div>
+
+        <div className="space-y-4">
+          <Text variant="heading-md">Textarea</Text>
+
+          <FormField label="توضیحات" description="حداکثر ۵۰۰ کاراکتر">
+            <Textarea placeholder="توضیحات خود را وارد کنید..." />
+          </FormField>
+
+          <FormField label="توضیحات" error="توضیحات الزامی است">
+            <Textarea state="error" placeholder="توضیحات" />
+          </FormField>
+        </div>
       </section>
 
       <section className="space-y-4">
