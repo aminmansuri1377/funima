@@ -1,5 +1,3 @@
-import "server-only";
-
 import { createHash, randomInt } from "crypto";
 
 import { prisma } from "@/server/db/prisma";
