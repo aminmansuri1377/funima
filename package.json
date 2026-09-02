@@ -10,6 +10,7 @@
     "db:test": "tsx scripts/test-db.ts",
     "auth:test": "tsx scripts/test-auth.ts",
     "authz:test": "tsx scripts/test-trpc-authz.ts",
+    "otp:test": "tsx scripts/test-otp.ts",
     "postinstall": "prisma skills sync || exit 0"
   },
   "dependencies": {
