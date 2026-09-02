@@ -1,18 +1,14 @@
 import { z } from "zod";
 
 import { router, publicProcedure } from "../trpc";
-import { requestOtp, verifyOtp } from "@/server/auth/otp";
+
+import { requestOtp, normalizePhoneNumber } from "@/server/auth/otp";
 
 const phoneSchema = z
   .string()
   .trim()
   .min(10, "شماره تلفن معتبر نیست")
   .max(15, "شماره تلفن معتبر نیست");
-
-const otpSchema = z
-  .string()
-  .trim()
-  .regex(/^\d{5}$/, "کد باید ۵ رقمی باشد");
 
 export const authRouter = router({
   requestOtp: publicProcedure
@@ -25,59 +21,27 @@ export const authRouter = router({
       return requestOtp(input.phoneNumber);
     }),
 
-  verifyOtp: publicProcedure
+  checkPhone: publicProcedure
     .input(
       z.object({
         phoneNumber: phoneSchema,
-        code: otpSchema,
       }),
     )
-    .mutation(async ({ input, ctx }) => {
-      const result = await verifyOtp(input.phoneNumber, input.code);
+    .query(async ({ input, ctx }) => {
+      const phoneNumber = normalizePhoneNumber(input.phoneNumber);
 
-      if (!result.success) {
-        return result;
-      }
-
-      const phoneNumber = input.phoneNumber.replace(/\s+/g, "").trim();
-
-      const existingUser = await ctx.prisma.user.findUnique({
+      const user = await ctx.prisma.user.findUnique({
         where: {
           phoneNumber,
         },
-        include: {
-          visitor: true,
-          host: true,
-        },
-      });
 
-      if (existingUser) {
-        return {
-          success: true as const,
-          isNewUser: false,
-          user: existingUser,
-        };
-      }
-
-      const user = await ctx.prisma.user.create({
-        data: {
-          phoneNumber,
-          fullName: "",
-          roles: ["VISITOR"],
-          visitor: {
-            create: {},
-          },
-        },
-        include: {
-          visitor: true,
-          host: true,
+        select: {
+          roles: true,
         },
       });
 
       return {
-        success: true as const,
-        isNewUser: true,
-        user,
+        exists: Boolean(user),
       };
     }),
 });
