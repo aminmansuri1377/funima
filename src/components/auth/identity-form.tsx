@@ -8,17 +8,20 @@ import { useForm } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import { z } from "zod";
+
+import { Button, FormField, InlineMessage, Input } from "@/components/ui";
+
 import { saveAuthFlow } from "@/lib/auth/flow-storage";
+
 import type { AuthRole } from "@/lib/auth/roles";
+
 import { fullNameSchema, phoneNumberSchema } from "@/lib/auth/schemas";
 
 import { trpc } from "@/trpc/client";
 
-import { z } from "zod";
-
 const formSchema = z.object({
   phoneNumber: phoneNumberSchema,
-
   fullName: fullNameSchema,
 });
 
@@ -30,8 +33,6 @@ type IdentityFormProps = {
 
 export function IdentityForm({ role }: IdentityFormProps) {
   const router = useRouter();
-
-  //   const setAuthFlow = useSetRecoilState(authFlowState);
 
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -55,7 +56,7 @@ export function IdentityForm({ role }: IdentityFormProps) {
 
     try {
       const result = await requestOtp.mutateAsync({
-        phoneNumber: values.phoneNumber,
+        phoneNumber: values.phoneNumber.trim(),
       });
 
       if (!result.success) {
@@ -87,39 +88,63 @@ export function IdentityForm({ role }: IdentityFormProps) {
       });
 
       router.push("/auth/otp");
-    } catch {
+    } catch (error) {
+      console.error("[IdentityForm] requestOtp failed:", error);
+
       setServerError("خطایی رخ داد. دوباره تلاش کنید.");
     }
   };
 
+  const isLoading = isSubmitting || requestOtp.isPending;
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <div>
-        <label>شماره موبایل</label>
-
-        <input
-          type="tel"
-          inputMode="numeric"
-          autoComplete="tel"
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+      <FormField
+        label="شماره تماس"
+        required
+        error={errors.phoneNumber?.message}
+      >
+        <Input
           {...register("phoneNumber")}
+          state={errors.phoneNumber ? "error" : "default"}
+          type="tel"
+          inputMode="tel"
+          dir="ltr"
+          autoComplete="tel"
+          placeholder="09123456789"
+          className="text-left"
+          disabled={isLoading}
         />
+      </FormField>
 
-        {errors.phoneNumber && <p>{errors.phoneNumber.message}</p>}
-      </div>
+      <FormField
+        label="نام و نام خانوادگی"
+        required
+        error={errors.fullName?.message}
+      >
+        <Input
+          {...register("fullName")}
+          state={errors.fullName ? "error" : "default"}
+          type="text"
+          autoComplete="name"
+          placeholder="نام و نام خانوادگی"
+          disabled={isLoading}
+        />
+      </FormField>
 
-      <div>
-        <label>نام و نام خانوادگی</label>
+      {serverError && (
+        <InlineMessage variant="error">{serverError}</InlineMessage>
+      )}
 
-        <input type="text" autoComplete="name" {...register("fullName")} />
-
-        {errors.fullName && <p>{errors.fullName.message}</p>}
-      </div>
-
-      {serverError && <p>{serverError}</p>}
-
-      <button type="submit" disabled={isSubmitting || requestOtp.isPending}>
-        {requestOtp.isPending ? "در حال ارسال..." : "ادامه"}
-      </button>
+      <Button
+        type="submit"
+        size="xl"
+        fullWidth
+        loading={isLoading}
+        disabled={isLoading}
+      >
+        ادامه
+      </Button>
     </form>
   );
 }

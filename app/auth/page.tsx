@@ -1,21 +1,67 @@
 import Link from "next/link";
 
+import { FiArrowLeft, FiMapPin } from "react-icons/fi";
+
+import { AuthCard } from "@/components/auth/auth-card";
+
+import { AuthShell } from "@/components/auth/auth-shell";
+
+import { FunimaLogo } from "@/components/brand/funima-logo";
+
+import { Button, Divider, Text } from "@/components/ui";
+
 import { redirectAuthenticatedUser } from "@/server/auth/guards";
 
 export default async function AuthPage() {
   await redirectAuthenticatedUser();
 
   return (
-    <main>
-      <h1>ورود به فونیما</h1>
+    <AuthShell>
+      <div className="flex flex-col gap-6">
+        <div className="flex justify-center">
+          <FunimaLogo priority />{" "}
+        </div>
 
-      <div>
-        <Link href="/auth/visitor">ورود / ثبت نام</Link>
-      </div>
+        <AuthCard>
+          <div className="flex flex-col gap-8">
+            <div className="space-y-3 text-center">
+              <Text as="h1" variant="heading-xl">
+                ماجراجویی‌ات را ادامه بده!
+              </Text>
 
-      <div>
-        <Link href="/auth/host">صاحب کسب و کار هستید؟</Link>
+              <Text variant="body-md" tone="secondary">
+                برای کشف مکان‌ها و تجربه‌های جدید وارد فونیما شو.
+              </Text>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <Link href="/auth/visitor" className="block">
+                <Button fullWidth size="xl">
+                  ورود یا ثبت نام
+                </Button>
+              </Link>
+            </div>
+
+            <Divider>صاحب کسب و کار هستید؟</Divider>
+
+            <Link href="/auth/host" className="block">
+              <Button
+                fullWidth
+                size="lg"
+                variant="secondary"
+                startIcon={<FiMapPin aria-hidden="true" />}
+                endIcon={<FiArrowLeft aria-hidden="true" />}
+              >
+                میزبان شو
+              </Button>
+            </Link>
+          </div>
+        </AuthCard>
+
+        <Text variant="caption" tone="secondary" className="text-center">
+          با ورود به فونیما، قوانین و شرایط استفاده را می‌پذیرید.
+        </Text>
       </div>
-    </main>
+    </AuthShell>
   );
 }

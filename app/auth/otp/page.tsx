@@ -4,17 +4,23 @@ import { useEffect, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { z } from "zod";
 
-import { otpCodeSchema } from "@/lib/auth/schemas";
+import { AuthCard } from "@/components/auth/auth-card";
+
+import { AuthHeader } from "@/components/auth/auth-header";
+
+import { AuthShell } from "@/components/auth/auth-shell";
+
+import { FunimaLogo } from "@/components/brand/funima-logo";
+
+import { Button, InlineMessage, OTPInput, Text } from "@/components/ui";
 
 import { loginWithOtp, signupWithOtp } from "@/lib/auth/client";
-
-import { getRoleHome } from "@/lib/auth/routes";
 
 import {
   clearAuthFlow,
@@ -22,6 +28,10 @@ import {
   getAuthFlow,
   type AuthFlowState,
 } from "@/lib/auth/flow-storage";
+
+import { getRoleHome } from "@/lib/auth/routes";
+
+import { otpCodeSchema } from "@/lib/auth/schemas";
 
 const formSchema = z.object({
   code: otpCodeSchema,
@@ -38,6 +48,18 @@ export default function OtpPage() {
 
   const [serverError, setServerError] = useState<string | null>(null);
 
+  const {
+    control,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = useForm<FormInput>({
+    resolver: zodResolver(formSchema),
+
+    defaultValues: {
+      code: "",
+    },
+  });
+
   useEffect(() => {
     const storedFlow = getAuthFlow();
 
@@ -52,14 +74,6 @@ export default function OtpPage() {
 
     setIsReady(true);
   }, [router]);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<FormInput>({
-    resolver: zodResolver(formSchema),
-  });
 
   const onSubmit = async (values: FormInput) => {
     if (!authFlow.phoneNumber || !authFlow.role) {
@@ -106,29 +120,98 @@ export default function OtpPage() {
     return null;
   }
 
+  const backHref =
+    authFlow.role === "HOST"
+      ? "/auth/host"
+      : authFlow.role === "ADMIN"
+        ? "/panel/login"
+        : "/auth/visitor";
+
   return (
-    <main>
-      <h1>کد تایید</h1>
+    <AuthShell>
+      <div className="flex flex-col gap-6">
+        {/* Logo */}
+        <div className="flex justify-center">
+          <FunimaLogo priority />
+        </div>
 
-      <p>کد ارسال شده به {authFlow.phoneNumber} را وارد کنید.</p>
+        {/* Auth Card */}
+        <AuthCard>
+          <div className="flex flex-col gap-8">
+            {/* Header */}
+            <AuthHeader title="کد ۵ رقمی را وارد کنید" backHref={backHref} />
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <input
-          type="text"
-          inputMode="numeric"
-          maxLength={5}
-          autoComplete="one-time-code"
-          {...register("code")}
-        />
+            {/* Description */}
+            <div className="text-center">
+              <Text variant="body-md" tone="secondary">
+                کد ارسال شده به{" "}
+                <span
+                  dir="ltr"
+                  className="
+                    inline-block
+                    font-semibold
+                    text-[var(--color-text-primary)]
+                  "
+                >
+                  {authFlow.phoneNumber}
+                </span>{" "}
+                را وارد کنید.
+              </Text>
+            </div>
 
-        {errors.code && <p>{errors.code.message}</p>}
+            {/* OTP Form */}
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="flex flex-col gap-6"
+            >
+              <Controller
+                control={control}
+                name="code"
+                render={({ field, fieldState }) => (
+                  <div className="flex flex-col gap-3">
+                    <OTPInput
+                      value={field.value ?? ""}
+                      onChange={(value) => {
+                        field.onChange(value);
 
-        {serverError && <p>{serverError}</p>}
+                        if (serverError) {
+                          setServerError(null);
+                        }
+                      }}
+                      length={5}
+                      disabled={isSubmitting}
+                      error={Boolean(fieldState.error)}
+                    />
 
-        <button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "در حال بررسی..." : "تایید"}
-        </button>
-      </form>
-    </main>
+                    {fieldState.error && (
+                      <InlineMessage variant="error" className="text-center">
+                        {fieldState.error.message}
+                      </InlineMessage>
+                    )}
+                  </div>
+                )}
+              />
+
+              {/* Server Error */}
+              {serverError && (
+                <InlineMessage variant="error" className="text-center">
+                  {serverError}
+                </InlineMessage>
+              )}
+
+              {/* Submit */}
+              <Button type="submit" size="xl" fullWidth loading={isSubmitting}>
+                تایید
+              </Button>
+            </form>
+
+            {/* Expiration */}
+            <Text variant="caption" tone="secondary" className="text-center">
+              کد تایید تا ۵ دقیقه معتبر است.
+            </Text>
+          </div>
+        </AuthCard>
+      </div>
+    </AuthShell>
   );
 }
