@@ -1,7 +1,4 @@
-import {
-  UserRole,
-  type UserRole as UserRoleType,
-} from "@/generated/prisma/client";
+import type { AuthRole } from "@/lib/auth/roles";
 
 export const AUTH_ROUTES = {
   visitor: "/auth/visitor",
@@ -9,43 +6,40 @@ export const AUTH_ROUTES = {
   admin: "/panel/login",
 } as const;
 
-export const ROLE_HOME: Record<UserRoleType, string> = {
-  [UserRole.VISITOR]: "/",
-  [UserRole.HOST]: "/host",
-  [UserRole.ADMIN]: "/panel",
+export const ROLE_HOME: Record<AuthRole, string> = {
+  VISITOR: "/",
+  HOST: "/host",
+  ADMIN: "/panel",
 };
 
-export function getRoleHome(role: UserRoleType): string {
+export function getRoleHome(role: AuthRole): string {
   return ROLE_HOME[role];
 }
 
-export function getAuthRoute(role: UserRoleType): string {
+export function getAuthRoute(role: AuthRole): string {
   switch (role) {
-    case UserRole.VISITOR:
+    case "VISITOR":
       return AUTH_ROUTES.visitor;
 
-    case UserRole.HOST:
+    case "HOST":
       return AUTH_ROUTES.host;
 
-    case UserRole.ADMIN:
+    case "ADMIN":
       return AUTH_ROUTES.admin;
   }
 }
 
-export function isRoleAllowedPath(
-  role: UserRoleType,
-  pathname: string,
-): boolean {
+export function isRoleAllowedPath(role: AuthRole, pathname: string): boolean {
   if (pathname === "/panel" || pathname.startsWith("/panel/")) {
-    return role === UserRole.ADMIN;
+    return role === "ADMIN";
   }
 
   if (pathname === "/host" || pathname.startsWith("/host/")) {
-    return role === UserRole.HOST;
+    return role === "HOST";
   }
 
   if (pathname === "/profile" || pathname.startsWith("/profile/")) {
-    return role === UserRole.VISITOR;
+    return role === "VISITOR";
   }
 
   return true;

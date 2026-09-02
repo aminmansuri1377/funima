@@ -1,4 +1,4 @@
-import { TRPCProvider } from "@/trpc/provider";
+import { AppProvider } from "@/providers/app-provider";
 
 export default function RootLayout({
   children,
@@ -8,7 +8,7 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl">
       <body>
-        <TRPCProvider>{children}</TRPCProvider>
+        <AppProvider>{children}</AppProvider>
       </body>
     </html>
   );

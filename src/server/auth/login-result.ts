@@ -1,13 +1,13 @@
-import type { UserRole } from "@/generated/prisma/client";
+import type { AuthRole } from "@/lib/auth/roles";
 
-import { getRoleHome } from "@/server/auth/routes";
+import { getRoleHome } from "@/lib/auth/routes";
 
 export type LoginResult = {
   success: true;
   redirectTo: string;
 };
 
-export function createLoginResult(activeRole: UserRole): LoginResult {
+export function createLoginResult(activeRole: AuthRole): LoginResult {
   return {
     success: true,
     redirectTo: getRoleHome(activeRole),

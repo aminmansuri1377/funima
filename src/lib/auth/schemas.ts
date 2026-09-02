@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { AUTH_ROLES } from "@/lib/auth/roles";
+
 export const phoneNumberSchema = z
   .string()
   .trim()
@@ -17,7 +19,7 @@ export const otpCodeSchema = z
   .trim()
   .regex(/^\d{5}$/, "کد تایید باید ۵ رقمی باشد");
 
-export const authRoleSchema = z.enum(["VISITOR", "HOST", "ADMIN"]);
+export const authRoleSchema = z.enum(AUTH_ROLES);
 
 export const requestOtpSchema = z.object({
   phoneNumber: phoneNumberSchema,
@@ -25,15 +27,30 @@ export const requestOtpSchema = z.object({
 
 export const signupCredentialsSchema = z.object({
   phoneNumber: phoneNumberSchema,
+
   fullName: fullNameSchema,
+
   code: otpCodeSchema,
+
   role: authRoleSchema,
 });
 
 export const loginCredentialsSchema = z.object({
   phoneNumber: phoneNumberSchema,
+
   code: otpCodeSchema,
+
   role: authRoleSchema,
+});
+
+export const nextAuthCredentialsSchema = z.object({
+  phoneNumber: phoneNumberSchema,
+
+  code: otpCodeSchema,
+
+  role: authRoleSchema,
+
+  fullName: fullNameSchema.optional(),
 });
 
 export type RequestOtpInput = z.infer<typeof requestOtpSchema>;
@@ -41,9 +58,3 @@ export type RequestOtpInput = z.infer<typeof requestOtpSchema>;
 export type SignupCredentialsInput = z.infer<typeof signupCredentialsSchema>;
 
 export type LoginCredentialsInput = z.infer<typeof loginCredentialsSchema>;
-export const nextAuthCredentialsSchema = z.object({
-  phoneNumber: phoneNumberSchema,
-  code: otpCodeSchema,
-  role: authRoleSchema,
-  fullName: fullNameSchema.optional(),
-});

@@ -1,10 +1,10 @@
-import { UserRole } from "../src/generated/prisma/client";
+// import { UserRole } from "../src/generated/prisma/client";
 
 import {
   getAuthRoute,
   getRoleHome,
   isRoleAllowedPath,
-} from "../src/server/auth/routes";
+} from "../src/lib/auth/routes";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
@@ -19,11 +19,11 @@ function main() {
    * Home redirects
    */
 
-  assert(getRoleHome(UserRole.VISITOR) === "/", "Visitor home incorrect");
+  assert(getRoleHome("VISITOR") === "/", "Visitor home incorrect");
 
-  assert(getRoleHome(UserRole.HOST) === "/host", "Host home incorrect");
+  assert(getRoleHome("HOST") === "/host", "Host home incorrect");
 
-  assert(getRoleHome(UserRole.ADMIN) === "/panel", "Admin home incorrect");
+  assert(getRoleHome("ADMIN") === "/panel", "Admin home incorrect");
 
   console.log("✓ Role home routes");
 
@@ -32,17 +32,14 @@ function main() {
    */
 
   assert(
-    getAuthRoute(UserRole.VISITOR) === "/auth/visitor",
+    getAuthRoute("VISITOR") === "/auth/visitor",
     "Visitor auth route incorrect",
   );
 
-  assert(
-    getAuthRoute(UserRole.HOST) === "/auth/host",
-    "Host auth route incorrect",
-  );
+  assert(getAuthRoute("HOST") === "/auth/host", "Host auth route incorrect");
 
   assert(
-    getAuthRoute(UserRole.ADMIN) === "/panel/login",
+    getAuthRoute("ADMIN") === "/panel/login",
     "Admin auth route incorrect",
   );
 
@@ -53,17 +50,14 @@ function main() {
    */
 
   assert(
-    isRoleAllowedPath(UserRole.VISITOR, "/profile"),
+    isRoleAllowedPath("VISITOR", "/profile"),
     "Visitor cannot access profile",
   );
 
-  assert(
-    !isRoleAllowedPath(UserRole.VISITOR, "/host"),
-    "Visitor accessed Host area",
-  );
+  assert(!isRoleAllowedPath("VISITOR", "/host"), "Visitor accessed Host area");
 
   assert(
-    !isRoleAllowedPath(UserRole.VISITOR, "/panel"),
+    !isRoleAllowedPath("VISITOR", "/panel"),
     "Visitor accessed Admin area",
   );
 
@@ -73,25 +67,19 @@ function main() {
    * Host
    */
 
-  assert(
-    isRoleAllowedPath(UserRole.HOST, "/host"),
-    "Host cannot access host area",
-  );
+  assert(isRoleAllowedPath("HOST", "/host"), "Host cannot access host area");
 
   assert(
-    isRoleAllowedPath(UserRole.HOST, "/host/events"),
+    isRoleAllowedPath("HOST", "/host/events"),
     "Host cannot access nested host route",
   );
 
   assert(
-    !isRoleAllowedPath(UserRole.HOST, "/profile"),
+    !isRoleAllowedPath("HOST", "/profile"),
     "Host accessed Visitor profile",
   );
 
-  assert(
-    !isRoleAllowedPath(UserRole.HOST, "/panel"),
-    "Host accessed Admin panel",
-  );
+  assert(!isRoleAllowedPath("HOST", "/panel"), "Host accessed Admin panel");
 
   console.log("✓ Host route isolation");
 
@@ -99,23 +87,17 @@ function main() {
    * Admin
    */
 
-  assert(
-    isRoleAllowedPath(UserRole.ADMIN, "/panel"),
-    "Admin cannot access panel",
-  );
+  assert(isRoleAllowedPath("ADMIN", "/panel"), "Admin cannot access panel");
 
   assert(
-    isRoleAllowedPath(UserRole.ADMIN, "/panel/users"),
+    isRoleAllowedPath("ADMIN", "/panel/users"),
     "Admin cannot access nested panel route",
   );
 
-  assert(
-    !isRoleAllowedPath(UserRole.ADMIN, "/host"),
-    "Admin accessed Host dashboard",
-  );
+  assert(!isRoleAllowedPath("ADMIN", "/host"), "Admin accessed Host dashboard");
 
   assert(
-    !isRoleAllowedPath(UserRole.ADMIN, "/profile"),
+    !isRoleAllowedPath("ADMIN", "/profile"),
     "Admin accessed Visitor profile",
   );
 
@@ -125,18 +107,15 @@ function main() {
    * Public routes.
    */
 
-  assert(
-    isRoleAllowedPath(UserRole.VISITOR, "/"),
-    "Visitor blocked from public home",
-  );
+  assert(isRoleAllowedPath("VISITOR", "/"), "Visitor blocked from public home");
 
   assert(
-    isRoleAllowedPath(UserRole.HOST, "/events"),
+    isRoleAllowedPath("HOST", "/events"),
     "Host blocked from public events",
   );
 
   assert(
-    isRoleAllowedPath(UserRole.ADMIN, "/places/123"),
+    isRoleAllowedPath("ADMIN", "/places/123"),
     "Admin blocked from public place",
   );
 

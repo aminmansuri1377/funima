@@ -14,6 +14,7 @@
     "nextauth:test": "tsx scripts/test-nextauth.ts",
     "auth-routes:test": "tsx scripts/test-auth-routes.ts",
     "auth-schema:test": "tsx scripts/test-auth-schemas.ts",
+    "make-admin": "tsx scripts/make-admin.ts",
     "postinstall": "prisma skills sync || exit 0"
   },
   "dependencies": {
@@ -36,9 +37,9 @@
     "react-dom": "19.2.8",
     "react-hook-form": "^7.87.0",
     "react-icons": "^5.7.0",
-    "recoil": "^0.7.7",
     "superjson": "^2.2.6",
-    "zod": "^4.5.4"
+    "zod": "^4.5.4",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

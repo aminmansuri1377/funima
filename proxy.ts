@@ -6,7 +6,7 @@ import {
   getAuthRoute,
   getRoleHome,
   isRoleAllowedPath,
-} from "@/server/auth/routes";
+} from "@/lib/auth/routes";
 
 export default auth((req) => {
   const pathname = req.nextUrl.pathname;
