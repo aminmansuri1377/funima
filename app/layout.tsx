@@ -1,4 +1,11 @@
+import "./globals.css";
+
 import { AppProvider } from "@/providers/app-provider";
+
+export const metadata = {
+  title: "Funima",
+  description: "Funima",
+};
 
 export default function RootLayout({
   children,
@@ -6,9 +13,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fa" dir="rtl">
+    <html
+      lang="fa"
+      dir="rtl"
+    >
       <body>
-        <AppProvider>{children}</AppProvider>
+        <AppProvider>
+          {children}
+        </AppProvider>
       </body>
     </html>
   );
