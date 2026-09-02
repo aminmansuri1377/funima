@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { router, publicProcedure } from "../trpc";
-
+import { requestOtpSchema } from "@/lib/auth/schemas";
 import { requestOtp, normalizePhoneNumber } from "@/server/auth/otp";
 
 const phoneSchema = z
@@ -12,11 +12,7 @@ const phoneSchema = z
 
 export const authRouter = router({
   requestOtp: publicProcedure
-    .input(
-      z.object({
-        phoneNumber: phoneSchema,
-      }),
-    )
+    .input(requestOtpSchema)
     .mutation(async ({ input }) => {
       return requestOtp(input.phoneNumber);
     }),

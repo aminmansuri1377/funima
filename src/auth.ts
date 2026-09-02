@@ -1,17 +1,17 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
-
+import { signupCredentialsSchema } from "@/lib/auth/schemas";
 import type { UserRole } from "@/generated/prisma/client";
-
+import { nextAuthCredentialsSchema } from "@/lib/auth/schemas";
 import { authenticateWithOtp } from "@/server/auth/authenticate";
 
-const credentialsSchema = z.object({
-  phoneNumber: z.string().min(10).max(15),
-  code: z.string().regex(/^\d{5}$/),
-  role: z.enum(["VISITOR", "HOST", "ADMIN"]),
-  fullName: z.string().optional(),
-});
+// const credentialsSchema = z.object({
+//   phoneNumber: z.string().min(10).max(15),
+//   code: z.string().regex(/^\d{5}$/),
+//   role: z.enum(["VISITOR", "HOST", "ADMIN"]),
+//   fullName: z.string().optional(),
+// });
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   session: {
@@ -41,8 +41,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
 
       async authorize(credentials) {
-        const parsed = credentialsSchema.safeParse(credentials);
-
+        const parsed = nextAuthCredentialsSchema.safeParse(credentials);
         if (!parsed.success) {
           return null;
         }
