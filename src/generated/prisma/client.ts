@@ -121,3 +121,8 @@ export type ShowOnPage = Prisma.ShowOnPageModel
  * 
  */
 export type ShowOnPagePlace = Prisma.ShowOnPagePlaceModel
+/**
+ * Model Blog
+ * 
+ */
+export type Blog = Prisma.BlogModel

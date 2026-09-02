@@ -194,6 +194,7 @@ export type UserWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   roles?: Prisma.EnumUserRoleNullableListFilter<"User">
+  blogs?: Prisma.BlogListRelationFilter
   visitor?: Prisma.XOR<Prisma.VisitorNullableScalarRelationFilter, Prisma.VisitorWhereInput> | null
   host?: Prisma.XOR<Prisma.HostNullableScalarRelationFilter, Prisma.HostWhereInput> | null
   comments?: Prisma.CommentListRelationFilter
@@ -209,6 +210,7 @@ export type UserOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   roles?: Prisma.SortOrder
+  blogs?: Prisma.BlogOrderByRelationAggregateInput
   visitor?: Prisma.VisitorOrderByWithRelationInput
   host?: Prisma.HostOrderByWithRelationInput
   comments?: Prisma.CommentOrderByRelationAggregateInput
@@ -227,6 +229,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   roles?: Prisma.EnumUserRoleNullableListFilter<"User">
+  blogs?: Prisma.BlogListRelationFilter
   visitor?: Prisma.XOR<Prisma.VisitorNullableScalarRelationFilter, Prisma.VisitorWhereInput> | null
   host?: Prisma.XOR<Prisma.HostNullableScalarRelationFilter, Prisma.HostWhereInput> | null
   comments?: Prisma.CommentListRelationFilter
@@ -268,6 +271,7 @@ export type UserCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   roles?: Prisma.UserCreaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogCreateNestedManyWithoutAuthorInput
   visitor?: Prisma.VisitorCreateNestedOneWithoutUserInput
   host?: Prisma.HostCreateNestedOneWithoutUserInput
   comments?: Prisma.CommentCreateNestedManyWithoutUserInput
@@ -283,6 +287,7 @@ export type UserUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   roles?: Prisma.UserCreaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogUncheckedCreateNestedManyWithoutAuthorInput
   visitor?: Prisma.VisitorUncheckedCreateNestedOneWithoutUserInput
   host?: Prisma.HostUncheckedCreateNestedOneWithoutUserInput
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutUserInput
@@ -298,6 +303,7 @@ export type UserUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   roles?: Prisma.UserUpdaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogUpdateManyWithoutAuthorNestedInput
   visitor?: Prisma.VisitorUpdateOneWithoutUserNestedInput
   host?: Prisma.HostUpdateOneWithoutUserNestedInput
   comments?: Prisma.CommentUpdateManyWithoutUserNestedInput
@@ -313,6 +319,7 @@ export type UserUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   roles?: Prisma.UserUpdaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogUncheckedUpdateManyWithoutAuthorNestedInput
   visitor?: Prisma.VisitorUncheckedUpdateOneWithoutUserNestedInput
   host?: Prisma.HostUncheckedUpdateOneWithoutUserNestedInput
   comments?: Prisma.CommentUncheckedUpdateManyWithoutUserNestedInput
@@ -482,6 +489,20 @@ export type UserUpdateOneRequiredWithoutSavedEventsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutSavedEventsInput, Prisma.UserUpdateWithoutSavedEventsInput>, Prisma.UserUncheckedUpdateWithoutSavedEventsInput>
 }
 
+export type UserCreateNestedOneWithoutBlogsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutBlogsInput, Prisma.UserUncheckedCreateWithoutBlogsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutBlogsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutBlogsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutBlogsInput, Prisma.UserUncheckedCreateWithoutBlogsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutBlogsInput
+  upsert?: Prisma.UserUpsertWithoutBlogsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutBlogsInput, Prisma.UserUpdateWithoutBlogsInput>, Prisma.UserUncheckedUpdateWithoutBlogsInput>
+}
+
 export type UserCreateWithoutVisitorInput = {
   id?: string
   phoneNumber: string
@@ -490,6 +511,7 @@ export type UserCreateWithoutVisitorInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   roles?: Prisma.UserCreaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogCreateNestedManyWithoutAuthorInput
   host?: Prisma.HostCreateNestedOneWithoutUserInput
   comments?: Prisma.CommentCreateNestedManyWithoutUserInput
   savedPlaces?: Prisma.SavedPlaceCreateNestedManyWithoutUserInput
@@ -504,6 +526,7 @@ export type UserUncheckedCreateWithoutVisitorInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   roles?: Prisma.UserCreaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogUncheckedCreateNestedManyWithoutAuthorInput
   host?: Prisma.HostUncheckedCreateNestedOneWithoutUserInput
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutUserInput
   savedPlaces?: Prisma.SavedPlaceUncheckedCreateNestedManyWithoutUserInput
@@ -534,6 +557,7 @@ export type UserUpdateWithoutVisitorInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   roles?: Prisma.UserUpdaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogUpdateManyWithoutAuthorNestedInput
   host?: Prisma.HostUpdateOneWithoutUserNestedInput
   comments?: Prisma.CommentUpdateManyWithoutUserNestedInput
   savedPlaces?: Prisma.SavedPlaceUpdateManyWithoutUserNestedInput
@@ -548,6 +572,7 @@ export type UserUncheckedUpdateWithoutVisitorInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   roles?: Prisma.UserUpdaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogUncheckedUpdateManyWithoutAuthorNestedInput
   host?: Prisma.HostUncheckedUpdateOneWithoutUserNestedInput
   comments?: Prisma.CommentUncheckedUpdateManyWithoutUserNestedInput
   savedPlaces?: Prisma.SavedPlaceUncheckedUpdateManyWithoutUserNestedInput
@@ -562,6 +587,7 @@ export type UserCreateWithoutHostInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   roles?: Prisma.UserCreaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogCreateNestedManyWithoutAuthorInput
   visitor?: Prisma.VisitorCreateNestedOneWithoutUserInput
   comments?: Prisma.CommentCreateNestedManyWithoutUserInput
   savedPlaces?: Prisma.SavedPlaceCreateNestedManyWithoutUserInput
@@ -576,6 +602,7 @@ export type UserUncheckedCreateWithoutHostInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   roles?: Prisma.UserCreaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogUncheckedCreateNestedManyWithoutAuthorInput
   visitor?: Prisma.VisitorUncheckedCreateNestedOneWithoutUserInput
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutUserInput
   savedPlaces?: Prisma.SavedPlaceUncheckedCreateNestedManyWithoutUserInput
@@ -606,6 +633,7 @@ export type UserUpdateWithoutHostInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   roles?: Prisma.UserUpdaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogUpdateManyWithoutAuthorNestedInput
   visitor?: Prisma.VisitorUpdateOneWithoutUserNestedInput
   comments?: Prisma.CommentUpdateManyWithoutUserNestedInput
   savedPlaces?: Prisma.SavedPlaceUpdateManyWithoutUserNestedInput
@@ -620,6 +648,7 @@ export type UserUncheckedUpdateWithoutHostInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   roles?: Prisma.UserUpdaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogUncheckedUpdateManyWithoutAuthorNestedInput
   visitor?: Prisma.VisitorUncheckedUpdateOneWithoutUserNestedInput
   comments?: Prisma.CommentUncheckedUpdateManyWithoutUserNestedInput
   savedPlaces?: Prisma.SavedPlaceUncheckedUpdateManyWithoutUserNestedInput
@@ -634,6 +663,7 @@ export type UserCreateWithoutCommentsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   roles?: Prisma.UserCreaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogCreateNestedManyWithoutAuthorInput
   visitor?: Prisma.VisitorCreateNestedOneWithoutUserInput
   host?: Prisma.HostCreateNestedOneWithoutUserInput
   savedPlaces?: Prisma.SavedPlaceCreateNestedManyWithoutUserInput
@@ -648,6 +678,7 @@ export type UserUncheckedCreateWithoutCommentsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   roles?: Prisma.UserCreaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogUncheckedCreateNestedManyWithoutAuthorInput
   visitor?: Prisma.VisitorUncheckedCreateNestedOneWithoutUserInput
   host?: Prisma.HostUncheckedCreateNestedOneWithoutUserInput
   savedPlaces?: Prisma.SavedPlaceUncheckedCreateNestedManyWithoutUserInput
@@ -678,6 +709,7 @@ export type UserUpdateWithoutCommentsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   roles?: Prisma.UserUpdaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogUpdateManyWithoutAuthorNestedInput
   visitor?: Prisma.VisitorUpdateOneWithoutUserNestedInput
   host?: Prisma.HostUpdateOneWithoutUserNestedInput
   savedPlaces?: Prisma.SavedPlaceUpdateManyWithoutUserNestedInput
@@ -692,6 +724,7 @@ export type UserUncheckedUpdateWithoutCommentsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   roles?: Prisma.UserUpdaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogUncheckedUpdateManyWithoutAuthorNestedInput
   visitor?: Prisma.VisitorUncheckedUpdateOneWithoutUserNestedInput
   host?: Prisma.HostUncheckedUpdateOneWithoutUserNestedInput
   savedPlaces?: Prisma.SavedPlaceUncheckedUpdateManyWithoutUserNestedInput
@@ -706,6 +739,7 @@ export type UserCreateWithoutSavedPlacesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   roles?: Prisma.UserCreaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogCreateNestedManyWithoutAuthorInput
   visitor?: Prisma.VisitorCreateNestedOneWithoutUserInput
   host?: Prisma.HostCreateNestedOneWithoutUserInput
   comments?: Prisma.CommentCreateNestedManyWithoutUserInput
@@ -720,6 +754,7 @@ export type UserUncheckedCreateWithoutSavedPlacesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   roles?: Prisma.UserCreaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogUncheckedCreateNestedManyWithoutAuthorInput
   visitor?: Prisma.VisitorUncheckedCreateNestedOneWithoutUserInput
   host?: Prisma.HostUncheckedCreateNestedOneWithoutUserInput
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutUserInput
@@ -750,6 +785,7 @@ export type UserUpdateWithoutSavedPlacesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   roles?: Prisma.UserUpdaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogUpdateManyWithoutAuthorNestedInput
   visitor?: Prisma.VisitorUpdateOneWithoutUserNestedInput
   host?: Prisma.HostUpdateOneWithoutUserNestedInput
   comments?: Prisma.CommentUpdateManyWithoutUserNestedInput
@@ -764,6 +800,7 @@ export type UserUncheckedUpdateWithoutSavedPlacesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   roles?: Prisma.UserUpdaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogUncheckedUpdateManyWithoutAuthorNestedInput
   visitor?: Prisma.VisitorUncheckedUpdateOneWithoutUserNestedInput
   host?: Prisma.HostUncheckedUpdateOneWithoutUserNestedInput
   comments?: Prisma.CommentUncheckedUpdateManyWithoutUserNestedInput
@@ -778,6 +815,7 @@ export type UserCreateWithoutSavedEventsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   roles?: Prisma.UserCreaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogCreateNestedManyWithoutAuthorInput
   visitor?: Prisma.VisitorCreateNestedOneWithoutUserInput
   host?: Prisma.HostCreateNestedOneWithoutUserInput
   comments?: Prisma.CommentCreateNestedManyWithoutUserInput
@@ -792,6 +830,7 @@ export type UserUncheckedCreateWithoutSavedEventsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   roles?: Prisma.UserCreaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogUncheckedCreateNestedManyWithoutAuthorInput
   visitor?: Prisma.VisitorUncheckedCreateNestedOneWithoutUserInput
   host?: Prisma.HostUncheckedCreateNestedOneWithoutUserInput
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutUserInput
@@ -822,6 +861,7 @@ export type UserUpdateWithoutSavedEventsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   roles?: Prisma.UserUpdaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogUpdateManyWithoutAuthorNestedInput
   visitor?: Prisma.VisitorUpdateOneWithoutUserNestedInput
   host?: Prisma.HostUpdateOneWithoutUserNestedInput
   comments?: Prisma.CommentUpdateManyWithoutUserNestedInput
@@ -836,10 +876,87 @@ export type UserUncheckedUpdateWithoutSavedEventsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   roles?: Prisma.UserUpdaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogUncheckedUpdateManyWithoutAuthorNestedInput
   visitor?: Prisma.VisitorUncheckedUpdateOneWithoutUserNestedInput
   host?: Prisma.HostUncheckedUpdateOneWithoutUserNestedInput
   comments?: Prisma.CommentUncheckedUpdateManyWithoutUserNestedInput
   savedPlaces?: Prisma.SavedPlaceUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutBlogsInput = {
+  id?: string
+  phoneNumber: string
+  fullName: string
+  profileImage?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  roles?: Prisma.UserCreaterolesInput | $Enums.UserRole[]
+  visitor?: Prisma.VisitorCreateNestedOneWithoutUserInput
+  host?: Prisma.HostCreateNestedOneWithoutUserInput
+  comments?: Prisma.CommentCreateNestedManyWithoutUserInput
+  savedPlaces?: Prisma.SavedPlaceCreateNestedManyWithoutUserInput
+  savedEvents?: Prisma.SavedEventCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutBlogsInput = {
+  id?: string
+  phoneNumber: string
+  fullName: string
+  profileImage?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  roles?: Prisma.UserCreaterolesInput | $Enums.UserRole[]
+  visitor?: Prisma.VisitorUncheckedCreateNestedOneWithoutUserInput
+  host?: Prisma.HostUncheckedCreateNestedOneWithoutUserInput
+  comments?: Prisma.CommentUncheckedCreateNestedManyWithoutUserInput
+  savedPlaces?: Prisma.SavedPlaceUncheckedCreateNestedManyWithoutUserInput
+  savedEvents?: Prisma.SavedEventUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutBlogsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutBlogsInput, Prisma.UserUncheckedCreateWithoutBlogsInput>
+}
+
+export type UserUpsertWithoutBlogsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutBlogsInput, Prisma.UserUncheckedUpdateWithoutBlogsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutBlogsInput, Prisma.UserUncheckedCreateWithoutBlogsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutBlogsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutBlogsInput, Prisma.UserUncheckedUpdateWithoutBlogsInput>
+}
+
+export type UserUpdateWithoutBlogsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  phoneNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  fullName?: Prisma.StringFieldUpdateOperationsInput | string
+  profileImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  roles?: Prisma.UserUpdaterolesInput | $Enums.UserRole[]
+  visitor?: Prisma.VisitorUpdateOneWithoutUserNestedInput
+  host?: Prisma.HostUpdateOneWithoutUserNestedInput
+  comments?: Prisma.CommentUpdateManyWithoutUserNestedInput
+  savedPlaces?: Prisma.SavedPlaceUpdateManyWithoutUserNestedInput
+  savedEvents?: Prisma.SavedEventUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutBlogsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  phoneNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  fullName?: Prisma.StringFieldUpdateOperationsInput | string
+  profileImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  roles?: Prisma.UserUpdaterolesInput | $Enums.UserRole[]
+  visitor?: Prisma.VisitorUncheckedUpdateOneWithoutUserNestedInput
+  host?: Prisma.HostUncheckedUpdateOneWithoutUserNestedInput
+  comments?: Prisma.CommentUncheckedUpdateManyWithoutUserNestedInput
+  savedPlaces?: Prisma.SavedPlaceUncheckedUpdateManyWithoutUserNestedInput
+  savedEvents?: Prisma.SavedEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -848,12 +965,14 @@ export type UserUncheckedUpdateWithoutSavedEventsInput = {
  */
 
 export type UserCountOutputType = {
+  blogs: number
   comments: number
   savedPlaces: number
   savedEvents: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  blogs?: boolean | UserCountOutputTypeCountBlogsArgs
   comments?: boolean | UserCountOutputTypeCountCommentsArgs
   savedPlaces?: boolean | UserCountOutputTypeCountSavedPlacesArgs
   savedEvents?: boolean | UserCountOutputTypeCountSavedEventsArgs
@@ -867,6 +986,13 @@ export type UserCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensi
    * Select specific fields to fetch from the UserCountOutputType
    */
   select?: Prisma.UserCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountBlogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.BlogWhereInput
 }
 
 /**
@@ -899,6 +1025,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   createdAt?: boolean
   updatedAt?: boolean
   roles?: boolean
+  blogs?: boolean | Prisma.User$blogsArgs<ExtArgs>
   visitor?: boolean | Prisma.User$visitorArgs<ExtArgs>
   host?: boolean | Prisma.User$hostArgs<ExtArgs>
   comments?: boolean | Prisma.User$commentsArgs<ExtArgs>
@@ -939,6 +1066,7 @@ export type UserSelectScalar = {
 
 export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "phoneNumber" | "fullName" | "profileImage" | "createdAt" | "updatedAt" | "roles", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  blogs?: boolean | Prisma.User$blogsArgs<ExtArgs>
   visitor?: boolean | Prisma.User$visitorArgs<ExtArgs>
   host?: boolean | Prisma.User$hostArgs<ExtArgs>
   comments?: boolean | Prisma.User$commentsArgs<ExtArgs>
@@ -952,6 +1080,7 @@ export type UserIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
 export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "User"
   objects: {
+    blogs: Prisma.$BlogPayload<ExtArgs>[]
     visitor: Prisma.$VisitorPayload<ExtArgs> | null
     host: Prisma.$HostPayload<ExtArgs> | null
     comments: Prisma.$CommentPayload<ExtArgs>[]
@@ -1360,6 +1489,7 @@ readonly fields: UserFieldRefs;
  */
 export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  blogs<T extends Prisma.User$blogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$blogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BlogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   visitor<T extends Prisma.User$visitorArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$visitorArgs<ExtArgs>>): Prisma.Prisma__VisitorClient<runtime.Types.Result.GetResult<Prisma.$VisitorPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   host<T extends Prisma.User$hostArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$hostArgs<ExtArgs>>): Prisma.Prisma__HostClient<runtime.Types.Result.GetResult<Prisma.$HostPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   comments<T extends Prisma.User$commentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$commentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -1791,6 +1921,30 @@ export type UserDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
    * Limit how many Users to delete.
    */
   limit?: number
+}
+
+/**
+ * User.blogs
+ */
+export type User$blogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Blog
+   */
+  select?: Prisma.BlogSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Blog
+   */
+  omit?: Prisma.BlogOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.BlogInclude<ExtArgs> | null
+  where?: Prisma.BlogWhereInput
+  orderBy?: Prisma.BlogOrderByWithRelationInput | Prisma.BlogOrderByWithRelationInput[]
+  cursor?: Prisma.BlogWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.BlogScalarFieldEnum | Prisma.BlogScalarFieldEnum[]
 }
 
 /**
