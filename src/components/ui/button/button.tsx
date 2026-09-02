@@ -1,124 +1,154 @@
 "use client";
 
-import {
-  forwardRef,
-  type ButtonHTMLAttributes,
-  type ReactNode,
-} from "react";
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
 
-type ButtonVariant =
-  | "primary"
-  | "secondary"
-  | "tertiary";
+export type ButtonVariant = "primary" | "secondary" | "tertiary" | "danger";
 
-type ButtonSize =
-  | "xl"
-  | "lg"
-  | "md"
-  | "sm";
+export type ButtonSize = "xl" | "lg" | "md" | "sm";
 
-type ButtonProps =
-  ButtonHTMLAttributes<HTMLButtonElement> & {
-    variant?: ButtonVariant;
-    size?: ButtonSize;
-    fullWidth?: boolean;
-    loading?: boolean;
-    startIcon?: ReactNode;
-    endIcon?: ReactNode;
-  };
+export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
 
-const variants: Record<
-  ButtonVariant,
-  string
-> = {
+  fullWidth?: boolean;
+
+  loading?: boolean;
+
+  startIcon?: ReactNode;
+  endIcon?: ReactNode;
+
+  iconOnly?: boolean;
+};
+
+const variantClasses: Record<ButtonVariant, string> = {
   primary: cn(
-    "bg-[var(--color-brand-500)]",
-    "text-white",
     "border border-transparent",
+    "bg-[var(--color-brand-500)]",
+    "text-[var(--color-text-inverse)]",
+
     "hover:bg-[var(--color-brand-600)]",
+
     "active:bg-[var(--color-brand-700)]",
+
     "disabled:bg-[var(--color-gray-200)]",
     "disabled:text-[var(--color-text-disabled)]",
   ),
 
   secondary: cn(
+    "border",
+    "border-[var(--color-brand-500)]",
     "bg-transparent",
     "text-[var(--color-brand-500)]",
-    "border border-[var(--color-brand-500)]",
+
     "hover:bg-[var(--color-brand-50)]",
+
     "active:bg-[var(--color-brand-100)]",
-    "disabled:border-[var(--color-gray-300)]",
+
+    "disabled:border-[var(--color-border)]",
     "disabled:text-[var(--color-text-disabled)]",
   ),
 
   tertiary: cn(
+    "border border-transparent",
     "bg-transparent",
     "text-[var(--color-brand-500)]",
-    "border border-transparent",
+
     "hover:bg-[var(--color-brand-50)]",
+
     "active:bg-[var(--color-brand-100)]",
+
+    "disabled:text-[var(--color-text-disabled)]",
+  ),
+
+  danger: cn(
+    "border border-transparent",
+    "bg-[var(--color-error-500)]",
+    "text-white",
+
+    "hover:opacity-90",
+    "active:opacity-80",
+
+    "disabled:bg-[var(--color-gray-200)]",
     "disabled:text-[var(--color-text-disabled)]",
   ),
 };
 
-const sizes: Record<
-  ButtonSize,
-  string
-> = {
-  xl:
-    "h-14 px-8 text-lg font-medium",
-
-  lg:
-    "h-12 px-6 text-base font-medium",
-
-  md:
-    "h-10 px-5 text-sm font-medium",
-
-  sm:
-    "h-8 px-4 text-xs font-medium",
+const sizeClasses: Record<ButtonSize, string> = {
+  xl: "h-14 px-8 text-[18px] font-semibold",
+  lg: "h-12 px-6 text-[16px] font-semibold",
+  md: "h-10 px-5 text-[14px] font-semibold",
+  sm: "h-8 px-4 text-[12px] font-semibold",
 };
 
-export const Button =
-  forwardRef<
-    HTMLButtonElement,
-    ButtonProps
-  >(function Button(
+const iconOnlySizeClasses: Record<ButtonSize, string> = {
+  xl: "h-14 w-14 p-0",
+  lg: "h-12 w-12 p-0",
+  md: "h-10 w-10 p-0",
+  sm: "h-8 w-8 p-0",
+};
+
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  function Button(
     {
       variant = "primary",
       size = "lg",
+
       fullWidth = false,
+
       loading = false,
+
       startIcon,
       endIcon,
+
+      iconOnly = false,
+
       disabled,
+
       className,
+
       children,
+
+      type = "button",
+
       ...props
     },
     ref,
   ) {
-    const isDisabled =
-      disabled || loading;
+    const isDisabled = disabled || loading;
 
     return (
       <button
         ref={ref}
+        type={type}
         disabled={isDisabled}
+        aria-busy={loading || undefined}
         className={cn(
-          "inline-flex items-center justify-center gap-2",
+          "relative",
+          "inline-flex items-center justify-center",
+          "gap-2",
+
           "rounded-[var(--radius-full)]",
-          "transition-colors",
+
+          "font-abar",
+
+          "transition-[background-color,color,border-color,opacity,box-shadow,transform]",
           "duration-[var(--duration-normal)]",
+
           "focus-visible:outline-none",
           "focus-visible:ring-2",
           "focus-visible:ring-[var(--color-brand-300)]",
           "focus-visible:ring-offset-2",
+
           "disabled:cursor-not-allowed",
-          variants[variant],
-          sizes[size],
-          fullWidth && "w-full",
+
+          variantClasses[variant],
+
+          iconOnly ? iconOnlySizeClasses[size] : sizeClasses[size],
+
+          fullWidth && !iconOnly && "w-full",
+
           className,
         )}
         {...props}
@@ -139,10 +169,12 @@ export const Button =
           startIcon
         )}
 
-        <span>{children}</span>
+        {!iconOnly && <span>{children}</span>}
 
-        {!loading &&
-          endIcon}
+        {!loading && !iconOnly && endIcon}
+
+        {iconOnly && !loading && children}
       </button>
     );
-  });
+  },
+);
