@@ -126,3 +126,8 @@ export type ShowOnPagePlace = Prisma.ShowOnPagePlaceModel
  * 
  */
 export type Blog = Prisma.BlogModel
+/**
+ * Model OtpVerification
+ * 
+ */
+export type OtpVerification = Prisma.OtpVerificationModel

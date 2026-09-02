@@ -366,3 +366,20 @@ model Blog {
   @@index([isPublished, publishedAt])
   @@index([authorId])
 }
+
+// =====================================================
+// OTP VERIFICATION
+// =====================================================
+
+model OtpVerification {
+  id          String    @id @default(cuid())
+  phoneNumber String
+  codeHash    String
+  expiresAt   DateTime
+  attempts    Int       @default(0)
+  verifiedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([phoneNumber, createdAt])
+  @@index([expiresAt])
+}
