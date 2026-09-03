@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useState } from "react";
 
 import { FiMapPin, FiPlus, FiSearch, FiTrash2 } from "react-icons/fi";
-
+import { FiEdit2 } from "react-icons/fi";
 import {
   Button,
   FormField,
@@ -436,6 +436,17 @@ function PlacesTable({ places, onChanged }: PlacesTableProps) {
                       onClick={() => handleDelete(place.id, place.placeName)}
                     >
                       حذف
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      startIcon={<FiEdit2 />}
+                      onClick={() => {
+                        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+                        window.location.href = `/panel/places/${place.id}`;
+                      }}
+                    >
+                      ویرایش
                     </Button>
                   </td>
                 </tr>

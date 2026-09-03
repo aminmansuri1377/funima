@@ -294,4 +294,236 @@ export const panelPlacesRouter = router({
         success: true,
       };
     }),
+  getById: adminProcedure
+    .input(
+      z.object({
+        placeId: z.string().min(1),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const place = await ctx.prisma.place.findUnique({
+        where: {
+          id: input.placeId,
+        },
+
+        include: {
+          host: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  phoneNumber: true,
+                },
+              },
+            },
+          },
+
+          location: true,
+
+          images: {
+            orderBy: {
+              sortOrder: "asc",
+            },
+          },
+        },
+      });
+
+      if (!place) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "مکان پیدا نشد.",
+        });
+      }
+
+      return place;
+    }),
+
+  update: adminProcedure
+    .input(
+      z.object({
+        placeId: z.string().min(1),
+
+        placeName: z.string().trim().min(2),
+
+        placePhone: z.string().trim().optional(),
+
+        placeType: z.enum(PlaceType),
+
+        placeCity: z.string().trim().min(2),
+
+        instagramId: z.string().trim().optional(),
+
+        description: z.string().trim().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const place = await ctx.prisma.place.findUnique({
+        where: {
+          id: input.placeId,
+        },
+      });
+
+      if (!place) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "مکان پیدا نشد.",
+        });
+      }
+
+      const updated = await ctx.prisma.place.update({
+        where: {
+          id: input.placeId,
+        },
+
+        data: {
+          placeName: input.placeName.trim(),
+
+          placePhone: input.placePhone?.trim() || null,
+
+          placeType: input.placeType,
+
+          placeCity: input.placeCity.trim(),
+
+          instagramId: input.instagramId?.trim() || null,
+
+          description: input.description?.trim() || null,
+        },
+      });
+
+      try {
+        await ctx.prisma.auditLog.create({
+          data: {
+            adminId: ctx.session.user.id,
+
+            action: "UPDATE_PLACE",
+
+            entity: "Place",
+
+            entityId: updated.id,
+
+            metadata: {
+              placeName: updated.placeName,
+
+              placeType: updated.placeType,
+            },
+          },
+        });
+      } catch (error) {
+        console.error("[panel.places.update] AuditLog failed:", error);
+      }
+
+      return {
+        success: true,
+        place: updated,
+      };
+    }),
+  locationUpsert: adminProcedure
+    .input(
+      z.object({
+        placeId: z.string().min(1),
+
+        title: z.string().trim().optional(),
+
+        address: z.string().trim().optional(),
+
+        latitude: z.number(),
+        longitude: z.number(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const place = await ctx.prisma.place.findUnique({
+        where: {
+          id: input.placeId,
+        },
+
+        select: {
+          id: true,
+          locationId: true,
+          placeName: true,
+        },
+      });
+
+      if (!place) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "مکان پیدا نشد.",
+        });
+      }
+
+      let locationId = place.locationId;
+
+      if (locationId) {
+        await ctx.prisma.location.update({
+          where: {
+            id: locationId,
+          },
+
+          data: {
+            title: input.title?.trim() || null,
+
+            address: input.address?.trim() || null,
+
+            latitude: input.latitude,
+
+            longitude: input.longitude,
+          },
+        });
+      } else {
+        const location = await ctx.prisma.location.create({
+          data: {
+            title: input.title?.trim() || null,
+
+            address: input.address?.trim() || null,
+
+            latitude: input.latitude,
+
+            longitude: input.longitude,
+          },
+        });
+
+        locationId = location.id;
+
+        await ctx.prisma.place.update({
+          where: {
+            id: place.id,
+          },
+
+          data: {
+            locationId,
+          },
+        });
+      }
+
+      try {
+        await ctx.prisma.auditLog.create({
+          data: {
+            adminId: ctx.session.user.id,
+
+            action: "UPSERT_PLACE_LOCATION",
+
+            entity: "Place",
+
+            entityId: place.id,
+
+            metadata: {
+              placeName: place.placeName,
+
+              locationId,
+
+              latitude: input.latitude,
+
+              longitude: input.longitude,
+            },
+          },
+        });
+      } catch (error) {
+        console.error("[panel.places.locationUpsert] AuditLog failed:", error);
+      }
+
+      return {
+        success: true,
+        locationId,
+      };
+    }),
 });
