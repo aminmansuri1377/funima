@@ -85,3 +85,128 @@ textarea,
 select {
   font: inherit;
 }
+.blog-prosemirror {
+  padding: 24px;
+  line-height: 2;
+  color: var(--color-text-primary);
+}
+
+.blog-prosemirror > * + * {
+  margin-top: 1rem;
+}
+
+.blog-prosemirror h1 {
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1.5;
+}
+
+.blog-prosemirror h2 {
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+.blog-prosemirror h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.blog-prosemirror ul {
+  list-style: disc;
+  padding-right: 1.5rem;
+}
+
+.blog-prosemirror ol {
+  list-style: decimal;
+  padding-right: 1.5rem;
+}
+
+.blog-prosemirror blockquote {
+  border-right: 4px solid var(--color-brand-500);
+  padding-right: 16px;
+  color: var(--color-text-secondary);
+}
+
+.blog-prosemirror a {
+  color: var(--color-info-500);
+  text-decoration: underline;
+}
+
+.blog-prosemirror code {
+  border-radius: 6px;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  direction: ltr;
+}
+
+.blog-prosemirror pre {
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  background: #0f172a;
+  padding: 16px;
+  color: white;
+  direction: ltr;
+}
+
+.blog-prosemirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-xl);
+  margin-inline: auto;
+}
+
+.blog-prosemirror table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.blog-prosemirror th,
+.blog-prosemirror td {
+  position: relative;
+  min-width: 100px;
+  border: 1px solid var(--color-border);
+  padding: 10px;
+  vertical-align: top;
+}
+
+.blog-prosemirror th {
+  background: #f8fafc;
+  font-weight: 700;
+}
+
+.blog-prosemirror .selectedCell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: rgb(255 102 52 / 0.12);
+}
+
+.blog-prosemirror .column-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -2px;
+  bottom: 0;
+  width: 4px;
+  background: var(--color-brand-500);
+}
+
+.blog-prosemirror ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+}
+
+.blog-prosemirror ul[data-type="taskList"] li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.blog-prosemirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: right;
+  height: 0;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}

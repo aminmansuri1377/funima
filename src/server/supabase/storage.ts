@@ -17,7 +17,10 @@ export const supabaseUrl = getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL");
 export const supabaseSecretKey = getRequiredEnv("SUPABASE_SECRET_KEY");
 
 export const storageBucket = getRequiredEnv("SUPABASE_STORAGE_BUCKET");
-
+export const blogStorageBucket =
+  getRequiredEnv(
+    "SUPABASE_BLOG_STORAGE_BUCKET",
+  );
 export const supabaseAdmin = createClient(supabaseUrl, supabaseSecretKey, {
   auth: {
     persistSession: false,
