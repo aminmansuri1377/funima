@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import {
   Button,
   FormField,
+  ImageUploader,
   InlineMessage,
   Input,
   Text,
@@ -59,7 +60,11 @@ type EditPlaceFormProps = {
     placeCity: string | null;
     instagramId: string | null;
     description: string | null;
-
+    images: Array<{
+      id: string;
+      url: string;
+      sortOrder: number;
+    }>;
     location: {
       id: string;
       title: string | null;
@@ -106,7 +111,7 @@ function EditPlaceForm({ place, onUpdated }: EditPlaceFormProps) {
   const [placeError, setPlaceError] = useState<string | null>(null);
 
   const [placeSuccess, setPlaceSuccess] = useState<string | null>(null);
-
+  const deleteImage = trpc.panel.places.deleteImage.useMutation();
   /*
    * =========================
    * LOCATION STATE
@@ -267,10 +272,10 @@ function EditPlaceForm({ place, onUpdated }: EditPlaceFormProps) {
 
       <section
         className="
-          rounded-[var(--radius-xl)]
+          rounded-xl
           border
-          border-[var(--color-border)]
-          bg-[var(--color-surface)]
+          border-(--color-border)
+          bg-(--color-surface)
           p-5
         "
       >
@@ -294,10 +299,10 @@ function EditPlaceForm({ place, onUpdated }: EditPlaceFormProps) {
       <form
         onSubmit={handlePlaceSubmit}
         className="
-          rounded-[var(--radius-xl)]
+          rounded-xl
           border
-          border-[var(--color-border)]
-          bg-[var(--color-surface)]
+          border-(--color-border)
+          bg-(--color-surface)
           p-5
         "
       >
@@ -328,19 +333,19 @@ function EditPlaceForm({ place, onUpdated }: EditPlaceFormProps) {
               disabled={updatePlace.isPending}
               className="
                 h-14 w-full
-                rounded-[var(--radius-full)]
+                rounded-(--radius-full)
                 border
-                border-[var(--color-border-strong)]
-                bg-[var(--color-surface)]
+                border-(--color-border-strong)
+                bg-(--color-surface)
                 px-5
                 text-[16px]
                 outline-none
                 transition-colors
-                focus:border-[var(--color-brand-500)]
+                focus:border-(--color-brand-500)
                 focus:ring-2
-                focus:ring-[var(--color-brand-100)]
+                focus:ring-(--color-brand-100)
                 disabled:cursor-not-allowed
-                disabled:bg-[var(--color-gray-100)]
+                disabled:bg-gray-100
               "
             >
               {PLACE_TYPE_OPTIONS.map((option) => (
@@ -417,10 +422,10 @@ function EditPlaceForm({ place, onUpdated }: EditPlaceFormProps) {
       <form
         onSubmit={handleLocationSubmit}
         className="
-          rounded-[var(--radius-xl)]
+          rounded-xl
           border
-          border-[var(--color-border)]
-          bg-[var(--color-surface)]
+          border-(--color-border)
+          bg-(--color-surface)
           p-5
         "
       >
@@ -499,6 +504,28 @@ function EditPlaceForm({ place, onUpdated }: EditPlaceFormProps) {
           </Button>
         </div>
       </form>
+      <section
+        className="
+    rounded-xl
+    border
+    border-(--color-border)
+    bg-(--color-surface)
+    p-5
+  "
+      >
+        <ImageUploader
+          placeId={place.id}
+          images={place.images}
+          onUploaded={() => onUpdated()}
+          onDelete={async (imageId) => {
+            await deleteImage.mutateAsync({
+              imageId,
+            });
+
+            await onUpdated();
+          }}
+        />
+      </section>
     </div>
   );
 }

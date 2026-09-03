@@ -526,4 +526,112 @@ export const panelPlacesRouter = router({
         locationId,
       };
     }),
+  deleteImage: adminProcedure
+    .input(
+      z.object({
+        imageId: z.string().min(1),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const image = await ctx.prisma.placeImage.findUnique({
+        where: {
+          id: input.imageId,
+        },
+
+        include: {
+          place: true,
+        },
+      });
+
+      if (!image) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "تصویر پیدا نشد.",
+        });
+      }
+
+      const { supabaseAdmin, storageBucket } =
+        await import("@/server/supabase/storage");
+
+      /*
+       * public URL:
+       *
+       * https://PROJECT.supabase.co/
+       * storage/v1/object/public/places/
+       * places/PLACE_ID/UUID.webp
+       *
+       * bucket = places
+       *
+       * path داخل bucket باید فقط:
+       * places/PLACE_ID/UUID.webp
+       */
+      const bucketMarker = `/storage/v1/object/public/${storageBucket}/`;
+
+      const markerIndex = image.url.indexOf(bucketMarker);
+
+      if (markerIndex === -1) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "مسیر فایل تصویر در Storage قابل تشخیص نیست.",
+        });
+      }
+
+      const storagePath = decodeURIComponent(
+        image.url.slice(markerIndex + bucketMarker.length),
+      );
+
+      const removeResult = await supabaseAdmin.storage
+        .from(storageBucket)
+        .remove([storagePath]);
+
+      if (removeResult.error) {
+        console.error(
+          "[panel.places.deleteImage] Storage delete failed:",
+          removeResult.error,
+        );
+
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "حذف فایل از Storage انجام نشد.",
+        });
+      }
+
+      /*
+       * وقتی Storage با موفقیت حذف شد،
+       * رکورد DB را حذف می‌کنیم.
+       */
+      await ctx.prisma.placeImage.delete({
+        where: {
+          id: image.id,
+        },
+      });
+
+      try {
+        await ctx.prisma.auditLog.create({
+          data: {
+            adminId: ctx.session.user.id,
+
+            action: "DELETE_PLACE_IMAGE",
+
+            entity: "PlaceImage",
+
+            entityId: image.id,
+
+            metadata: {
+              placeId: image.placeId,
+
+              storagePath,
+
+              url: image.url,
+            },
+          },
+        });
+      } catch (error) {
+        console.error("[panel.places.deleteImage] AuditLog failed:", error);
+      }
+
+      return {
+        success: true,
+      };
+    }),
 });
