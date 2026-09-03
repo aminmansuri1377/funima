@@ -4,6 +4,7 @@ import { panelFiltersRouter } from "./filters";
 
 import { panelHostsRouter } from "./hosts";
 import { panelPlacesRouter } from "./places";
+import { panelShowOnPageRouter } from "./show-on-page";
 import { panelVisitorsRouter } from "./visitors";
 
 export const panelRouter = router({
@@ -13,4 +14,5 @@ export const panelRouter = router({
   admins: panelAdminsRouter,
   places: panelPlacesRouter,
   filters: panelFiltersRouter,
+  showOnPage: panelShowOnPageRouter,
 });

@@ -76,10 +76,10 @@ export function FiltersManager() {
       <form
         onSubmit={handleCreateFilter}
         className="
-          rounded-[var(--radius-xl)]
+          rounded-xl
           border
-          border-[var(--color-border)]
-          bg-[var(--color-surface)]
+          border-(--color-border)
+          bg-(--color-surface)
           p-5
         "
       >
@@ -136,10 +136,10 @@ export function FiltersManager() {
       {filters.data?.length === 0 && (
         <div
           className="
-            rounded-[var(--radius-xl)]
+            rounded-xl
             border border-dashed
-            border-[var(--color-border)]
-            bg-[var(--color-surface)]
+            border-(--color-border)
+            bg-(--color-surface)
             p-10 text-center
           "
         >
@@ -224,10 +224,10 @@ function FilterCard({ filter, onChanged, onDelete }: FilterCardProps) {
   return (
     <section
       className="
-        rounded-[var(--radius-xl)]
+        rounded-xl
         border
-        border-[var(--color-border)]
-        bg-[var(--color-surface)]
+        border-(--color-border)
+        bg-(--color-surface)
         p-5
       "
     >
@@ -272,7 +272,7 @@ function FilterCard({ filter, onChanged, onDelete }: FilterCardProps) {
                   inline-flex
                   items-center gap-2
                   rounded-full
-                  bg-[var(--color-gray-50)]
+                  bg-gray-50
                   px-4 py-2
                 "
             >
@@ -281,7 +281,7 @@ function FilterCard({ filter, onChanged, onDelete }: FilterCardProps) {
               <span
                 className="
                     text-xs
-                    text-[var(--color-text-secondary)]
+                    text-(--color-text-secondary)
                   "
               >
                 ({value._count.places})
@@ -296,7 +296,7 @@ function FilterCard({ filter, onChanged, onDelete }: FilterCardProps) {
                     items-center
                     justify-center
                     rounded-full
-                    hover:bg-[var(--color-gray-200)]
+                    hover:bg-gray-200
                   "
               >
                 ×

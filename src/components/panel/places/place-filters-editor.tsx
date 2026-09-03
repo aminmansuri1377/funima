@@ -151,15 +151,15 @@ function PlaceFiltersForm({
 
                     selected
                       ? [
-                          "border-[var(--color-brand-500)]",
-                          "bg-[var(--color-brand-500)]",
+                          "border-(--color-brand-500)",
+                          "bg-(--color-brand-500)",
                           "text-white",
                         ]
                       : [
-                          "border-[var(--color-border)]",
+                          "border-(--color-border)",
                           "bg-white",
-                          "text-[var(--color-text-primary)]",
-                          "hover:border-[var(--color-brand-300)]",
+                          "text-(--color-text-primary)",
+                          "hover:border-(--color-brand-300)",
                         ],
                   )}
                 >
