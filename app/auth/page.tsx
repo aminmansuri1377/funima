@@ -30,7 +30,7 @@ export default async function AuthPage() {
               </Text>
 
               <Text variant="body-md" tone="secondary">
-                برای کشف مکان‌ها و تجربه‌های جدید وارد فونیما شو.
+                برای کشف مکان‌ها و تجربه‌های جدید وارد فانیما شو.
               </Text>
             </div>
 
@@ -59,7 +59,7 @@ export default async function AuthPage() {
         </AuthCard>
 
         <Text variant="caption" tone="secondary" className="text-center">
-          با ورود به فونیما، قوانین و شرایط استفاده را می‌پذیرید.
+          با ورود به فانیما، قوانین و شرایط استفاده را می‌پذیرید.
         </Text>
       </div>
     </AuthShell>

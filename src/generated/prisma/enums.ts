@@ -21,6 +21,8 @@ export type UserRole = (typeof UserRole)[keyof typeof UserRole]
 export const PlaceType = {
   CAFE: 'CAFE',
   RESTAURANT: 'RESTAURANT',
+  CAFE_GAME: 'CAFE_GAME',
+  GALLERY: 'GALLERY',
   OTHER: 'OTHER'
 } as const
 

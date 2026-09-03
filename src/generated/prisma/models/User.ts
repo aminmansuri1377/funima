@@ -200,6 +200,7 @@ export type UserWhereInput = {
   comments?: Prisma.CommentListRelationFilter
   savedPlaces?: Prisma.SavedPlaceListRelationFilter
   savedEvents?: Prisma.SavedEventListRelationFilter
+  auditLogs?: Prisma.AuditLogListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -216,6 +217,7 @@ export type UserOrderByWithRelationInput = {
   comments?: Prisma.CommentOrderByRelationAggregateInput
   savedPlaces?: Prisma.SavedPlaceOrderByRelationAggregateInput
   savedEvents?: Prisma.SavedEventOrderByRelationAggregateInput
+  auditLogs?: Prisma.AuditLogOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -235,6 +237,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   comments?: Prisma.CommentListRelationFilter
   savedPlaces?: Prisma.SavedPlaceListRelationFilter
   savedEvents?: Prisma.SavedEventListRelationFilter
+  auditLogs?: Prisma.AuditLogListRelationFilter
 }, "id" | "phoneNumber">
 
 export type UserOrderByWithAggregationInput = {
@@ -277,6 +280,7 @@ export type UserCreateInput = {
   comments?: Prisma.CommentCreateNestedManyWithoutUserInput
   savedPlaces?: Prisma.SavedPlaceCreateNestedManyWithoutUserInput
   savedEvents?: Prisma.SavedEventCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -293,6 +297,7 @@ export type UserUncheckedCreateInput = {
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutUserInput
   savedPlaces?: Prisma.SavedPlaceUncheckedCreateNestedManyWithoutUserInput
   savedEvents?: Prisma.SavedEventUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
 }
 
 export type UserUpdateInput = {
@@ -309,6 +314,7 @@ export type UserUpdateInput = {
   comments?: Prisma.CommentUpdateManyWithoutUserNestedInput
   savedPlaces?: Prisma.SavedPlaceUpdateManyWithoutUserNestedInput
   savedEvents?: Prisma.SavedEventUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -325,6 +331,7 @@ export type UserUncheckedUpdateInput = {
   comments?: Prisma.CommentUncheckedUpdateManyWithoutUserNestedInput
   savedPlaces?: Prisma.SavedPlaceUncheckedUpdateManyWithoutUserNestedInput
   savedEvents?: Prisma.SavedEventUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -503,6 +510,20 @@ export type UserUpdateOneRequiredWithoutBlogsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutBlogsInput, Prisma.UserUpdateWithoutBlogsInput>, Prisma.UserUncheckedUpdateWithoutBlogsInput>
 }
 
+export type UserCreateNestedOneWithoutAuditLogsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutAuditLogsInput, Prisma.UserUncheckedCreateWithoutAuditLogsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAuditLogsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutAuditLogsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutAuditLogsInput, Prisma.UserUncheckedCreateWithoutAuditLogsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAuditLogsInput
+  upsert?: Prisma.UserUpsertWithoutAuditLogsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAuditLogsInput, Prisma.UserUpdateWithoutAuditLogsInput>, Prisma.UserUncheckedUpdateWithoutAuditLogsInput>
+}
+
 export type UserCreateWithoutVisitorInput = {
   id?: string
   phoneNumber: string
@@ -516,6 +537,7 @@ export type UserCreateWithoutVisitorInput = {
   comments?: Prisma.CommentCreateNestedManyWithoutUserInput
   savedPlaces?: Prisma.SavedPlaceCreateNestedManyWithoutUserInput
   savedEvents?: Prisma.SavedEventCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
 }
 
 export type UserUncheckedCreateWithoutVisitorInput = {
@@ -531,6 +553,7 @@ export type UserUncheckedCreateWithoutVisitorInput = {
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutUserInput
   savedPlaces?: Prisma.SavedPlaceUncheckedCreateNestedManyWithoutUserInput
   savedEvents?: Prisma.SavedEventUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
 }
 
 export type UserCreateOrConnectWithoutVisitorInput = {
@@ -562,6 +585,7 @@ export type UserUpdateWithoutVisitorInput = {
   comments?: Prisma.CommentUpdateManyWithoutUserNestedInput
   savedPlaces?: Prisma.SavedPlaceUpdateManyWithoutUserNestedInput
   savedEvents?: Prisma.SavedEventUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
 }
 
 export type UserUncheckedUpdateWithoutVisitorInput = {
@@ -577,6 +601,7 @@ export type UserUncheckedUpdateWithoutVisitorInput = {
   comments?: Prisma.CommentUncheckedUpdateManyWithoutUserNestedInput
   savedPlaces?: Prisma.SavedPlaceUncheckedUpdateManyWithoutUserNestedInput
   savedEvents?: Prisma.SavedEventUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
 }
 
 export type UserCreateWithoutHostInput = {
@@ -592,6 +617,7 @@ export type UserCreateWithoutHostInput = {
   comments?: Prisma.CommentCreateNestedManyWithoutUserInput
   savedPlaces?: Prisma.SavedPlaceCreateNestedManyWithoutUserInput
   savedEvents?: Prisma.SavedEventCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
 }
 
 export type UserUncheckedCreateWithoutHostInput = {
@@ -607,6 +633,7 @@ export type UserUncheckedCreateWithoutHostInput = {
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutUserInput
   savedPlaces?: Prisma.SavedPlaceUncheckedCreateNestedManyWithoutUserInput
   savedEvents?: Prisma.SavedEventUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
 }
 
 export type UserCreateOrConnectWithoutHostInput = {
@@ -638,6 +665,7 @@ export type UserUpdateWithoutHostInput = {
   comments?: Prisma.CommentUpdateManyWithoutUserNestedInput
   savedPlaces?: Prisma.SavedPlaceUpdateManyWithoutUserNestedInput
   savedEvents?: Prisma.SavedEventUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
 }
 
 export type UserUncheckedUpdateWithoutHostInput = {
@@ -653,6 +681,7 @@ export type UserUncheckedUpdateWithoutHostInput = {
   comments?: Prisma.CommentUncheckedUpdateManyWithoutUserNestedInput
   savedPlaces?: Prisma.SavedPlaceUncheckedUpdateManyWithoutUserNestedInput
   savedEvents?: Prisma.SavedEventUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
 }
 
 export type UserCreateWithoutCommentsInput = {
@@ -668,6 +697,7 @@ export type UserCreateWithoutCommentsInput = {
   host?: Prisma.HostCreateNestedOneWithoutUserInput
   savedPlaces?: Prisma.SavedPlaceCreateNestedManyWithoutUserInput
   savedEvents?: Prisma.SavedEventCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
 }
 
 export type UserUncheckedCreateWithoutCommentsInput = {
@@ -683,6 +713,7 @@ export type UserUncheckedCreateWithoutCommentsInput = {
   host?: Prisma.HostUncheckedCreateNestedOneWithoutUserInput
   savedPlaces?: Prisma.SavedPlaceUncheckedCreateNestedManyWithoutUserInput
   savedEvents?: Prisma.SavedEventUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
 }
 
 export type UserCreateOrConnectWithoutCommentsInput = {
@@ -714,6 +745,7 @@ export type UserUpdateWithoutCommentsInput = {
   host?: Prisma.HostUpdateOneWithoutUserNestedInput
   savedPlaces?: Prisma.SavedPlaceUpdateManyWithoutUserNestedInput
   savedEvents?: Prisma.SavedEventUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCommentsInput = {
@@ -729,6 +761,7 @@ export type UserUncheckedUpdateWithoutCommentsInput = {
   host?: Prisma.HostUncheckedUpdateOneWithoutUserNestedInput
   savedPlaces?: Prisma.SavedPlaceUncheckedUpdateManyWithoutUserNestedInput
   savedEvents?: Prisma.SavedEventUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
 }
 
 export type UserCreateWithoutSavedPlacesInput = {
@@ -744,6 +777,7 @@ export type UserCreateWithoutSavedPlacesInput = {
   host?: Prisma.HostCreateNestedOneWithoutUserInput
   comments?: Prisma.CommentCreateNestedManyWithoutUserInput
   savedEvents?: Prisma.SavedEventCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
 }
 
 export type UserUncheckedCreateWithoutSavedPlacesInput = {
@@ -759,6 +793,7 @@ export type UserUncheckedCreateWithoutSavedPlacesInput = {
   host?: Prisma.HostUncheckedCreateNestedOneWithoutUserInput
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutUserInput
   savedEvents?: Prisma.SavedEventUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
 }
 
 export type UserCreateOrConnectWithoutSavedPlacesInput = {
@@ -790,6 +825,7 @@ export type UserUpdateWithoutSavedPlacesInput = {
   host?: Prisma.HostUpdateOneWithoutUserNestedInput
   comments?: Prisma.CommentUpdateManyWithoutUserNestedInput
   savedEvents?: Prisma.SavedEventUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSavedPlacesInput = {
@@ -805,6 +841,7 @@ export type UserUncheckedUpdateWithoutSavedPlacesInput = {
   host?: Prisma.HostUncheckedUpdateOneWithoutUserNestedInput
   comments?: Prisma.CommentUncheckedUpdateManyWithoutUserNestedInput
   savedEvents?: Prisma.SavedEventUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
 }
 
 export type UserCreateWithoutSavedEventsInput = {
@@ -820,6 +857,7 @@ export type UserCreateWithoutSavedEventsInput = {
   host?: Prisma.HostCreateNestedOneWithoutUserInput
   comments?: Prisma.CommentCreateNestedManyWithoutUserInput
   savedPlaces?: Prisma.SavedPlaceCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
 }
 
 export type UserUncheckedCreateWithoutSavedEventsInput = {
@@ -835,6 +873,7 @@ export type UserUncheckedCreateWithoutSavedEventsInput = {
   host?: Prisma.HostUncheckedCreateNestedOneWithoutUserInput
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutUserInput
   savedPlaces?: Prisma.SavedPlaceUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
 }
 
 export type UserCreateOrConnectWithoutSavedEventsInput = {
@@ -866,6 +905,7 @@ export type UserUpdateWithoutSavedEventsInput = {
   host?: Prisma.HostUpdateOneWithoutUserNestedInput
   comments?: Prisma.CommentUpdateManyWithoutUserNestedInput
   savedPlaces?: Prisma.SavedPlaceUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSavedEventsInput = {
@@ -881,6 +921,7 @@ export type UserUncheckedUpdateWithoutSavedEventsInput = {
   host?: Prisma.HostUncheckedUpdateOneWithoutUserNestedInput
   comments?: Prisma.CommentUncheckedUpdateManyWithoutUserNestedInput
   savedPlaces?: Prisma.SavedPlaceUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
 }
 
 export type UserCreateWithoutBlogsInput = {
@@ -896,6 +937,7 @@ export type UserCreateWithoutBlogsInput = {
   comments?: Prisma.CommentCreateNestedManyWithoutUserInput
   savedPlaces?: Prisma.SavedPlaceCreateNestedManyWithoutUserInput
   savedEvents?: Prisma.SavedEventCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
 }
 
 export type UserUncheckedCreateWithoutBlogsInput = {
@@ -911,6 +953,7 @@ export type UserUncheckedCreateWithoutBlogsInput = {
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutUserInput
   savedPlaces?: Prisma.SavedPlaceUncheckedCreateNestedManyWithoutUserInput
   savedEvents?: Prisma.SavedEventUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
 }
 
 export type UserCreateOrConnectWithoutBlogsInput = {
@@ -942,6 +985,7 @@ export type UserUpdateWithoutBlogsInput = {
   comments?: Prisma.CommentUpdateManyWithoutUserNestedInput
   savedPlaces?: Prisma.SavedPlaceUpdateManyWithoutUserNestedInput
   savedEvents?: Prisma.SavedEventUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
 }
 
 export type UserUncheckedUpdateWithoutBlogsInput = {
@@ -952,6 +996,87 @@ export type UserUncheckedUpdateWithoutBlogsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   roles?: Prisma.UserUpdaterolesInput | $Enums.UserRole[]
+  visitor?: Prisma.VisitorUncheckedUpdateOneWithoutUserNestedInput
+  host?: Prisma.HostUncheckedUpdateOneWithoutUserNestedInput
+  comments?: Prisma.CommentUncheckedUpdateManyWithoutUserNestedInput
+  savedPlaces?: Prisma.SavedPlaceUncheckedUpdateManyWithoutUserNestedInput
+  savedEvents?: Prisma.SavedEventUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
+}
+
+export type UserCreateWithoutAuditLogsInput = {
+  id?: string
+  phoneNumber: string
+  fullName: string
+  profileImage?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  roles?: Prisma.UserCreaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogCreateNestedManyWithoutAuthorInput
+  visitor?: Prisma.VisitorCreateNestedOneWithoutUserInput
+  host?: Prisma.HostCreateNestedOneWithoutUserInput
+  comments?: Prisma.CommentCreateNestedManyWithoutUserInput
+  savedPlaces?: Prisma.SavedPlaceCreateNestedManyWithoutUserInput
+  savedEvents?: Prisma.SavedEventCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutAuditLogsInput = {
+  id?: string
+  phoneNumber: string
+  fullName: string
+  profileImage?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  roles?: Prisma.UserCreaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogUncheckedCreateNestedManyWithoutAuthorInput
+  visitor?: Prisma.VisitorUncheckedCreateNestedOneWithoutUserInput
+  host?: Prisma.HostUncheckedCreateNestedOneWithoutUserInput
+  comments?: Prisma.CommentUncheckedCreateNestedManyWithoutUserInput
+  savedPlaces?: Prisma.SavedPlaceUncheckedCreateNestedManyWithoutUserInput
+  savedEvents?: Prisma.SavedEventUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutAuditLogsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutAuditLogsInput, Prisma.UserUncheckedCreateWithoutAuditLogsInput>
+}
+
+export type UserUpsertWithoutAuditLogsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutAuditLogsInput, Prisma.UserUncheckedUpdateWithoutAuditLogsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutAuditLogsInput, Prisma.UserUncheckedCreateWithoutAuditLogsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutAuditLogsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutAuditLogsInput, Prisma.UserUncheckedUpdateWithoutAuditLogsInput>
+}
+
+export type UserUpdateWithoutAuditLogsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  phoneNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  fullName?: Prisma.StringFieldUpdateOperationsInput | string
+  profileImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  roles?: Prisma.UserUpdaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogUpdateManyWithoutAuthorNestedInput
+  visitor?: Prisma.VisitorUpdateOneWithoutUserNestedInput
+  host?: Prisma.HostUpdateOneWithoutUserNestedInput
+  comments?: Prisma.CommentUpdateManyWithoutUserNestedInput
+  savedPlaces?: Prisma.SavedPlaceUpdateManyWithoutUserNestedInput
+  savedEvents?: Prisma.SavedEventUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutAuditLogsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  phoneNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  fullName?: Prisma.StringFieldUpdateOperationsInput | string
+  profileImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  roles?: Prisma.UserUpdaterolesInput | $Enums.UserRole[]
+  blogs?: Prisma.BlogUncheckedUpdateManyWithoutAuthorNestedInput
   visitor?: Prisma.VisitorUncheckedUpdateOneWithoutUserNestedInput
   host?: Prisma.HostUncheckedUpdateOneWithoutUserNestedInput
   comments?: Prisma.CommentUncheckedUpdateManyWithoutUserNestedInput
@@ -969,6 +1094,7 @@ export type UserCountOutputType = {
   comments: number
   savedPlaces: number
   savedEvents: number
+  auditLogs: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -976,6 +1102,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   comments?: boolean | UserCountOutputTypeCountCommentsArgs
   savedPlaces?: boolean | UserCountOutputTypeCountSavedPlacesArgs
   savedEvents?: boolean | UserCountOutputTypeCountSavedEventsArgs
+  auditLogs?: boolean | UserCountOutputTypeCountAuditLogsArgs
 }
 
 /**
@@ -1016,6 +1143,13 @@ export type UserCountOutputTypeCountSavedEventsArgs<ExtArgs extends runtime.Type
   where?: Prisma.SavedEventWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountAuditLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AuditLogWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1031,6 +1165,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   comments?: boolean | Prisma.User$commentsArgs<ExtArgs>
   savedPlaces?: boolean | Prisma.User$savedPlacesArgs<ExtArgs>
   savedEvents?: boolean | Prisma.User$savedEventsArgs<ExtArgs>
+  auditLogs?: boolean | Prisma.User$auditLogsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -1072,6 +1207,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   comments?: boolean | Prisma.User$commentsArgs<ExtArgs>
   savedPlaces?: boolean | Prisma.User$savedPlacesArgs<ExtArgs>
   savedEvents?: boolean | Prisma.User$savedEventsArgs<ExtArgs>
+  auditLogs?: boolean | Prisma.User$auditLogsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1086,6 +1222,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     comments: Prisma.$CommentPayload<ExtArgs>[]
     savedPlaces: Prisma.$SavedPlacePayload<ExtArgs>[]
     savedEvents: Prisma.$SavedEventPayload<ExtArgs>[]
+    auditLogs: Prisma.$AuditLogPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1495,6 +1632,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   comments<T extends Prisma.User$commentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$commentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   savedPlaces<T extends Prisma.User$savedPlacesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$savedPlacesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SavedPlacePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   savedEvents<T extends Prisma.User$savedEventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$savedEventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SavedEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  auditLogs<T extends Prisma.User$auditLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2055,6 +2193,30 @@ export type User$savedEventsArgs<ExtArgs extends runtime.Types.Extensions.Intern
   take?: number
   skip?: number
   distinct?: Prisma.SavedEventScalarFieldEnum | Prisma.SavedEventScalarFieldEnum[]
+}
+
+/**
+ * User.auditLogs
+ */
+export type User$auditLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AuditLog
+   */
+  select?: Prisma.AuditLogSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AuditLog
+   */
+  omit?: Prisma.AuditLogOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AuditLogInclude<ExtArgs> | null
+  where?: Prisma.AuditLogWhereInput
+  orderBy?: Prisma.AuditLogOrderByWithRelationInput | Prisma.AuditLogOrderByWithRelationInput[]
+  cursor?: Prisma.AuditLogWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AuditLogScalarFieldEnum | Prisma.AuditLogScalarFieldEnum[]
 }
 
 /**

@@ -12,12 +12,12 @@ export function FunimaLogo({ className, priority = false }: FunimaLogoProps) {
   return (
     <Link
       href="/"
-      aria-label="فونیما"
+      aria-label="فانیما"
       className={cn("inline-flex items-center justify-center", className)}
     >
       <Image
         src="/images/logo.png"
-        alt="فونیما"
+        alt="فانیما"
         width={160}
         height={64}
         priority={priority}

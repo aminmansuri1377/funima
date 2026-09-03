@@ -131,3 +131,8 @@ export type Blog = Prisma.BlogModel
  * 
  */
 export type OtpVerification = Prisma.OtpVerificationModel
+/**
+ * Model AuditLog
+ * 
+ */
+export type AuditLog = Prisma.AuditLogModel

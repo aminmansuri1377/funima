@@ -33,7 +33,7 @@ export default function UIKitPage() {
 
         <Text variant="heading-lg">عنوان نمونه</Text>
 
-        <Text>این یک متن نمونه برای سیستم تایپوگرافی فونیما است.</Text>
+        <Text>این یک متن نمونه برای سیستم تایپوگرافی فانیما است.</Text>
 
         <Text tone="secondary">متن ثانویه</Text>
       </section>

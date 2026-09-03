@@ -20,6 +20,8 @@ enum UserRole {
 enum PlaceType {
   CAFE
   RESTAURANT
+  CAFE_GAME
+  GALLERY
   OTHER
 }
 
@@ -44,6 +46,7 @@ model User {
 
   savedPlaces SavedPlace[]
   savedEvents SavedEvent[]
+  auditLogs   AuditLog[]   @relation("AdminAuditLogs")
 
   @@index([phoneNumber])
 }
@@ -382,4 +385,20 @@ model OtpVerification {
 
   @@index([phoneNumber, createdAt])
   @@index([expiresAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  admin User @relation("AdminAuditLogs", fields: [adminId], references: [id], onDelete: Restrict)
+
+  @@index([adminId])
+  @@index([entity])
+  @@index([createdAt])
 }
