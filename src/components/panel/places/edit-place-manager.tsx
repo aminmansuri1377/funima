@@ -18,7 +18,7 @@ import {
   PLACE_TYPE_OPTIONS,
   type PlaceTypeValue,
 } from "@/lib/place/place-type";
-
+import { PlaceFiltersEditor } from "./place-filters-editor";
 import { trpc } from "@/trpc/client";
 
 type Props = {
@@ -525,6 +525,17 @@ function EditPlaceForm({ place, onUpdated }: EditPlaceFormProps) {
             await onUpdated();
           }}
         />
+      </section>
+      <section
+        className="
+    rounded-xl
+    border
+    border-(--color-border)
+    bg-(--color-surface)
+    p-5
+  "
+      >
+        <PlaceFiltersEditor placeId={place.id} />
       </section>
     </div>
   );
