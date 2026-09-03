@@ -2007,6 +2007,7 @@ export const EventPlanScalarFieldEnum = {
   eventId: 'eventId',
   hour: 'hour',
   plan: 'plan',
+  sortOrder: 'sortOrder',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

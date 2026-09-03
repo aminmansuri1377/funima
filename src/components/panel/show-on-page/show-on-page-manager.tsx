@@ -87,10 +87,10 @@ export function ShowOnPageManager() {
       <form
         onSubmit={create}
         className="
-          rounded-[var(--radius-xl)]
+          rounded-xl
           border
-          border-[var(--color-border)]
-          bg-[var(--color-surface)]
+          border-(--color-border)
+          bg-(--color-surface)
           p-5
         "
       >

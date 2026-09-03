@@ -20,8 +20,18 @@ export type EventPlanModel = runtime.Types.Result.DefaultSelection<Prisma.$Event
 
 export type AggregateEventPlan = {
   _count: EventPlanCountAggregateOutputType | null
+  _avg: EventPlanAvgAggregateOutputType | null
+  _sum: EventPlanSumAggregateOutputType | null
   _min: EventPlanMinAggregateOutputType | null
   _max: EventPlanMaxAggregateOutputType | null
+}
+
+export type EventPlanAvgAggregateOutputType = {
+  sortOrder: number | null
+}
+
+export type EventPlanSumAggregateOutputType = {
+  sortOrder: number | null
 }
 
 export type EventPlanMinAggregateOutputType = {
@@ -29,6 +39,7 @@ export type EventPlanMinAggregateOutputType = {
   eventId: string | null
   hour: string | null
   plan: string | null
+  sortOrder: number | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -38,6 +49,7 @@ export type EventPlanMaxAggregateOutputType = {
   eventId: string | null
   hour: string | null
   plan: string | null
+  sortOrder: number | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -47,17 +59,27 @@ export type EventPlanCountAggregateOutputType = {
   eventId: number
   hour: number
   plan: number
+  sortOrder: number
   createdAt: number
   updatedAt: number
   _all: number
 }
 
 
+export type EventPlanAvgAggregateInputType = {
+  sortOrder?: true
+}
+
+export type EventPlanSumAggregateInputType = {
+  sortOrder?: true
+}
+
 export type EventPlanMinAggregateInputType = {
   id?: true
   eventId?: true
   hour?: true
   plan?: true
+  sortOrder?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -67,6 +89,7 @@ export type EventPlanMaxAggregateInputType = {
   eventId?: true
   hour?: true
   plan?: true
+  sortOrder?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -76,6 +99,7 @@ export type EventPlanCountAggregateInputType = {
   eventId?: true
   hour?: true
   plan?: true
+  sortOrder?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -119,6 +143,18 @@ export type EventPlanAggregateArgs<ExtArgs extends runtime.Types.Extensions.Inte
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: EventPlanAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: EventPlanSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: EventPlanMinAggregateInputType
@@ -149,6 +185,8 @@ export type EventPlanGroupByArgs<ExtArgs extends runtime.Types.Extensions.Intern
   take?: number
   skip?: number
   _count?: EventPlanCountAggregateInputType | true
+  _avg?: EventPlanAvgAggregateInputType
+  _sum?: EventPlanSumAggregateInputType
   _min?: EventPlanMinAggregateInputType
   _max?: EventPlanMaxAggregateInputType
 }
@@ -158,9 +196,12 @@ export type EventPlanGroupByOutputType = {
   eventId: string
   hour: string | null
   plan: string
+  sortOrder: number
   createdAt: Date
   updatedAt: Date
   _count: EventPlanCountAggregateOutputType | null
+  _avg: EventPlanAvgAggregateOutputType | null
+  _sum: EventPlanSumAggregateOutputType | null
   _min: EventPlanMinAggregateOutputType | null
   _max: EventPlanMaxAggregateOutputType | null
 }
@@ -188,6 +229,7 @@ export type EventPlanWhereInput = {
   eventId?: Prisma.StringFilter<"EventPlan"> | string
   hour?: Prisma.StringNullableFilter<"EventPlan"> | string | null
   plan?: Prisma.StringFilter<"EventPlan"> | string
+  sortOrder?: Prisma.IntFilter<"EventPlan"> | number
   createdAt?: Prisma.DateTimeFilter<"EventPlan"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"EventPlan"> | Date | string
   event?: Prisma.XOR<Prisma.EventScalarRelationFilter, Prisma.EventWhereInput>
@@ -198,6 +240,7 @@ export type EventPlanOrderByWithRelationInput = {
   eventId?: Prisma.SortOrder
   hour?: Prisma.SortOrderInput | Prisma.SortOrder
   plan?: Prisma.SortOrder
+  sortOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   event?: Prisma.EventOrderByWithRelationInput
@@ -211,6 +254,7 @@ export type EventPlanWhereUniqueInput = Prisma.AtLeast<{
   eventId?: Prisma.StringFilter<"EventPlan"> | string
   hour?: Prisma.StringNullableFilter<"EventPlan"> | string | null
   plan?: Prisma.StringFilter<"EventPlan"> | string
+  sortOrder?: Prisma.IntFilter<"EventPlan"> | number
   createdAt?: Prisma.DateTimeFilter<"EventPlan"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"EventPlan"> | Date | string
   event?: Prisma.XOR<Prisma.EventScalarRelationFilter, Prisma.EventWhereInput>
@@ -221,11 +265,14 @@ export type EventPlanOrderByWithAggregationInput = {
   eventId?: Prisma.SortOrder
   hour?: Prisma.SortOrderInput | Prisma.SortOrder
   plan?: Prisma.SortOrder
+  sortOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.EventPlanCountOrderByAggregateInput
+  _avg?: Prisma.EventPlanAvgOrderByAggregateInput
   _max?: Prisma.EventPlanMaxOrderByAggregateInput
   _min?: Prisma.EventPlanMinOrderByAggregateInput
+  _sum?: Prisma.EventPlanSumOrderByAggregateInput
 }
 
 export type EventPlanScalarWhereWithAggregatesInput = {
@@ -236,6 +283,7 @@ export type EventPlanScalarWhereWithAggregatesInput = {
   eventId?: Prisma.StringWithAggregatesFilter<"EventPlan"> | string
   hour?: Prisma.StringNullableWithAggregatesFilter<"EventPlan"> | string | null
   plan?: Prisma.StringWithAggregatesFilter<"EventPlan"> | string
+  sortOrder?: Prisma.IntWithAggregatesFilter<"EventPlan"> | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"EventPlan"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"EventPlan"> | Date | string
 }
@@ -244,6 +292,7 @@ export type EventPlanCreateInput = {
   id?: string
   hour?: string | null
   plan: string
+  sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   event: Prisma.EventCreateNestedOneWithoutPlansInput
@@ -254,6 +303,7 @@ export type EventPlanUncheckedCreateInput = {
   eventId: string
   hour?: string | null
   plan: string
+  sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -262,6 +312,7 @@ export type EventPlanUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   hour?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   plan?: Prisma.StringFieldUpdateOperationsInput | string
+  sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   event?: Prisma.EventUpdateOneRequiredWithoutPlansNestedInput
@@ -272,6 +323,7 @@ export type EventPlanUncheckedUpdateInput = {
   eventId?: Prisma.StringFieldUpdateOperationsInput | string
   hour?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   plan?: Prisma.StringFieldUpdateOperationsInput | string
+  sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -281,6 +333,7 @@ export type EventPlanCreateManyInput = {
   eventId: string
   hour?: string | null
   plan: string
+  sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -289,6 +342,7 @@ export type EventPlanUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   hour?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   plan?: Prisma.StringFieldUpdateOperationsInput | string
+  sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -298,6 +352,7 @@ export type EventPlanUncheckedUpdateManyInput = {
   eventId?: Prisma.StringFieldUpdateOperationsInput | string
   hour?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   plan?: Prisma.StringFieldUpdateOperationsInput | string
+  sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -317,8 +372,13 @@ export type EventPlanCountOrderByAggregateInput = {
   eventId?: Prisma.SortOrder
   hour?: Prisma.SortOrder
   plan?: Prisma.SortOrder
+  sortOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type EventPlanAvgOrderByAggregateInput = {
+  sortOrder?: Prisma.SortOrder
 }
 
 export type EventPlanMaxOrderByAggregateInput = {
@@ -326,6 +386,7 @@ export type EventPlanMaxOrderByAggregateInput = {
   eventId?: Prisma.SortOrder
   hour?: Prisma.SortOrder
   plan?: Prisma.SortOrder
+  sortOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -335,8 +396,13 @@ export type EventPlanMinOrderByAggregateInput = {
   eventId?: Prisma.SortOrder
   hour?: Prisma.SortOrder
   plan?: Prisma.SortOrder
+  sortOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type EventPlanSumOrderByAggregateInput = {
+  sortOrder?: Prisma.SortOrder
 }
 
 export type EventPlanCreateNestedManyWithoutEventInput = {
@@ -385,6 +451,7 @@ export type EventPlanCreateWithoutEventInput = {
   id?: string
   hour?: string | null
   plan: string
+  sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -393,6 +460,7 @@ export type EventPlanUncheckedCreateWithoutEventInput = {
   id?: string
   hour?: string | null
   plan: string
+  sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -431,6 +499,7 @@ export type EventPlanScalarWhereInput = {
   eventId?: Prisma.StringFilter<"EventPlan"> | string
   hour?: Prisma.StringNullableFilter<"EventPlan"> | string | null
   plan?: Prisma.StringFilter<"EventPlan"> | string
+  sortOrder?: Prisma.IntFilter<"EventPlan"> | number
   createdAt?: Prisma.DateTimeFilter<"EventPlan"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"EventPlan"> | Date | string
 }
@@ -439,6 +508,7 @@ export type EventPlanCreateManyEventInput = {
   id?: string
   hour?: string | null
   plan: string
+  sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -447,6 +517,7 @@ export type EventPlanUpdateWithoutEventInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   hour?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   plan?: Prisma.StringFieldUpdateOperationsInput | string
+  sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -455,6 +526,7 @@ export type EventPlanUncheckedUpdateWithoutEventInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   hour?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   plan?: Prisma.StringFieldUpdateOperationsInput | string
+  sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -463,6 +535,7 @@ export type EventPlanUncheckedUpdateManyWithoutEventInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   hour?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   plan?: Prisma.StringFieldUpdateOperationsInput | string
+  sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -474,6 +547,7 @@ export type EventPlanSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   eventId?: boolean
   hour?: boolean
   plan?: boolean
+  sortOrder?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   event?: boolean | Prisma.EventDefaultArgs<ExtArgs>
@@ -484,6 +558,7 @@ export type EventPlanSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   eventId?: boolean
   hour?: boolean
   plan?: boolean
+  sortOrder?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   event?: boolean | Prisma.EventDefaultArgs<ExtArgs>
@@ -494,6 +569,7 @@ export type EventPlanSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   eventId?: boolean
   hour?: boolean
   plan?: boolean
+  sortOrder?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   event?: boolean | Prisma.EventDefaultArgs<ExtArgs>
@@ -504,11 +580,12 @@ export type EventPlanSelectScalar = {
   eventId?: boolean
   hour?: boolean
   plan?: boolean
+  sortOrder?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type EventPlanOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "eventId" | "hour" | "plan" | "createdAt" | "updatedAt", ExtArgs["result"]["eventPlan"]>
+export type EventPlanOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "eventId" | "hour" | "plan" | "sortOrder" | "createdAt" | "updatedAt", ExtArgs["result"]["eventPlan"]>
 export type EventPlanInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   event?: boolean | Prisma.EventDefaultArgs<ExtArgs>
 }
@@ -529,6 +606,7 @@ export type $EventPlanPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     eventId: string
     hour: string | null
     plan: string
+    sortOrder: number
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["eventPlan"]>
@@ -959,6 +1037,7 @@ export interface EventPlanFieldRefs {
   readonly eventId: Prisma.FieldRef<"EventPlan", 'String'>
   readonly hour: Prisma.FieldRef<"EventPlan", 'String'>
   readonly plan: Prisma.FieldRef<"EventPlan", 'String'>
+  readonly sortOrder: Prisma.FieldRef<"EventPlan", 'Int'>
   readonly createdAt: Prisma.FieldRef<"EventPlan", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"EventPlan", 'DateTime'>
 }

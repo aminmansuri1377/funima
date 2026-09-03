@@ -236,10 +236,14 @@ model Event {
 // =====================================================
 
 model EventPlan {
-  id      String  @id @default(cuid())
+  id String @id @default(cuid())
+
   eventId String
-  hour    String?
-  plan    String
+
+  hour String?
+  plan String
+
+  sortOrder Int @default(0)
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
