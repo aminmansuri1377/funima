@@ -15,3 +15,4 @@ export {
   uploadEventImages,
   type EventImageItem,
 } from "./uploader/event-image-uploader";
+export { ImageSlider } from "./image-slider";

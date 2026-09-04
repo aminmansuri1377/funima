@@ -14,7 +14,7 @@ import {
   FiPlus,
 } from "react-icons/fi";
 
-import { Button, InlineMessage, Text } from "@/components/ui";
+import { Button, ImageSlider, InlineMessage, Text } from "@/components/ui";
 
 import { trpc } from "@/trpc/client";
 
@@ -90,37 +90,19 @@ export function HostLatestEvent() {
           shadow-sm
         "
       >
-        <div
-          className="
-            relative
-            aspect-4/3
-            overflow-hidden
-            sm:aspect-16/7
-          "
-        >
-          {image ? (
-            <Image
-              src={image}
-              alt={event.eventName}
-              fill
-              priority
-              sizes="(max-width:768px) 100vw, 1000px"
-              className="object-cover"
-            />
-          ) : (
-            <div
-              className="
-                flex h-full
-                items-center
-                justify-center
-                bg-(--color-brand-50)
-                text-(--color-brand-500)
-              "
-            >
-              <FiCalendar size={50} />
-            </div>
-          )}
-        </div>
+        <ImageSlider
+          images={event.images.map((image) => ({
+            id: image.id,
+
+            url: image.url,
+
+            alt: event.eventName,
+          }))}
+          alt={event.eventName}
+          priority
+          aspectClassName="aspect-[4/3] sm:aspect-[16/7]"
+          fallback={<FiCalendar size={50} />}
+        />
 
         <div className="p-5 sm:p-7">
           <Text as="h2" variant="heading-xl">

@@ -14,7 +14,7 @@ import {
   FiPhone,
 } from "react-icons/fi";
 
-import { Button, Text } from "@/components/ui";
+import { Button, Text, ImageSlider } from "@/components/ui";
 
 import { PLACE_TYPE_LABELS, type PlaceTypeValue } from "@/lib/place/place-type";
 
@@ -129,8 +129,19 @@ export function HostAccountView({ place, onChanged }: Props) {
         </Button>
       </section>
 
-      <PlaceGallery placeName={place.placeName} images={place.images} />
+      <ImageSlider
+        images={place.images.map((image) => ({
+          id: image.id,
 
+          url: image.url,
+
+          alt: place.placeName,
+        }))}
+        alt={place.placeName}
+        priority
+        aspectClassName="aspect-[4/3] sm:aspect-[16/8]"
+        fallback={<FiMapPin size={46} />}
+      />
       <section
         className="
           overflow-hidden

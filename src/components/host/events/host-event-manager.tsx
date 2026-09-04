@@ -30,6 +30,7 @@ import {
   Input,
   Text,
   Textarea,
+  ImageSlider,
 } from "@/components/ui";
 
 import { trpc } from "@/trpc/client";
@@ -226,11 +227,23 @@ function HostEventContent({
             shadow-[0_8px_30px_rgba(0,0,0,0.05)]
           "
         >
-          <EventGallery
-            eventName={event.eventName}
-            images={event.images}
-            date={event.date}
-          />
+          <div className="relative">
+            <ImageSlider
+              images={event.images.map((image) => ({
+                id: image.id,
+
+                url: image.url,
+
+                alt: event.eventName,
+              }))}
+              alt={event.eventName}
+              priority
+              aspectClassName="aspect-[4/3] sm:aspect-[16/8]"
+              fallback={<FiCalendar size={52} />}
+            />
+
+            <DateBadge date={event.date} />
+          </div>
 
           <div className="p-5 sm:p-7">
             <Text as="h1" variant="heading-xl" className="leading-10">
