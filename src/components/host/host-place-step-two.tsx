@@ -4,6 +4,8 @@ import { useState } from "react";
 
 import { FiCheckCircle, FiMapPin } from "react-icons/fi";
 
+import { LocationPicker } from "@/components/map";
+
 import {
   Button,
   FormField,
@@ -13,6 +15,8 @@ import {
   Text,
   Textarea,
 } from "@/components/ui";
+
+import type { LngLat } from "@/lib/map/types";
 
 import { trpc } from "@/trpc/client";
 
@@ -36,7 +40,9 @@ type Props = {
 
     images: Array<{
       id: string;
+
       url: string;
+
       sortOrder: number;
     }>;
   };
@@ -49,8 +55,6 @@ export function HostPlaceStepTwo({ place, onCompleted }: Props) {
 
   const locationUpsert = trpc.host.place.locationUpsert.useMutation();
 
-  const updatePlace = trpc.host.place.update.useMutation();
-
   const deleteImage = trpc.host.place.deleteImage.useMutation();
 
   const filterOptions = trpc.host.place.filterOptions.useQuery();
@@ -61,15 +65,18 @@ export function HostPlaceStepTwo({ place, onCompleted }: Props) {
 
   const [address, setAddress] = useState(place.location?.address ?? "");
 
-  const [latitude, setLatitude] = useState(
-    place.location?.latitude?.toString() ?? "",
+  /*
+   * LocationPicker از فرمت:
+   *
+   * [longitude, latitude]
+   *
+   * استفاده می‌کند.
+   */
+  const [position, setPosition] = useState<LngLat | null>(
+    place.location ? [place.location.longitude, place.location.latitude] : null,
   );
 
-  const [longitude, setLongitude] = useState(
-    place.location?.longitude?.toString() ?? "",
-  );
-
-  const [description, setDescription] = useState(place.description ?? "");
+  const [description] = useState(place.description ?? "");
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -81,6 +88,8 @@ export function HostPlaceStepTwo({ place, onCompleted }: Props) {
     selectedIds.length > 0
       ? selectedIds
       : (filterOptions.data?.selectedIds ?? []);
+
+  const loading = locationUpsert.isPending || setFilterValues.isPending;
 
   function toggleFilter(id: string) {
     setSelectedIds((current) => {
@@ -106,64 +115,92 @@ export function HostPlaceStepTwo({ place, onCompleted }: Props) {
       return;
     }
 
-    await deleteImage.mutateAsync({
-      imageId,
-    });
+    try {
+      await deleteImage.mutateAsync({
+        imageId,
+      });
 
-    await refetchPlace();
+      await refetchPlace();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "حذف تصویر انجام نشد.");
+    }
   }
 
   async function handleComplete() {
     setError(null);
+
     setSuccess(null);
 
+    /*
+     * پروفایل بدون حداقل
+     * سه تصویر کامل نمی‌شود.
+     */
     if (place.images.length < 3) {
       setError("برای تکمیل پروفایل حداقل ۳ تصویر آپلود کنید.");
 
       return;
     }
 
-    const latitudeNumber = Number(latitude);
+    /*
+     * دیگر latitude / longitude
+     * را از Input نمی‌گیریم.
+     *
+     * Host باید یک نقطه واقعی
+     * روی LocationPicker انتخاب کند.
+     */
+    if (!position) {
+      setError("لطفاً موقعیت دقیق مکان را روی نقشه انتخاب کنید.");
 
-    const longitudeNumber = Number(longitude);
+      return;
+    }
 
+    const [longitude, latitude] = position;
+
+    /*
+     * یک validation ساده Client-side.
+     */
     if (
-      !latitude.trim() ||
-      !longitude.trim() ||
-      Number.isNaN(latitudeNumber) ||
-      Number.isNaN(longitudeNumber)
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude) ||
+      latitude < -90 ||
+      latitude > 90 ||
+      longitude < -180 ||
+      longitude > 180
     ) {
-      setError("موقعیت جغرافیایی معتبر وارد کنید.");
+      setError("موقعیت انتخاب‌شده معتبر نیست.");
 
       return;
     }
 
     try {
+      /*
+       * ابتدا Location ذخیره می‌شود.
+       */
       await locationUpsert.mutateAsync({
         title: title.trim(),
 
         address: address.trim(),
 
-        latitude: latitudeNumber,
+        latitude,
 
-        longitude: longitudeNumber,
+        longitude,
       });
 
       /*
-       * چون update فعلی Host تمام اطلاعات
-       * Place را لازم دارد، description را
-       * فعلاً در Step 1 ثبت کرده‌ایم.
-       *
-       * اگر بعداً description مستقل خواستیم،
-       * mutation مخصوص آن می‌سازیم.
+       * سپس ویژگی‌های Place
+       * ذخیره می‌شوند.
        */
-
       await setFilterValues.mutateAsync({
         filterValueIds: currentSelectedIds,
       });
 
       setSuccess("پروفایل کسب‌وکار با موفقیت تکمیل شد.");
 
+      /*
+       * اطلاعات Host Place
+       * از cache خارج می‌شود
+       * تا اطلاعات جدید دریافت شود.
+       */
       await refetchPlace();
 
       await onCompleted();
@@ -176,6 +213,12 @@ export function HostPlaceStepTwo({ place, onCompleted }: Props) {
 
   return (
     <div className="space-y-6">
+      {/*
+       * ========================================
+       * HEADER
+       * ========================================
+       */}
+
       <div className="text-center">
         <Text as="h1" variant="heading-xl">
           تکمیل پروفایل
@@ -193,6 +236,12 @@ export function HostPlaceStepTwo({ place, onCompleted }: Props) {
           space-y-6
         "
       >
+        {/*
+         * ========================================
+         * IMAGES
+         * ========================================
+         */}
+
         <section
           className="
             rounded-3xl
@@ -216,6 +265,12 @@ export function HostPlaceStepTwo({ place, onCompleted }: Props) {
           </Text>
         </section>
 
+        {/*
+         * ========================================
+         * LOCATION
+         * ========================================
+         */}
+
         <section
           className="
             rounded-3xl
@@ -226,14 +281,23 @@ export function HostPlaceStepTwo({ place, onCompleted }: Props) {
             sm:p-7
           "
         >
-          <div className="mb-5 flex items-start gap-3">
+          <div
+            className="
+              mb-5
+              flex
+              items-start
+              gap-3
+            "
+          >
             <div
               className="
-                flex h-11 w-11
+                flex
+                h-10
+                w-10
                 shrink-0
                 items-center
                 justify-center
-                rounded-xl
+                rounded-full
                 bg-(--color-brand-50)
                 text-(--color-brand-600)
               "
@@ -242,18 +306,18 @@ export function HostPlaceStepTwo({ place, onCompleted }: Props) {
             </div>
 
             <div>
-              <Text variant="heading-md">موقعیت دقیق مکان</Text>
+              <Text variant="heading-md">موقعیت مکان</Text>
 
               <Text tone="secondary" className="mt-1">
-                فعلاً مختصات را وارد کنید؛ Map Picker را در مرحله بعد جایگزین
-                می‌کنیم.
+                موقعیت دقیق کسب‌وکار را روی نقشه مشخص کنید.
               </Text>
             </div>
           </div>
 
           <div
             className="
-              grid gap-5
+              grid
+              gap-5
               sm:grid-cols-2
             "
           >
@@ -261,7 +325,8 @@ export function HostPlaceStepTwo({ place, onCompleted }: Props) {
               <Input
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                placeholder="مثلاً شعبه اصلی"
+                disabled={loading}
+                placeholder="مثلاً شعبه ولیعصر"
               />
             </FormField>
 
@@ -269,31 +334,33 @@ export function HostPlaceStepTwo({ place, onCompleted }: Props) {
               <Input
                 value={address}
                 onChange={(event) => setAddress(event.target.value)}
-                placeholder="آدرس کامل"
-              />
-            </FormField>
-
-            <FormField label="عرض جغرافیایی" required>
-              <Input
-                value={latitude}
-                onChange={(event) => setLatitude(event.target.value)}
-                dir="ltr"
-                className="text-left"
-                placeholder="35.6892"
-              />
-            </FormField>
-
-            <FormField label="طول جغرافیایی" required>
-              <Input
-                value={longitude}
-                onChange={(event) => setLongitude(event.target.value)}
-                dir="ltr"
-                className="text-left"
-                placeholder="51.3890"
+                disabled={loading}
+                placeholder="آدرس کامل مکان"
               />
             </FormField>
           </div>
+
+          <div className="mt-6">
+            <LocationPicker
+              value={position}
+              onChange={setPosition}
+              disabled={loading}
+              title="انتخاب موقعیت دقیق"
+              description="مکان را جستجو کنید، از موقعیت فعلی استفاده کنید یا نشانگر را روی نقشه جابه‌جا کنید."
+              mapHeightClassName="
+                h-[260px]
+                sm:h-[360px]
+                lg:h-[420px]
+              "
+            />
+          </div>
         </section>
+
+        {/*
+         * ========================================
+         * DESCRIPTION
+         * ========================================
+         */}
 
         <section
           className="
@@ -313,17 +380,18 @@ export function HostPlaceStepTwo({ place, onCompleted }: Props) {
             </Text>
           </div>
 
-          <Textarea
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            resize={false}
-            disabled
-          />
+          <Textarea value={description} resize={false} disabled />
 
           <Text variant="caption" tone="secondary" className="mt-2">
-            ویرایش معرفی را در صفحه حساب میزبان فعال می‌کنیم.
+            ویرایش معرفی را در صفحه حساب میزبان انجام می‌دهیم.
           </Text>
         </section>
+
+        {/*
+         * ========================================
+         * FILTERS
+         * ========================================
+         */}
 
         <section
           className="
@@ -354,7 +422,12 @@ export function HostPlaceStepTwo({ place, onCompleted }: Props) {
           )}
 
           {filterOptions.data && (
-            <div className="mt-6 space-y-7">
+            <div
+              className="
+                mt-6
+                space-y-7
+              "
+            >
               {filterOptions.data.filters.map((filter) => (
                 <div key={filter.id}>
                   <Text variant="label-lg">{filter.name}</Text>
@@ -375,6 +448,7 @@ export function HostPlaceStepTwo({ place, onCompleted }: Props) {
                           key={value.id}
                           type="button"
                           aria-pressed={selected}
+                          disabled={loading}
                           onClick={() => toggleFilter(value.id)}
                           className={`
                                 rounded-full
@@ -384,6 +458,9 @@ export function HostPlaceStepTwo({ place, onCompleted }: Props) {
                                 text-sm
                                 font-semibold
                                 transition-colors
+
+                                disabled:cursor-not-allowed
+                                disabled:opacity-60
 
                                 ${
                                   selected
@@ -403,16 +480,29 @@ export function HostPlaceStepTwo({ place, onCompleted }: Props) {
           )}
         </section>
 
+        {/*
+         * ========================================
+         * MESSAGES
+         * ========================================
+         */}
+
         {error && <InlineMessage variant="error">{error}</InlineMessage>}
 
         {success && <InlineMessage variant="success">{success}</InlineMessage>}
+
+        {/*
+         * ========================================
+         * COMPLETE
+         * ========================================
+         */}
 
         <Button
           type="button"
           size="xl"
           fullWidth
           startIcon={<FiCheckCircle />}
-          loading={locationUpsert.isPending || setFilterValues.isPending}
+          loading={loading}
+          disabled={deleteImage.isPending}
           onClick={handleComplete}
         >
           تکمیل و ثبت پروفایل

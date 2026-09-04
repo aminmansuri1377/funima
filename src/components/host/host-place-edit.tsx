@@ -2,14 +2,13 @@
 
 import { useMemo, useState } from "react";
 
-import { getCities, getProvincesList } from "@code-plate/iran-cities";
+import { FiMapPin, FiSave, FiX } from "react-icons/fi";
 
-import { FiArrowRight, FiMapPin, FiSave } from "react-icons/fi";
+import { LocationPicker } from "@/components/map";
 
 import {
   Button,
   FormField,
-  ImageUploader,
   InlineMessage,
   Input,
   SearchSelect,
@@ -22,12 +21,54 @@ import {
   type PlaceTypeValue,
 } from "@/lib/place/place-type";
 
+import type { LngLat } from "@/lib/map/types";
+
 import { trpc } from "@/trpc/client";
 
-import type { HostPlaceData } from "./host-account-view";
+type HostPlaceEditProps = {
+  place: {
+    id: string;
 
-type Props = {
-  place: HostPlaceData;
+    placeName: string;
+
+    placePhone: string | null;
+
+    placeType: PlaceTypeValue;
+
+    placeProvince: string | null;
+
+    placeCity: string | null;
+
+    instagramId: string | null;
+
+    description: string | null;
+
+    location: {
+      id: string;
+
+      title: string | null;
+
+      address: string | null;
+
+      latitude: number;
+
+      longitude: number;
+    } | null;
+
+    filterValues: Array<{
+      filterValue: {
+        id: string;
+
+        name: string;
+
+        filter: {
+          id: string;
+
+          name: string;
+        };
+      };
+    }>;
+  };
 
   onCancel: () => void;
 
@@ -36,12 +77,31 @@ type Props = {
   onSaved: () => void | Promise<unknown>;
 };
 
-export function HostPlaceEdit({ place, onCancel, onChanged, onSaved }: Props) {
+export function HostPlaceEdit({
+  place,
+  onCancel,
+  onChanged,
+  onSaved,
+}: HostPlaceEditProps) {
+  const utils = trpc.useUtils();
+
+  const updatePlace = trpc.host.place.update.useMutation();
+
+  const updateLocation = trpc.host.place.locationUpsert.useMutation();
+
+  const filterOptions = trpc.host.place.filterOptions.useQuery();
+
+  const setFilterValues = trpc.host.place.setFilterValues.useMutation();
+
   const [placeName, setPlaceName] = useState(place.placeName);
+
+  const [placePhone, setPlacePhone] = useState(place.placePhone ?? "");
 
   const [placeType, setPlaceType] = useState<PlaceTypeValue>(place.placeType);
 
-  const [placePhone, setPlacePhone] = useState(place.placePhone ?? "");
+  const [placeProvince, setPlaceProvince] = useState(place.placeProvince ?? "");
+
+  const [placeCity, setPlaceCity] = useState(place.placeCity ?? "");
 
   const [instagramId, setInstagramId] = useState(place.instagramId ?? "");
 
@@ -51,157 +111,225 @@ export function HostPlaceEdit({ place, onCancel, onChanged, onSaved }: Props) {
     place.location?.title ?? "",
   );
 
-  const [address, setAddress] = useState(place.location?.address ?? "");
-
-  const [latitude, setLatitude] = useState(
-    place.location?.latitude?.toString() ?? "",
+  const [locationAddress, setLocationAddress] = useState(
+    place.location?.address ?? "",
   );
 
-  const [longitude, setLongitude] = useState(
-    place.location?.longitude?.toString() ?? "",
+  /*
+   * LocationPicker:
+   *
+   * [longitude, latitude]
+   */
+  const [position, setPosition] = useState<LngLat | null>(
+    place.location ? [place.location.longitude, place.location.latitude] : null,
+  );
+
+  const [selectedFilterIds, setSelectedFilterIds] = useState<string[]>(
+    place.filterValues.map((item) => item.filterValue.id),
   );
 
   const [error, setError] = useState<string | null>(null);
 
   const [success, setSuccess] = useState<string | null>(null);
 
-  const provinces = useMemo(() => getProvincesList(), []);
+  /*
+   * اگر API فیلترها هنوز لود نشده،
+   * انتخاب‌های فعلی place را داریم.
+   */
+  const currentSelectedIds = selectedFilterIds;
 
-  const initialProvince = provinces.find(
-    (item) => item.fa === place.placeProvince,
-  );
+  const loading =
+    updatePlace.isPending ||
+    updateLocation.isPending ||
+    setFilterValues.isPending;
 
-  const [province, setProvince] = useState(initialProvince?.en ?? "");
+  /*
+   * فعلاً options استان/شهر را از داده‌های فعلی
+   * ساده نگه می‌داریم.
+   *
+   * اگر همان dataset ایران که در PlaceManager
+   * استفاده کردی import جدا دارد،
+   * بعداً همین دو array را با آن جایگزین کن.
+   */
+  const provinceOptions = useMemo(() => {
+    const values = new Set<string>();
 
-  const cities = useMemo(
-    () => (province ? getCities(province) : []),
-    [province],
-  );
+    if (place.placeProvince) {
+      values.add(place.placeProvince);
+    }
 
-  const initialCity = cities.find((item) => item.fa === place.placeCity);
+    return Array.from(values).map((value) => ({
+      value,
 
-  const [city, setCity] = useState(initialCity?.en ?? "");
+      label: value,
+    }));
+  }, [place.placeProvince]);
 
-  const provinceOptions = useMemo(
-    () =>
-      provinces.map((item) => ({
-        value: item.en,
-        label: item.fa,
-      })),
-    [provinces],
-  );
+  const cityOptions = useMemo(() => {
+    const values = new Set<string>();
 
-  const cityOptions = useMemo(
-    () =>
-      cities.map((item) => ({
-        value: item.en,
-        label: item.fa,
-      })),
-    [cities],
-  );
+    if (place.placeCity) {
+      values.add(place.placeCity);
+    }
 
-  const selectedProvince = provinces.find((item) => item.en === province);
+    return Array.from(values).map((value) => ({
+      value,
 
-  const selectedCity = cities.find((item) => item.en === city);
+      label: value,
+    }));
+  }, [place.placeCity]);
 
-  const update = trpc.host.place.update.useMutation();
+  function toggleFilter(id: string) {
+    setSelectedFilterIds((current) => {
+      if (current.includes(id)) {
+        return current.filter((item) => item !== id);
+      }
 
-  const locationUpsert = trpc.host.place.locationUpsert.useMutation();
-
-  const deleteImage = trpc.host.place.deleteImage.useMutation();
-
-  const filters = trpc.host.place.filterOptions.useQuery();
-
-  async function refresh() {
-    await onChanged();
+      return [...current, id];
+    });
   }
 
-  async function handleDeleteImage(imageId: string) {
-    const confirmed = window.confirm("این تصویر حذف شود؟");
+  async function handleSave() {
+    setError(null);
 
-    if (!confirmed) {
+    setSuccess(null);
+
+    if (!placeName.trim()) {
+      setError("نام مکان الزامی است.");
+
       return;
     }
 
-    await deleteImage.mutateAsync({
-      imageId,
-    });
+    if (!placeProvince.trim()) {
+      setError("استان الزامی است.");
 
-    await refresh();
-  }
+      return;
+    }
 
-  async function saveDetails() {
-    setError(null);
-    setSuccess(null);
+    if (!placeCity.trim()) {
+      setError("شهر الزامی است.");
 
-    if (!selectedProvince || !selectedCity) {
-      setError("استان و شهر را انتخاب کنید.");
+      return;
+    }
+
+    if (!position) {
+      setError("موقعیت دقیق مکان را روی نقشه انتخاب کنید.");
+
+      return;
+    }
+
+    const [longitude, latitude] = position;
+
+    if (
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude) ||
+      latitude < -90 ||
+      latitude > 90 ||
+      longitude < -180 ||
+      longitude > 180
+    ) {
+      setError("موقعیت انتخاب‌شده معتبر نیست.");
 
       return;
     }
 
     try {
-      await update.mutateAsync({
+      /*
+       * ========================================
+       * 1. اطلاعات اصلی Place
+       * ========================================
+       */
+      await updatePlace.mutateAsync({
         placeName: placeName.trim(),
+
+        placePhone: placePhone.trim(),
 
         placeType,
 
-        placeProvince: selectedProvince.fa,
+        placeProvince: placeProvince.trim(),
 
-        placeCity: selectedCity.fa,
-
-        placePhone: placePhone.trim(),
+        placeCity: placeCity.trim(),
 
         instagramId: instagramId.trim(),
 
         description: description.trim(),
       });
 
-      if (latitude.trim() && longitude.trim()) {
-        const lat = Number(latitude);
+      /*
+       * ========================================
+       * 2. Location
+       * ========================================
+       */
+      await updateLocation.mutateAsync({
+        title: locationTitle.trim(),
 
-        const lng = Number(longitude);
+        address: locationAddress.trim(),
 
-        if (Number.isNaN(lat) || Number.isNaN(lng)) {
-          throw new Error("مختصات موقعیت معتبر نیست.");
-        }
+        latitude,
 
-        await locationUpsert.mutateAsync({
-          title: locationTitle.trim(),
+        longitude,
+      });
 
-          address: address.trim(),
+      /*
+       * ========================================
+       * 3. Filter Values
+       * ========================================
+       */
+      await setFilterValues.mutateAsync({
+        filterValueIds: currentSelectedIds,
+      });
 
-          latitude: lat,
-          longitude: lng,
-        });
-      }
+      /*
+       * ========================================
+       * 4. Cache sync
+       * ========================================
+       */
+      await utils.host.place.getMine.invalidate();
 
-      setSuccess("تغییرات با موفقیت ذخیره شد.");
+      await onChanged();
+
+      setSuccess("اطلاعات مکان با موفقیت ذخیره شد.");
 
       await onSaved();
     } catch (error) {
       setError(
-        error instanceof Error ? error.message : "ذخیره تغییرات انجام نشد.",
+        error instanceof Error
+          ? error.message
+          : "ذخیره تغییرات مکان انجام نشد.",
       );
     }
   }
 
   return (
-    <div className="space-y-5">
+    <div
+      className="
+        mx-auto
+        w-full
+        max-w-3xl
+        space-y-6
+      "
+    >
+      {/*
+       * ========================================
+       * HEADER
+       * ========================================
+       */}
+
       <div
         className="
-          flex items-center
+          flex
+          items-start
           justify-between
-          gap-3
+          gap-4
         "
       >
         <div>
           <Text as="h1" variant="heading-xl">
-            ویرایش حساب
+            ویرایش مکان
           </Text>
 
           <Text tone="secondary" className="mt-1">
-            اطلاعات کسب‌وکار خود را ویرایش کنید
+            اطلاعات کسب‌وکار و موقعیت مکانی را ویرایش کنید
           </Text>
         </div>
 
@@ -209,12 +337,19 @@ export function HostPlaceEdit({ place, onCancel, onChanged, onSaved }: Props) {
           type="button"
           size="sm"
           variant="tertiary"
-          startIcon={<FiArrowRight />}
+          startIcon={<FiX />}
+          disabled={loading}
           onClick={onCancel}
         >
-          بازگشت
+          انصراف
         </Button>
       </div>
+
+      {/*
+       * ========================================
+       * BASIC INFO
+       * ========================================
+       */}
 
       <section
         className="
@@ -227,51 +362,33 @@ export function HostPlaceEdit({ place, onCancel, onChanged, onSaved }: Props) {
       >
         <Text variant="heading-md">اطلاعات اصلی</Text>
 
+        <Text tone="secondary" className="mt-1">
+          مشخصات کسب‌وکار را ویرایش کنید.
+        </Text>
+
         <div
           className="
             mt-6
-            grid gap-5
+            grid
+            gap-5
             sm:grid-cols-2
           "
         >
-          <FormField label="نام کسب‌وکار" required>
+          <FormField label="نام مکان" required>
             <Input
               value={placeName}
               onChange={(event) => setPlaceName(event.target.value)}
+              disabled={loading}
             />
           </FormField>
 
-          <FormField label="نوع کسب‌وکار" required>
+          <FormField label="نوع مکان" required>
             <SearchSelect
               value={placeType}
               options={PLACE_TYPE_OPTIONS}
               onChange={(value) => setPlaceType(value as PlaceTypeValue)}
-            />
-          </FormField>
-
-          <FormField label="استان" required>
-            <SearchSelect
-              value={province}
-              options={provinceOptions}
-              onChange={(value) => {
-                setProvince(value);
-
-                setCity("");
-              }}
-              searchPlaceholder="جستجوی استان..."
-            />
-          </FormField>
-
-          <FormField label="شهر" required>
-            <SearchSelect
-              value={city}
-              options={cityOptions}
-              onChange={setCity}
-              disabled={!province}
-              placeholder={
-                province ? "انتخاب شهر" : "ابتدا استان را انتخاب کنید"
-              }
-              searchPlaceholder="جستجوی شهر..."
+              disabled={loading}
+              placeholder="نوع مکان"
             />
           </FormField>
 
@@ -282,6 +399,7 @@ export function HostPlaceEdit({ place, onCancel, onChanged, onSaved }: Props) {
               type="tel"
               dir="ltr"
               className="text-left"
+              disabled={loading}
             />
           </FormField>
 
@@ -291,36 +409,65 @@ export function HostPlaceEdit({ place, onCancel, onChanged, onSaved }: Props) {
               onChange={(event) => setInstagramId(event.target.value)}
               dir="ltr"
               className="text-left"
+              placeholder="@..."
+              disabled={loading}
+            />
+          </FormField>
+
+          {/*
+           * فعلاً این دو SearchSelect فقط مقدار فعلی را نگه می‌دارند.
+           * اگر همان داده استان/شهر ایران را import جدا داری،
+           * این دو options را به dataset کامل وصل کن.
+           */}
+
+          <FormField label="استان" required>
+            <SearchSelect
+              value={placeProvince}
+              options={provinceOptions}
+              onChange={(value) => {
+                setPlaceProvince(value);
+
+                /*
+                 * اگر استان عوض شد،
+                 * شهر باید reset شود.
+                 */
+                if (value !== placeProvince) {
+                  setPlaceCity("");
+                }
+              }}
+              disabled={loading}
+              placeholder="استان"
+              searchPlaceholder="جستجوی استان..."
+            />
+          </FormField>
+
+          <FormField label="شهر" required>
+            <SearchSelect
+              value={placeCity}
+              options={cityOptions}
+              onChange={setPlaceCity}
+              disabled={loading || !placeProvince}
+              placeholder="شهر"
+              searchPlaceholder="جستجوی شهر..."
             />
           </FormField>
         </div>
 
-        <FormField label="معرفی کسب‌وکار" className="mt-5">
+        <FormField label="توضیحات" className="mt-5">
           <Textarea
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             resize={false}
+            disabled={loading}
           />
         </FormField>
       </section>
 
-      <section
-        className="
-          rounded-[28px]
-          bg-white
-          p-5
-          shadow-sm
-          sm:p-7
-        "
-      >
-        <ImageUploader
-          placeId={place.id}
-          images={place.images}
-          maxFiles={8}
-          onUploaded={refresh}
-          onDelete={handleDeleteImage}
-        />
-      </section>
+      {/*
+       * ========================================
+       * LOCATION
+       * ========================================
+       */}
 
       <section
         className="
@@ -331,188 +478,219 @@ export function HostPlaceEdit({ place, onCancel, onChanged, onSaved }: Props) {
           sm:p-7
         "
       >
-        <div className="flex items-center gap-3">
-          <FiMapPin />
+        <div
+          className="
+            flex
+            items-start
+            gap-3
+          "
+        >
+          <div
+            className="
+              flex
+              h-10
+              w-10
+              shrink-0
+              items-center
+              justify-center
+              rounded-full
+              bg-(--color-brand-50)
+              text-(--color-brand-600)
+            "
+          >
+            <FiMapPin />
+          </div>
 
-          <Text variant="heading-md">موقعیت</Text>
+          <div>
+            <Text variant="heading-md">موقعیت مکانی</Text>
+
+            <Text tone="secondary" className="mt-1">
+              موقعیت فعلی را مشاهده یا ویرایش کنید.
+            </Text>
+          </div>
         </div>
 
         <div
           className="
-            mt-5
-            grid gap-5
+            mt-6
+            grid
+            gap-5
             sm:grid-cols-2
           "
         >
-          <FormField label="عنوان">
+          <FormField label="عنوان موقعیت">
             <Input
               value={locationTitle}
               onChange={(event) => setLocationTitle(event.target.value)}
+              placeholder="مثلاً شعبه اصلی"
+              disabled={loading}
             />
           </FormField>
 
           <FormField label="آدرس">
             <Input
-              value={address}
-              onChange={(event) => setAddress(event.target.value)}
-            />
-          </FormField>
-
-          <FormField label="Latitude">
-            <Input
-              value={latitude}
-              onChange={(event) => setLatitude(event.target.value)}
-              dir="ltr"
-              className="text-left"
-            />
-          </FormField>
-
-          <FormField label="Longitude">
-            <Input
-              value={longitude}
-              onChange={(event) => setLongitude(event.target.value)}
-              dir="ltr"
-              className="text-left"
+              value={locationAddress}
+              onChange={(event) => setLocationAddress(event.target.value)}
+              placeholder="آدرس کامل"
+              disabled={loading}
             />
           </FormField>
         </div>
+
+        <div className="mt-6">
+          <LocationPicker
+            value={position}
+            onChange={setPosition}
+            disabled={loading}
+            title="ویرایش موقعیت دقیق"
+            description="موقعیت را جستجو کنید، از مکان فعلی استفاده کنید یا نشانگر را روی نقشه جابه‌جا کنید."
+            mapHeightClassName="
+              h-[260px]
+              sm:h-[360px]
+              lg:h-[420px]
+            "
+          />
+        </div>
       </section>
 
-      {filters.data && (
-        <HostFilterEditor
-          filters={filters.data.filters}
-          initialSelectedIds={filters.data.selectedIds}
-        />
-      )}
+      {/*
+       * ========================================
+       * FILTERS
+       * ========================================
+       */}
+
+      <section
+        className="
+          rounded-[28px]
+          bg-white
+          p-5
+          shadow-sm
+          sm:p-7
+        "
+      >
+        <Text variant="heading-md">ویژگی‌های مکان</Text>
+
+        <Text tone="secondary" className="mt-1">
+          ویژگی‌های مرتبط با کسب‌وکار را ویرایش کنید.
+        </Text>
+
+        {filterOptions.isPending && (
+          <Text tone="secondary" className="mt-5">
+            در حال دریافت ویژگی‌ها...
+          </Text>
+        )}
+
+        {filterOptions.error && (
+          <InlineMessage variant="error" className="mt-5">
+            دریافت ویژگی‌ها انجام نشد.
+          </InlineMessage>
+        )}
+
+        {filterOptions.data && (
+          <div
+            className="
+              mt-6
+              space-y-7
+            "
+          >
+            {filterOptions.data.filters.map((filter) => (
+              <div key={filter.id}>
+                <Text variant="label-lg">{filter.name}</Text>
+
+                <div
+                  className="
+                      mt-3
+                      flex
+                      flex-wrap
+                      gap-2
+                    "
+                >
+                  {filter.values.map((value) => {
+                    const selected = currentSelectedIds.includes(value.id);
+
+                    return (
+                      <button
+                        key={value.id}
+                        type="button"
+                        aria-pressed={selected}
+                        disabled={loading}
+                        onClick={() => toggleFilter(value.id)}
+                        className={`
+                              rounded-full
+                              border
+                              px-4
+                              py-2
+                              text-sm
+                              font-semibold
+                              transition-colors
+
+                              disabled:cursor-not-allowed
+                              disabled:opacity-60
+
+                              ${
+                                selected
+                                  ? "border-(--color-brand-500) bg-(--color-brand-500) text-white"
+                                  : "border-(--color-border) bg-white hover:border-(--color-brand-300)"
+                              }
+                            `}
+                      >
+                        {value.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/*
+       * ========================================
+       * MESSAGES
+       * ========================================
+       */}
 
       {error && <InlineMessage variant="error">{error}</InlineMessage>}
 
       {success && <InlineMessage variant="success">{success}</InlineMessage>}
 
-      <Button
-        type="button"
-        size="xl"
-        fullWidth
-        startIcon={<FiSave />}
-        loading={update.isPending || locationUpsert.isPending}
-        onClick={saveDetails}
+      {/*
+       * ========================================
+       * ACTIONS
+       * ========================================
+       */}
+
+      <div
+        className="
+          flex
+          flex-col
+          gap-3
+          sm:flex-row
+        "
       >
-        ذخیره تغییرات
-      </Button>
-    </div>
-  );
-}
+        <Button
+          type="button"
+          size="xl"
+          fullWidth
+          startIcon={<FiSave />}
+          loading={loading}
+          onClick={handleSave}
+        >
+          ذخیره تغییرات
+        </Button>
 
-function HostFilterEditor({
-  filters,
-  initialSelectedIds,
-}: {
-  filters: Array<{
-    id: string;
-    name: string;
-
-    values: Array<{
-      id: string;
-      name: string;
-    }>;
-  }>;
-
-  initialSelectedIds: string[];
-}) {
-  const [selectedIds, setSelectedIds] = useState(initialSelectedIds);
-
-  const setValues = trpc.host.place.setFilterValues.useMutation();
-
-  const [message, setMessage] = useState<string | null>(null);
-
-  function toggle(id: string) {
-    setSelectedIds((current) =>
-      current.includes(id)
-        ? current.filter((item) => item !== id)
-        : [...current, id],
-    );
-  }
-
-  async function save() {
-    await setValues.mutateAsync({
-      filterValueIds: selectedIds,
-    });
-
-    setMessage("ویژگی‌ها ذخیره شدند.");
-  }
-
-  return (
-    <section
-      className="
-        rounded-[28px]
-        bg-white
-        p-5
-        shadow-sm
-        sm:p-7
-      "
-    >
-      <Text variant="heading-md">ویژگی‌های مکان</Text>
-
-      <div className="mt-6 space-y-6">
-        {filters.map((filter) => (
-          <div key={filter.id}>
-            <Text variant="label-lg">{filter.name}</Text>
-
-            <div
-              className="
-                  mt-3
-                  flex
-                  flex-wrap
-                  gap-2
-                "
-            >
-              {filter.values.map((value) => {
-                const selected = selectedIds.includes(value.id);
-
-                return (
-                  <button
-                    key={value.id}
-                    type="button"
-                    onClick={() => toggle(value.id)}
-                    className={`
-                          rounded-full
-                          border
-                          px-4
-                          py-2
-                          text-sm
-                          transition-colors
-
-                          ${
-                            selected
-                              ? "border-(--color-brand-500) bg-(--color-brand-500) text-white"
-                              : "border-(--color-border) bg-white"
-                          }
-                        `}
-                  >
-                    {value.name}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+        <Button
+          type="button"
+          size="xl"
+          variant="tertiary"
+          fullWidth
+          disabled={loading}
+          onClick={onCancel}
+        >
+          انصراف
+        </Button>
       </div>
-
-      {message && (
-        <InlineMessage variant="success" className="mt-5">
-          {message}
-        </InlineMessage>
-      )}
-
-      <Button
-        type="button"
-        variant="secondary"
-        className="mt-6"
-        loading={setValues.isPending}
-        onClick={save}
-      >
-        ذخیره ویژگی‌ها
-      </Button>
-    </section>
+    </div>
   );
 }

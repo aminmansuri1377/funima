@@ -13,7 +13,7 @@ import {
   FiMessageCircle,
   FiPhone,
 } from "react-icons/fi";
-
+import { LocationPreview } from "@/components/map";
 import { Button, Text, ImageSlider } from "@/components/ui";
 
 import { PLACE_TYPE_LABELS, type PlaceTypeValue } from "@/lib/place/place-type";
@@ -265,43 +265,90 @@ export function HostAccountView({ place, onChanged }: Props) {
 
       <section
         className="
-          rounded-[28px]
-          bg-white
-          p-5
-          shadow-[0_8px_30px_rgba(0,0,0,0.04)]
-          sm:p-7
-        "
+    rounded-[28px]
+    bg-white
+    p-5
+    shadow-sm
+    sm:p-7
+  "
       >
-        <SectionHeader
-          icon={<FiMapPin />}
-          title="آدرس مکان"
-          description={place.location?.title ?? undefined}
-        />
-
         <div
           className="
-            mt-5
-            rounded-[22px]
-            bg-[#f8f8f8]
-            p-4
-            sm:p-5
-          "
+      flex
+      items-start
+      gap-3
+    "
         >
-          <Text className="leading-7">
-            {place.location?.address || "آدرسی ثبت نشده است."}
-          </Text>
+          <div
+            className="
+        flex
+        h-11
+        w-11
+        shrink-0
+        items-center
+        justify-center
+        rounded-full
+        bg-(--color-brand-50)
+        text-(--color-brand-600)
+      "
+          >
+            <FiMapPin />
+          </div>
 
-          {place.location && (
+          <div className="min-w-0">
+            <Text variant="heading-md">آدرس مکان</Text>
+
             <Text
-              variant="caption"
               tone="secondary"
-              dir="ltr"
-              className="mt-3 text-left"
+              className="
+          mt-1
+          leading-7
+        "
             >
-              {place.location.latitude} , {place.location.longitude}
+              {place.location?.address || "آدرسی ثبت نشده است."}
             </Text>
-          )}
+
+            {place.location?.title && (
+              <Text variant="caption" tone="secondary" className="mt-1">
+                {place.location.title}
+              </Text>
+            )}
+          </div>
         </div>
+
+        {place.location ? (
+          <div className="mt-5">
+            <LocationPreview
+              latitude={place.location.latitude}
+              longitude={place.location.longitude}
+              className="
+          h-[220px]
+          sm:h-[300px]
+        "
+            />
+          </div>
+        ) : (
+          <div
+            className="
+        mt-5
+        flex
+        min-h-36
+        items-center
+        justify-center
+        rounded-[22px]
+        border
+        border-dashed
+        border-(--color-border)
+        bg-gray-50
+        px-4
+        text-center
+      "
+          >
+            <Text variant="body-sm" tone="secondary">
+              موقعیت مکانی هنوز ثبت نشده است.
+            </Text>
+          </div>
+        )}
       </section>
 
       {groupedFilters.length > 0 && (

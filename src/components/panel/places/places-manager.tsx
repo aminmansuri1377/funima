@@ -10,6 +10,8 @@ import { getCities, getProvincesList } from "@code-plate/iran-cities";
 
 import { FiEdit2, FiMapPin, FiPlus, FiTrash2 } from "react-icons/fi";
 
+import { LocationPicker } from "@/components/map";
+
 import {
   Button,
   FormField,
@@ -26,6 +28,8 @@ import {
   PLACE_TYPE_OPTIONS,
   type PlaceTypeValue,
 } from "@/lib/place/place-type";
+
+import type { LngLat } from "@/lib/map/types";
 
 import { trpc } from "@/trpc/client";
 
@@ -165,6 +169,8 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
 
   const createPlace = trpc.panel.places.create.useMutation();
 
+  const locationUpsert = trpc.panel.places.locationUpsert.useMutation();
+
   const [hostId, setHostId] = useState("");
 
   const [placeName, setPlaceName] = useState("");
@@ -177,11 +183,7 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
    * داخل UI مقدار انگلیسی استان/شهر
    * را نگه می‌داریم.
    *
-   * مثال:
-   * province = "tehran"
-   * city = "tehran"
-   *
-   * ولی در DB نام فارسی ذخیره می‌شود.
+   * ولی نام فارسی در DB ذخیره می‌شود.
    */
   const [province, setProvince] = useState("");
 
@@ -190,6 +192,12 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
   const [instagramId, setInstagramId] = useState("");
 
   const [description, setDescription] = useState("");
+
+  const [locationTitle, setLocationTitle] = useState("");
+
+  const [locationAddress, setLocationAddress] = useState("");
+
+  const [position, setPosition] = useState<LngLat | null>(null);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -229,12 +237,9 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
 
   const selectedCity = cities.find((cityItem) => cityItem.en === city);
 
+  const submitting = createPlace.isPending || locationUpsert.isPending;
+
   function handleProvinceChange(nextProvince: string) {
-    /*
-     * مهم:
-     * تغییر استان باید شهر قبلی
-     * را reset کند.
-     */
     setProvince(nextProvince);
 
     setCity("");
@@ -269,8 +274,29 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
       return;
     }
 
+    if (!position) {
+      setError("لطفاً موقعیت دقیق مکان را روی نقشه انتخاب کنید.");
+
+      return;
+    }
+
+    const [longitude, latitude] = position;
+
+    if (
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude) ||
+      latitude < -90 ||
+      latitude > 90 ||
+      longitude < -180 ||
+      longitude > 180
+    ) {
+      setError("موقعیت انتخاب‌شده معتبر نیست.");
+
+      return;
+    }
+
     try {
-      await createPlace.mutateAsync({
+      const created = await createPlace.mutateAsync({
         hostId,
 
         placeName: placeName.trim(),
@@ -279,10 +305,6 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
 
         placeType,
 
-        /*
-         * نام فارسی در دیتابیس
-         * ذخیره می‌شود.
-         */
         placeProvince: selectedProvince.fa,
 
         placeCity: selectedCity.fa,
@@ -291,6 +313,34 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
 
         description: description.trim(),
       });
+
+      try {
+        await locationUpsert.mutateAsync({
+          placeId: created.placeId,
+
+          title: locationTitle.trim(),
+
+          address: locationAddress.trim(),
+
+          latitude,
+
+          longitude,
+        });
+      } catch (locationError) {
+        /*
+         * Place ساخته شده است، پس دوباره create نمی‌کنیم.
+         * لیست را refresh می‌کنیم تا Admin بتواند Location
+         * را از صفحه ویرایش همان Place تکمیل کند.
+         */
+        console.error(
+          "[PlacesManager] Place created but location save failed:",
+          locationError,
+        );
+
+        onCreated();
+
+        return;
+      }
 
       onCreated();
     } catch (error) {
@@ -325,7 +375,7 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
           <select
             value={hostId}
             onChange={(event) => setHostId(event.target.value)}
-            disabled={hosts.isPending || createPlace.isPending}
+            disabled={hosts.isPending || submitting}
             className="
               h-14 w-full
               rounded-(--radius-full)
@@ -355,7 +405,7 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
             value={placeName}
             onChange={(event) => setPlaceName(event.target.value)}
             placeholder="نام کافه یا مجموعه"
-            disabled={createPlace.isPending}
+            disabled={submitting}
           />
         </FormField>
 
@@ -365,7 +415,7 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
             onChange={(event) =>
               setPlaceType(event.target.value as PlaceTypeValue)
             }
-            disabled={createPlace.isPending}
+            disabled={submitting}
             className="
               h-14 w-full
               rounded-(--radius-full)
@@ -402,7 +452,7 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
             placeholder="انتخاب استان"
             searchPlaceholder="جستجوی استان..."
             emptyMessage="استانی پیدا نشد."
-            disabled={createPlace.isPending}
+            disabled={submitting}
           />
         </FormField>
 
@@ -414,7 +464,7 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
             placeholder={province ? "انتخاب شهر" : "ابتدا استان را انتخاب کنید"}
             searchPlaceholder="جستجوی شهر..."
             emptyMessage="شهری پیدا نشد."
-            disabled={!province || createPlace.isPending}
+            disabled={!province || submitting}
           />
         </FormField>
 
@@ -426,7 +476,7 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
             dir="ltr"
             className="text-left"
             placeholder="021..."
-            disabled={createPlace.isPending}
+            disabled={submitting}
           />
         </FormField>
 
@@ -437,7 +487,7 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
             dir="ltr"
             className="text-left"
             placeholder="@..."
-            disabled={createPlace.isPending}
+            disabled={submitting}
           />
         </FormField>
       </div>
@@ -448,9 +498,68 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
           onChange={(event) => setDescription(event.target.value)}
           placeholder="توضیحات مکان..."
           resize={false}
-          disabled={createPlace.isPending}
+          disabled={submitting}
         />
       </FormField>
+
+      <div
+        className="
+          mt-6
+          rounded-xl
+          border
+          border-(--color-border)
+          p-4
+          sm:p-5
+        "
+      >
+        <div className="mb-5">
+          <Text variant="heading-md">موقعیت مکان</Text>
+
+          <Text tone="secondary" className="mt-1">
+            آدرس و موقعیت دقیق مکان را مشخص کنید.
+          </Text>
+        </div>
+
+        <div
+          className="
+            grid gap-5
+            md:grid-cols-2
+          "
+        >
+          <FormField label="عنوان موقعیت">
+            <Input
+              value={locationTitle}
+              onChange={(event) => setLocationTitle(event.target.value)}
+              placeholder="مثلاً شعبه اصلی"
+              disabled={submitting}
+            />
+          </FormField>
+
+          <FormField label="آدرس">
+            <Input
+              value={locationAddress}
+              onChange={(event) => setLocationAddress(event.target.value)}
+              placeholder="آدرس کامل"
+              disabled={submitting}
+            />
+          </FormField>
+        </div>
+
+        <div className="mt-5">
+          <LocationPicker
+            value={position}
+            onChange={setPosition}
+            disabled={submitting}
+            title="انتخاب موقعیت دقیق"
+            description="مکان را جستجو کنید، از موقعیت فعلی استفاده کنید یا نشانگر را روی نقشه جابه‌جا کنید."
+            mapHeightClassName="
+              h-[260px]
+              sm:h-[360px]
+              lg:h-[420px]
+            "
+          />
+        </div>
+      </div>
 
       {error && (
         <InlineMessage variant="error" className="mt-4">
@@ -459,11 +568,7 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
       )}
 
       <div className="mt-6">
-        <Button
-          type="submit"
-          loading={createPlace.isPending}
-          startIcon={<FiMapPin />}
-        >
+        <Button type="submit" loading={submitting} startIcon={<FiMapPin />}>
           ایجاد مکان
         </Button>
       </div>

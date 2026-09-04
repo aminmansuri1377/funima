@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 import type { inferRouterOutputs } from "@trpc/server";
-
+import { LocationPreview } from "@/components/map";
 import {
   FiArrowRight,
   FiBookmark,
@@ -493,6 +493,61 @@ function PlaceContact({ place }: { place: PlaceData }) {
 function PlaceLocation({ place }: { place: PlaceData }) {
   const location = place.location;
 
+  if (!location) {
+    return (
+      <section
+        className="
+          rounded-[30px]
+          bg-white
+          p-5
+          shadow-[0_8px_30px_rgba(0,0,0,0.04)]
+          sm:p-7
+        "
+      >
+        <div
+          className="
+            flex
+            items-center
+            gap-3
+          "
+        >
+          <ContactIcon>
+            <FiMapPin />
+          </ContactIcon>
+
+          <div>
+            <Text variant="heading-md">موقعیت مکانی</Text>
+
+            <Text variant="caption" tone="secondary" className="mt-0.5">
+              {place.placeName}
+            </Text>
+          </div>
+        </div>
+
+        <div
+          className="
+            mt-5
+            flex
+            min-h-32
+            items-center
+            justify-center
+            rounded-[22px]
+            border
+            border-dashed
+            border-(--color-border)
+            bg-[#f8f8f8]
+            px-5
+            text-center
+          "
+        >
+          <Text variant="body-sm" tone="secondary">
+            موقعیت مکانی این مجموعه هنوز ثبت نشده است.
+          </Text>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section
       className="
@@ -506,7 +561,7 @@ function PlaceLocation({ place }: { place: PlaceData }) {
       <div
         className="
           flex
-          items-center
+          items-start
           gap-3
         "
       >
@@ -514,7 +569,7 @@ function PlaceLocation({ place }: { place: PlaceData }) {
           <FiMapPin />
         </ContactIcon>
 
-        <div>
+        <div className="min-w-0">
           <Text variant="heading-md">موقعیت مکانی</Text>
 
           <Text variant="caption" tone="secondary" className="mt-0.5">
@@ -523,57 +578,41 @@ function PlaceLocation({ place }: { place: PlaceData }) {
         </div>
       </div>
 
-      <div
-        className="
-          mt-5
-          rounded-[22px]
-          bg-[#f8f8f8]
-          p-4
-        "
-      >
-        <Text className="leading-7">
-          {location?.address ||
-            [place.placeProvince, place.placeCity].filter(Boolean).join("، ") ||
-            "آدرس ثبت نشده است."}
-        </Text>
+      {(location.address || location.title) && (
+        <div
+          className="
+            mt-5
+            rounded-[20px]
+            bg-[#f8f8f8]
+            p-4
+          "
+        >
+          {location.title && <Text variant="label-md">{location.title}</Text>}
 
-        {location?.title && (
-          <Text variant="caption" tone="secondary" className="mt-2">
-            {location.title}
-          </Text>
-        )}
-
-        {location && (
-          <div
-            className="
-              mt-4
-              rounded-[18px]
-              border
-              border-dashed
-              border-(--color-border)
-              bg-white
-              p-4
-            "
-          >
-            <Text variant="caption" tone="secondary">
-              مختصات
-            </Text>
-
+          {location.address && (
             <Text
-              dir="ltr"
+              tone="secondary"
               className="
                 mt-1
-                text-left
+                leading-7
               "
             >
-              {location.latitude}, {location.longitude}
+              {location.address}
             </Text>
+          )}
+        </div>
+      )}
 
-            <Text variant="caption" tone="secondary" className="mt-3">
-              نقشه تعاملی را در مرحله نهایی پروژه اضافه می‌کنیم.
-            </Text>
-          </div>
-        )}
+      <div className="mt-4">
+        <LocationPreview
+          latitude={location.latitude}
+          longitude={location.longitude}
+          className="
+            h-[220px]
+            sm:h-[300px]
+          "
+          showNavigation
+        />
       </div>
     </section>
   );

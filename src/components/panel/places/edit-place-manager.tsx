@@ -8,6 +8,8 @@ import { getCities, getProvincesList } from "@code-plate/iran-cities";
 
 import { FiImage, FiMapPin, FiTrash2, FiUploadCloud } from "react-icons/fi";
 
+import { LocationPicker } from "@/components/map";
+
 import {
   Button,
   FormField,
@@ -22,6 +24,8 @@ import {
   PLACE_TYPE_OPTIONS,
   type PlaceTypeValue,
 } from "@/lib/place/place-type";
+
+import type { LngLat } from "@/lib/map/types";
 
 import { trpc } from "@/trpc/client";
 
@@ -438,12 +442,8 @@ function LocationEditor({ placeId, location, onChanged }: LocationEditorProps) {
 
   const [address, setAddress] = useState(location?.address ?? "");
 
-  const [latitude, setLatitude] = useState(
-    location?.latitude?.toString() ?? "",
-  );
-
-  const [longitude, setLongitude] = useState(
-    location?.longitude?.toString() ?? "",
+  const [position, setPosition] = useState<LngLat | null>(
+    location ? [location.longitude, location.latitude] : null,
   );
 
   const [error, setError] = useState<string | null>(null);
@@ -458,12 +458,23 @@ function LocationEditor({ placeId, location, onChanged }: LocationEditorProps) {
     setError(null);
     setSuccess(null);
 
-    const latitudeNumber = Number(latitude);
+    if (!position) {
+      setError("لطفاً موقعیت دقیق مکان را روی نقشه انتخاب کنید.");
 
-    const longitudeNumber = Number(longitude);
+      return;
+    }
 
-    if (Number.isNaN(latitudeNumber) || Number.isNaN(longitudeNumber)) {
-      setError("طول و عرض جغرافیایی معتبر نیست.");
+    const [longitude, latitude] = position;
+
+    if (
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude) ||
+      latitude < -90 ||
+      latitude > 90 ||
+      longitude < -180 ||
+      longitude > 180
+    ) {
+      setError("موقعیت انتخاب‌شده معتبر نیست.");
 
       return;
     }
@@ -476,9 +487,9 @@ function LocationEditor({ placeId, location, onChanged }: LocationEditorProps) {
 
         address: address.trim(),
 
-        latitude: latitudeNumber,
+        latitude,
 
-        longitude: longitudeNumber,
+        longitude,
       });
 
       setSuccess("موقعیت مکان با موفقیت ذخیره شد.");
@@ -505,7 +516,7 @@ function LocationEditor({ placeId, location, onChanged }: LocationEditorProps) {
         <Text variant="heading-md">موقعیت مکان</Text>
 
         <Text tone="secondary" className="mt-1">
-          اطلاعات آدرس و موقعیت جغرافیایی
+          آدرس را وارد کنید و موقعیت دقیق را روی نقشه مشخص کنید.
         </Text>
       </div>
 
@@ -533,29 +544,20 @@ function LocationEditor({ placeId, location, onChanged }: LocationEditorProps) {
               disabled={locationUpsert.isPending}
             />
           </FormField>
-
-          <FormField label="عرض جغرافیایی" required>
-            <Input
-              value={latitude}
-              onChange={(event) => setLatitude(event.target.value)}
-              dir="ltr"
-              className="text-left"
-              placeholder="35.6892"
-              disabled={locationUpsert.isPending}
-            />
-          </FormField>
-
-          <FormField label="طول جغرافیایی" required>
-            <Input
-              value={longitude}
-              onChange={(event) => setLongitude(event.target.value)}
-              dir="ltr"
-              className="text-left"
-              placeholder="51.3890"
-              disabled={locationUpsert.isPending}
-            />
-          </FormField>
         </div>
+
+        <LocationPicker
+          value={position}
+          onChange={setPosition}
+          disabled={locationUpsert.isPending}
+          title="ویرایش موقعیت دقیق"
+          description="مکان را جستجو کنید، از موقعیت فعلی استفاده کنید یا نشانگر را روی نقشه جابه‌جا کنید."
+          mapHeightClassName="
+            h-[260px]
+            sm:h-[360px]
+            lg:h-[420px]
+          "
+        />
 
         {error && <InlineMessage variant="error">{error}</InlineMessage>}
 
