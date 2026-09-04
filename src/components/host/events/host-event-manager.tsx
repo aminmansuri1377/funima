@@ -185,7 +185,7 @@ function HostEventContent({
     );
   }
 
-  const mainImage = event.images[0]?.url ?? null;
+  // const mainImage = event.images[0]?.url ?? null;
 
   return (
     <HostEventShell>
