@@ -128,6 +128,7 @@ export const PlaceScalarFieldEnum = {
   placePhone: 'placePhone',
   placeType: 'placeType',
   placeCity: 'placeCity',
+  placeProvince: 'placeProvince',
   instagramId: 'instagramId',
   description: 'description',
   locationId: 'locationId',

@@ -2,9 +2,11 @@
 
 import Image from "next/image";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { useRouter } from "next/navigation";
+
+import { getCities, getProvincesList } from "@code-plate/iran-cities";
 
 import { FiEdit2, FiMapPin, FiPlus, FiTrash2 } from "react-icons/fi";
 
@@ -15,6 +17,7 @@ import {
   Input,
   Pagination,
   SearchInput,
+  SearchSelect,
   Text,
   Textarea,
 } from "@/components/ui";
@@ -95,7 +98,8 @@ export function PlacesManager() {
       <div
         className="
           rounded-xl
-          border border-(--color-border)
+          border
+          border-(--color-border)
           bg-(--color-surface)
           p-4
         "
@@ -113,7 +117,7 @@ export function PlacesManager() {
             setPage(1);
           }}
           onClear={handleClearSearch}
-          placeholder="جستجو با نام مکان، شهر یا میزبان..."
+          placeholder="جستجو با نام مکان، استان، شهر یا میزبان..."
         />
       </div>
 
@@ -145,6 +149,7 @@ export function PlacesManager() {
               onPageChange={setPage}
               onPageSizeChange={(size) => {
                 setPageSize(size);
+
                 setPage(1);
               }}
             />
@@ -168,13 +173,72 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
 
   const [placeType, setPlaceType] = useState<PlaceTypeValue>("CAFE");
 
-  const [placeCity, setPlaceCity] = useState("");
+  /*
+   * داخل UI مقدار انگلیسی استان/شهر
+   * را نگه می‌داریم.
+   *
+   * مثال:
+   * province = "tehran"
+   * city = "tehran"
+   *
+   * ولی در DB نام فارسی ذخیره می‌شود.
+   */
+  const [province, setProvince] = useState("");
+
+  const [city, setCity] = useState("");
 
   const [instagramId, setInstagramId] = useState("");
 
   const [description, setDescription] = useState("");
 
   const [error, setError] = useState<string | null>(null);
+
+  const provinces = useMemo(() => getProvincesList(), []);
+
+  const cities = useMemo(() => {
+    if (!province) {
+      return [];
+    }
+
+    return getCities(province);
+  }, [province]);
+
+  const provinceOptions = useMemo(
+    () =>
+      provinces.map((provinceItem) => ({
+        value: provinceItem.en,
+
+        label: provinceItem.fa,
+      })),
+    [provinces],
+  );
+
+  const cityOptions = useMemo(
+    () =>
+      cities.map((cityItem) => ({
+        value: cityItem.en,
+
+        label: cityItem.fa,
+      })),
+    [cities],
+  );
+
+  const selectedProvince = provinces.find(
+    (provinceItem) => provinceItem.en === province,
+  );
+
+  const selectedCity = cities.find((cityItem) => cityItem.en === city);
+
+  function handleProvinceChange(nextProvince: string) {
+    /*
+     * مهم:
+     * تغییر استان باید شهر قبلی
+     * را reset کند.
+     */
+    setProvince(nextProvince);
+
+    setCity("");
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -187,15 +251,45 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
       return;
     }
 
+    if (!placeName.trim()) {
+      setError("نام مکان الزامی است.");
+
+      return;
+    }
+
+    if (!selectedProvince) {
+      setError("لطفاً استان را انتخاب کنید.");
+
+      return;
+    }
+
+    if (!selectedCity) {
+      setError("لطفاً شهر را انتخاب کنید.");
+
+      return;
+    }
+
     try {
       await createPlace.mutateAsync({
         hostId,
-        placeName,
-        placePhone,
+
+        placeName: placeName.trim(),
+
+        placePhone: placePhone.trim(),
+
         placeType,
-        placeCity,
-        instagramId,
-        description,
+
+        /*
+         * نام فارسی در دیتابیس
+         * ذخیره می‌شود.
+         */
+        placeProvince: selectedProvince.fa,
+
+        placeCity: selectedCity.fa,
+
+        instagramId: instagramId.trim(),
+
+        description: description.trim(),
       });
 
       onCreated();
@@ -211,7 +305,8 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
       onSubmit={handleSubmit}
       className="
         rounded-xl
-        border border-(--color-border)
+        border
+        border-(--color-border)
         bg-(--color-surface)
         p-5
       "
@@ -220,7 +315,12 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
         افزودن مکان جدید
       </Text>
 
-      <div className="grid gap-5 md:grid-cols-2">
+      <div
+        className="
+          grid gap-5
+          md:grid-cols-2
+        "
+      >
         <FormField label="میزبان" required>
           <select
             value={hostId}
@@ -234,6 +334,7 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
               bg-white
               px-5
               outline-none
+
               focus:border-(--color-brand-500)
             "
           >
@@ -253,19 +354,7 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
           <Input
             value={placeName}
             onChange={(event) => setPlaceName(event.target.value)}
-            placeholder="نام کافه"
-            disabled={createPlace.isPending}
-          />
-        </FormField>
-
-        <FormField label="شماره مکان">
-          <Input
-            value={placePhone}
-            onChange={(event) => setPlacePhone(event.target.value)}
-            type="tel"
-            dir="ltr"
-            className="text-left"
-            placeholder="021..."
+            placeholder="نام کافه یا مجموعه"
             disabled={createPlace.isPending}
           />
         </FormField>
@@ -288,9 +377,11 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
               text-(--color-text-primary)
               outline-none
               transition-colors
+
               focus:border-(--color-brand-500)
               focus:ring-2
               focus:ring-(--color-brand-100)
+
               disabled:cursor-not-allowed
               disabled:bg-gray-100
             "
@@ -303,11 +394,38 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
           </select>
         </FormField>
 
+        <FormField label="استان" required>
+          <SearchSelect
+            value={province}
+            options={provinceOptions}
+            onChange={handleProvinceChange}
+            placeholder="انتخاب استان"
+            searchPlaceholder="جستجوی استان..."
+            emptyMessage="استانی پیدا نشد."
+            disabled={createPlace.isPending}
+          />
+        </FormField>
+
         <FormField label="شهر" required>
+          <SearchSelect
+            value={city}
+            options={cityOptions}
+            onChange={setCity}
+            placeholder={province ? "انتخاب شهر" : "ابتدا استان را انتخاب کنید"}
+            searchPlaceholder="جستجوی شهر..."
+            emptyMessage="شهری پیدا نشد."
+            disabled={!province || createPlace.isPending}
+          />
+        </FormField>
+
+        <FormField label="شماره مکان">
           <Input
-            value={placeCity}
-            onChange={(event) => setPlaceCity(event.target.value)}
-            placeholder="تهران"
+            value={placePhone}
+            onChange={(event) => setPlacePhone(event.target.value)}
+            type="tel"
+            dir="ltr"
+            className="text-left"
+            placeholder="021..."
             disabled={createPlace.isPending}
           />
         </FormField>
@@ -355,7 +473,11 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
 
 type PlaceListItem = {
   id: string;
+
   placeName: string;
+
+  placeProvince: string | null;
+
   placeCity: string | null;
 
   host: {
@@ -414,7 +536,8 @@ function PlacesTable({ places, onChanged, onEdit }: PlacesTableProps) {
       <div
         className="
           rounded-xl
-          border border-dashed
+          border
+          border-dashed
           border-(--color-border)
           bg-white
           p-10
@@ -438,17 +561,20 @@ function PlacesTable({ places, onChanged, onEdit }: PlacesTableProps) {
         className="
           overflow-hidden
           rounded-xl
-          border border-(--color-border)
+          border
+          border-(--color-border)
           bg-white
         "
       >
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[950px]">
+          <table className="w-full min-w-[1100px]">
             <thead className="bg-gray-50 text-right">
               <tr>
                 <th className="px-5 py-4">مکان</th>
 
                 <th className="px-5 py-4">میزبان</th>
+
+                <th className="px-5 py-4">استان</th>
 
                 <th className="px-5 py-4">شهر</th>
 
@@ -481,6 +607,8 @@ function PlacesTable({ places, onChanged, onEdit }: PlacesTableProps) {
                   </td>
 
                   <td className="px-5 py-4">{place.host.user.fullName}</td>
+
+                  <td className="px-5 py-4">{place.placeProvince ?? "—"}</td>
 
                   <td className="px-5 py-4">{place.placeCity ?? "—"}</td>
 
@@ -527,6 +655,7 @@ function PlaceThumbnail({
   name,
 }: {
   image: string | null;
+
   name: string;
 }) {
   if (!image) {

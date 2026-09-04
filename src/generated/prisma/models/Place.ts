@@ -31,6 +31,7 @@ export type PlaceMinAggregateOutputType = {
   placePhone: string | null
   placeType: $Enums.PlaceType | null
   placeCity: string | null
+  placeProvince: string | null
   instagramId: string | null
   description: string | null
   locationId: string | null
@@ -45,6 +46,7 @@ export type PlaceMaxAggregateOutputType = {
   placePhone: string | null
   placeType: $Enums.PlaceType | null
   placeCity: string | null
+  placeProvince: string | null
   instagramId: string | null
   description: string | null
   locationId: string | null
@@ -59,6 +61,7 @@ export type PlaceCountAggregateOutputType = {
   placePhone: number
   placeType: number
   placeCity: number
+  placeProvince: number
   instagramId: number
   description: number
   locationId: number
@@ -75,6 +78,7 @@ export type PlaceMinAggregateInputType = {
   placePhone?: true
   placeType?: true
   placeCity?: true
+  placeProvince?: true
   instagramId?: true
   description?: true
   locationId?: true
@@ -89,6 +93,7 @@ export type PlaceMaxAggregateInputType = {
   placePhone?: true
   placeType?: true
   placeCity?: true
+  placeProvince?: true
   instagramId?: true
   description?: true
   locationId?: true
@@ -103,6 +108,7 @@ export type PlaceCountAggregateInputType = {
   placePhone?: true
   placeType?: true
   placeCity?: true
+  placeProvince?: true
   instagramId?: true
   description?: true
   locationId?: true
@@ -190,6 +196,7 @@ export type PlaceGroupByOutputType = {
   placePhone: string | null
   placeType: $Enums.PlaceType
   placeCity: string | null
+  placeProvince: string | null
   instagramId: string | null
   description: string | null
   locationId: string | null
@@ -225,6 +232,7 @@ export type PlaceWhereInput = {
   placePhone?: Prisma.StringNullableFilter<"Place"> | string | null
   placeType?: Prisma.EnumPlaceTypeFilter<"Place"> | $Enums.PlaceType
   placeCity?: Prisma.StringNullableFilter<"Place"> | string | null
+  placeProvince?: Prisma.StringNullableFilter<"Place"> | string | null
   instagramId?: Prisma.StringNullableFilter<"Place"> | string | null
   description?: Prisma.StringNullableFilter<"Place"> | string | null
   locationId?: Prisma.StringNullableFilter<"Place"> | string | null
@@ -247,6 +255,7 @@ export type PlaceOrderByWithRelationInput = {
   placePhone?: Prisma.SortOrderInput | Prisma.SortOrder
   placeType?: Prisma.SortOrder
   placeCity?: Prisma.SortOrderInput | Prisma.SortOrder
+  placeProvince?: Prisma.SortOrderInput | Prisma.SortOrder
   instagramId?: Prisma.SortOrderInput | Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   locationId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -273,6 +282,7 @@ export type PlaceWhereUniqueInput = Prisma.AtLeast<{
   placePhone?: Prisma.StringNullableFilter<"Place"> | string | null
   placeType?: Prisma.EnumPlaceTypeFilter<"Place"> | $Enums.PlaceType
   placeCity?: Prisma.StringNullableFilter<"Place"> | string | null
+  placeProvince?: Prisma.StringNullableFilter<"Place"> | string | null
   instagramId?: Prisma.StringNullableFilter<"Place"> | string | null
   description?: Prisma.StringNullableFilter<"Place"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Place"> | Date | string
@@ -294,6 +304,7 @@ export type PlaceOrderByWithAggregationInput = {
   placePhone?: Prisma.SortOrderInput | Prisma.SortOrder
   placeType?: Prisma.SortOrder
   placeCity?: Prisma.SortOrderInput | Prisma.SortOrder
+  placeProvince?: Prisma.SortOrderInput | Prisma.SortOrder
   instagramId?: Prisma.SortOrderInput | Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   locationId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -314,6 +325,7 @@ export type PlaceScalarWhereWithAggregatesInput = {
   placePhone?: Prisma.StringNullableWithAggregatesFilter<"Place"> | string | null
   placeType?: Prisma.EnumPlaceTypeWithAggregatesFilter<"Place"> | $Enums.PlaceType
   placeCity?: Prisma.StringNullableWithAggregatesFilter<"Place"> | string | null
+  placeProvince?: Prisma.StringNullableWithAggregatesFilter<"Place"> | string | null
   instagramId?: Prisma.StringNullableWithAggregatesFilter<"Place"> | string | null
   description?: Prisma.StringNullableWithAggregatesFilter<"Place"> | string | null
   locationId?: Prisma.StringNullableWithAggregatesFilter<"Place"> | string | null
@@ -327,6 +339,7 @@ export type PlaceCreateInput = {
   placePhone?: string | null
   placeType?: $Enums.PlaceType
   placeCity?: string | null
+  placeProvince?: string | null
   instagramId?: string | null
   description?: string | null
   createdAt?: Date | string
@@ -348,6 +361,7 @@ export type PlaceUncheckedCreateInput = {
   placePhone?: string | null
   placeType?: $Enums.PlaceType
   placeCity?: string | null
+  placeProvince?: string | null
   instagramId?: string | null
   description?: string | null
   locationId?: string | null
@@ -367,6 +381,7 @@ export type PlaceUpdateInput = {
   placePhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   placeType?: Prisma.EnumPlaceTypeFieldUpdateOperationsInput | $Enums.PlaceType
   placeCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  placeProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instagramId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -388,6 +403,7 @@ export type PlaceUncheckedUpdateInput = {
   placePhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   placeType?: Prisma.EnumPlaceTypeFieldUpdateOperationsInput | $Enums.PlaceType
   placeCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  placeProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instagramId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   locationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -408,6 +424,7 @@ export type PlaceCreateManyInput = {
   placePhone?: string | null
   placeType?: $Enums.PlaceType
   placeCity?: string | null
+  placeProvince?: string | null
   instagramId?: string | null
   description?: string | null
   locationId?: string | null
@@ -421,6 +438,7 @@ export type PlaceUpdateManyMutationInput = {
   placePhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   placeType?: Prisma.EnumPlaceTypeFieldUpdateOperationsInput | $Enums.PlaceType
   placeCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  placeProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instagramId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -434,6 +452,7 @@ export type PlaceUncheckedUpdateManyInput = {
   placePhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   placeType?: Prisma.EnumPlaceTypeFieldUpdateOperationsInput | $Enums.PlaceType
   placeCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  placeProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instagramId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   locationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -453,6 +472,7 @@ export type PlaceCountOrderByAggregateInput = {
   placePhone?: Prisma.SortOrder
   placeType?: Prisma.SortOrder
   placeCity?: Prisma.SortOrder
+  placeProvince?: Prisma.SortOrder
   instagramId?: Prisma.SortOrder
   description?: Prisma.SortOrder
   locationId?: Prisma.SortOrder
@@ -467,6 +487,7 @@ export type PlaceMaxOrderByAggregateInput = {
   placePhone?: Prisma.SortOrder
   placeType?: Prisma.SortOrder
   placeCity?: Prisma.SortOrder
+  placeProvince?: Prisma.SortOrder
   instagramId?: Prisma.SortOrder
   description?: Prisma.SortOrder
   locationId?: Prisma.SortOrder
@@ -481,6 +502,7 @@ export type PlaceMinOrderByAggregateInput = {
   placePhone?: Prisma.SortOrder
   placeType?: Prisma.SortOrder
   placeCity?: Prisma.SortOrder
+  placeProvince?: Prisma.SortOrder
   instagramId?: Prisma.SortOrder
   description?: Prisma.SortOrder
   locationId?: Prisma.SortOrder
@@ -653,6 +675,7 @@ export type PlaceCreateWithoutHostInput = {
   placePhone?: string | null
   placeType?: $Enums.PlaceType
   placeCity?: string | null
+  placeProvince?: string | null
   instagramId?: string | null
   description?: string | null
   createdAt?: Date | string
@@ -672,6 +695,7 @@ export type PlaceUncheckedCreateWithoutHostInput = {
   placePhone?: string | null
   placeType?: $Enums.PlaceType
   placeCity?: string | null
+  placeProvince?: string | null
   instagramId?: string | null
   description?: string | null
   locationId?: string | null
@@ -707,6 +731,7 @@ export type PlaceUpdateWithoutHostInput = {
   placePhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   placeType?: Prisma.EnumPlaceTypeFieldUpdateOperationsInput | $Enums.PlaceType
   placeCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  placeProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instagramId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -726,6 +751,7 @@ export type PlaceUncheckedUpdateWithoutHostInput = {
   placePhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   placeType?: Prisma.EnumPlaceTypeFieldUpdateOperationsInput | $Enums.PlaceType
   placeCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  placeProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instagramId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   locationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -745,6 +771,7 @@ export type PlaceCreateWithoutImagesInput = {
   placePhone?: string | null
   placeType?: $Enums.PlaceType
   placeCity?: string | null
+  placeProvince?: string | null
   instagramId?: string | null
   description?: string | null
   createdAt?: Date | string
@@ -765,6 +792,7 @@ export type PlaceUncheckedCreateWithoutImagesInput = {
   placePhone?: string | null
   placeType?: $Enums.PlaceType
   placeCity?: string | null
+  placeProvince?: string | null
   instagramId?: string | null
   description?: string | null
   locationId?: string | null
@@ -799,6 +827,7 @@ export type PlaceUpdateWithoutImagesInput = {
   placePhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   placeType?: Prisma.EnumPlaceTypeFieldUpdateOperationsInput | $Enums.PlaceType
   placeCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  placeProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instagramId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -819,6 +848,7 @@ export type PlaceUncheckedUpdateWithoutImagesInput = {
   placePhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   placeType?: Prisma.EnumPlaceTypeFieldUpdateOperationsInput | $Enums.PlaceType
   placeCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  placeProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instagramId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   locationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -837,6 +867,7 @@ export type PlaceCreateWithoutLocationInput = {
   placePhone?: string | null
   placeType?: $Enums.PlaceType
   placeCity?: string | null
+  placeProvince?: string | null
   instagramId?: string | null
   description?: string | null
   createdAt?: Date | string
@@ -857,6 +888,7 @@ export type PlaceUncheckedCreateWithoutLocationInput = {
   placePhone?: string | null
   placeType?: $Enums.PlaceType
   placeCity?: string | null
+  placeProvince?: string | null
   instagramId?: string | null
   description?: string | null
   createdAt?: Date | string
@@ -891,6 +923,7 @@ export type PlaceUpdateWithoutLocationInput = {
   placePhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   placeType?: Prisma.EnumPlaceTypeFieldUpdateOperationsInput | $Enums.PlaceType
   placeCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  placeProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instagramId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -911,6 +944,7 @@ export type PlaceUncheckedUpdateWithoutLocationInput = {
   placePhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   placeType?: Prisma.EnumPlaceTypeFieldUpdateOperationsInput | $Enums.PlaceType
   placeCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  placeProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instagramId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -929,6 +963,7 @@ export type PlaceCreateWithoutFilterValuesInput = {
   placePhone?: string | null
   placeType?: $Enums.PlaceType
   placeCity?: string | null
+  placeProvince?: string | null
   instagramId?: string | null
   description?: string | null
   createdAt?: Date | string
@@ -949,6 +984,7 @@ export type PlaceUncheckedCreateWithoutFilterValuesInput = {
   placePhone?: string | null
   placeType?: $Enums.PlaceType
   placeCity?: string | null
+  placeProvince?: string | null
   instagramId?: string | null
   description?: string | null
   locationId?: string | null
@@ -983,6 +1019,7 @@ export type PlaceUpdateWithoutFilterValuesInput = {
   placePhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   placeType?: Prisma.EnumPlaceTypeFieldUpdateOperationsInput | $Enums.PlaceType
   placeCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  placeProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instagramId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1003,6 +1040,7 @@ export type PlaceUncheckedUpdateWithoutFilterValuesInput = {
   placePhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   placeType?: Prisma.EnumPlaceTypeFieldUpdateOperationsInput | $Enums.PlaceType
   placeCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  placeProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instagramId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   locationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1021,6 +1059,7 @@ export type PlaceCreateWithoutEventsInput = {
   placePhone?: string | null
   placeType?: $Enums.PlaceType
   placeCity?: string | null
+  placeProvince?: string | null
   instagramId?: string | null
   description?: string | null
   createdAt?: Date | string
@@ -1041,6 +1080,7 @@ export type PlaceUncheckedCreateWithoutEventsInput = {
   placePhone?: string | null
   placeType?: $Enums.PlaceType
   placeCity?: string | null
+  placeProvince?: string | null
   instagramId?: string | null
   description?: string | null
   locationId?: string | null
@@ -1075,6 +1115,7 @@ export type PlaceUpdateWithoutEventsInput = {
   placePhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   placeType?: Prisma.EnumPlaceTypeFieldUpdateOperationsInput | $Enums.PlaceType
   placeCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  placeProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instagramId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1095,6 +1136,7 @@ export type PlaceUncheckedUpdateWithoutEventsInput = {
   placePhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   placeType?: Prisma.EnumPlaceTypeFieldUpdateOperationsInput | $Enums.PlaceType
   placeCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  placeProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instagramId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   locationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1113,6 +1155,7 @@ export type PlaceCreateWithoutCommentsInput = {
   placePhone?: string | null
   placeType?: $Enums.PlaceType
   placeCity?: string | null
+  placeProvince?: string | null
   instagramId?: string | null
   description?: string | null
   createdAt?: Date | string
@@ -1133,6 +1176,7 @@ export type PlaceUncheckedCreateWithoutCommentsInput = {
   placePhone?: string | null
   placeType?: $Enums.PlaceType
   placeCity?: string | null
+  placeProvince?: string | null
   instagramId?: string | null
   description?: string | null
   locationId?: string | null
@@ -1167,6 +1211,7 @@ export type PlaceUpdateWithoutCommentsInput = {
   placePhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   placeType?: Prisma.EnumPlaceTypeFieldUpdateOperationsInput | $Enums.PlaceType
   placeCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  placeProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instagramId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1187,6 +1232,7 @@ export type PlaceUncheckedUpdateWithoutCommentsInput = {
   placePhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   placeType?: Prisma.EnumPlaceTypeFieldUpdateOperationsInput | $Enums.PlaceType
   placeCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  placeProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instagramId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   locationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1205,6 +1251,7 @@ export type PlaceCreateWithoutSavedByInput = {
   placePhone?: string | null
   placeType?: $Enums.PlaceType
   placeCity?: string | null
+  placeProvince?: string | null
   instagramId?: string | null
   description?: string | null
   createdAt?: Date | string
@@ -1225,6 +1272,7 @@ export type PlaceUncheckedCreateWithoutSavedByInput = {
   placePhone?: string | null
   placeType?: $Enums.PlaceType
   placeCity?: string | null
+  placeProvince?: string | null
   instagramId?: string | null
   description?: string | null
   locationId?: string | null
@@ -1259,6 +1307,7 @@ export type PlaceUpdateWithoutSavedByInput = {
   placePhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   placeType?: Prisma.EnumPlaceTypeFieldUpdateOperationsInput | $Enums.PlaceType
   placeCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  placeProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instagramId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1279,6 +1328,7 @@ export type PlaceUncheckedUpdateWithoutSavedByInput = {
   placePhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   placeType?: Prisma.EnumPlaceTypeFieldUpdateOperationsInput | $Enums.PlaceType
   placeCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  placeProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instagramId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   locationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1297,6 +1347,7 @@ export type PlaceCreateWithoutShowOnPagePlacesInput = {
   placePhone?: string | null
   placeType?: $Enums.PlaceType
   placeCity?: string | null
+  placeProvince?: string | null
   instagramId?: string | null
   description?: string | null
   createdAt?: Date | string
@@ -1317,6 +1368,7 @@ export type PlaceUncheckedCreateWithoutShowOnPagePlacesInput = {
   placePhone?: string | null
   placeType?: $Enums.PlaceType
   placeCity?: string | null
+  placeProvince?: string | null
   instagramId?: string | null
   description?: string | null
   locationId?: string | null
@@ -1351,6 +1403,7 @@ export type PlaceUpdateWithoutShowOnPagePlacesInput = {
   placePhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   placeType?: Prisma.EnumPlaceTypeFieldUpdateOperationsInput | $Enums.PlaceType
   placeCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  placeProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instagramId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1371,6 +1424,7 @@ export type PlaceUncheckedUpdateWithoutShowOnPagePlacesInput = {
   placePhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   placeType?: Prisma.EnumPlaceTypeFieldUpdateOperationsInput | $Enums.PlaceType
   placeCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  placeProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instagramId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   locationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1466,6 +1520,7 @@ export type PlaceSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   placePhone?: boolean
   placeType?: boolean
   placeCity?: boolean
+  placeProvince?: boolean
   instagramId?: boolean
   description?: boolean
   locationId?: boolean
@@ -1489,6 +1544,7 @@ export type PlaceSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   placePhone?: boolean
   placeType?: boolean
   placeCity?: boolean
+  placeProvince?: boolean
   instagramId?: boolean
   description?: boolean
   locationId?: boolean
@@ -1505,6 +1561,7 @@ export type PlaceSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   placePhone?: boolean
   placeType?: boolean
   placeCity?: boolean
+  placeProvince?: boolean
   instagramId?: boolean
   description?: boolean
   locationId?: boolean
@@ -1521,6 +1578,7 @@ export type PlaceSelectScalar = {
   placePhone?: boolean
   placeType?: boolean
   placeCity?: boolean
+  placeProvince?: boolean
   instagramId?: boolean
   description?: boolean
   locationId?: boolean
@@ -1528,7 +1586,7 @@ export type PlaceSelectScalar = {
   updatedAt?: boolean
 }
 
-export type PlaceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "hostId" | "placeName" | "placePhone" | "placeType" | "placeCity" | "instagramId" | "description" | "locationId" | "createdAt" | "updatedAt", ExtArgs["result"]["place"]>
+export type PlaceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "hostId" | "placeName" | "placePhone" | "placeType" | "placeCity" | "placeProvince" | "instagramId" | "description" | "locationId" | "createdAt" | "updatedAt", ExtArgs["result"]["place"]>
 export type PlaceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   location?: boolean | Prisma.Place$locationArgs<ExtArgs>
   host?: boolean | Prisma.HostDefaultArgs<ExtArgs>
@@ -1568,6 +1626,7 @@ export type $PlacePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     placePhone: string | null
     placeType: $Enums.PlaceType
     placeCity: string | null
+    placeProvince: string | null
     instagramId: string | null
     description: string | null
     locationId: string | null
@@ -2010,6 +2069,7 @@ export interface PlaceFieldRefs {
   readonly placePhone: Prisma.FieldRef<"Place", 'String'>
   readonly placeType: Prisma.FieldRef<"Place", 'PlaceType'>
   readonly placeCity: Prisma.FieldRef<"Place", 'String'>
+  readonly placeProvince: Prisma.FieldRef<"Place", 'String'>
   readonly instagramId: Prisma.FieldRef<"Place", 'String'>
   readonly description: Prisma.FieldRef<"Place", 'String'>
   readonly locationId: Prisma.FieldRef<"Place", 'String'>

@@ -16,8 +16,9 @@ const createPlaceSchema = z.object({
 
   placeType: z.enum(PlaceType),
 
-  placeCity: z.string().trim().min(2, "شهر الزامی است").max(100),
+  placeProvince: z.string().trim().min(1, "استان الزامی است."),
 
+  placeCity: z.string().trim().min(1, "شهر الزامی است."),
   instagramId: z.string().trim().optional(),
 
   description: z.string().trim().optional(),
@@ -36,6 +37,14 @@ export const panelPlacesRouter = router({
             OR: [
               {
                 placeName: {
+                  contains: search,
+
+                  mode: "insensitive" as const,
+                },
+              },
+
+              {
+                placeProvince: {
                   contains: search,
 
                   mode: "insensitive" as const,
@@ -216,10 +225,9 @@ export const panelPlacesRouter = router({
 
           placePhone: input.placePhone?.trim() || null,
 
-          /*
-           * Prisma enum
-           */
           placeType: input.placeType,
+
+          placeProvince: input.placeProvince.trim(),
 
           placeCity: input.placeCity.trim(),
 
@@ -400,8 +408,9 @@ export const panelPlacesRouter = router({
 
         placeType: z.enum(PlaceType),
 
-        placeCity: z.string().trim().min(2),
+        placeProvince: z.string().trim().min(1),
 
+        placeCity: z.string().trim().min(1),
         instagramId: z.string().trim().optional(),
 
         description: z.string().trim().optional(),
@@ -433,8 +442,9 @@ export const panelPlacesRouter = router({
 
           placeType: input.placeType,
 
-          placeCity: input.placeCity.trim(),
+          placeProvince: input.placeProvince.trim(),
 
+          placeCity: input.placeCity.trim(),
           instagramId: input.instagramId?.trim() || null,
 
           description: input.description?.trim() || null,

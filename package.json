@@ -18,6 +18,7 @@
     "postinstall": "prisma skills sync || exit 0"
   },
   "dependencies": {
+    "@code-plate/iran-cities": "^1.0.2",
     "@hookform/resolvers": "^5.9.1",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",

@@ -89,12 +89,13 @@ model Place {
   id     String @id @default(cuid())
   hostId String @unique
 
-  placeName   String
-  placePhone  String?
-  placeType   PlaceType @default(CAFE)
-  placeCity   String?
-  instagramId String?
-  description String?
+  placeName     String
+  placePhone    String?
+  placeType     PlaceType @default(CAFE)
+  placeCity     String?
+  placeProvince String?
+  instagramId   String?
+  description   String?
 
   locationId String?   @unique
   location   Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
