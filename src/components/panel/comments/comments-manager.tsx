@@ -4,22 +4,43 @@ import Image from "next/image";
 
 import { useState } from "react";
 
-import { FiMessageSquare, FiSearch, FiTrash2 } from "react-icons/fi";
+import { FiMessageSquare, FiTrash2 } from "react-icons/fi";
 
-import { Button, InlineMessage, Input, Text } from "@/components/ui";
+import {
+  Button,
+  InlineMessage,
+  Pagination,
+  SearchInput,
+  Text,
+} from "@/components/ui";
 
 import { trpc } from "@/trpc/client";
 
 export function CommentsManager() {
   const [search, setSearch] = useState("");
 
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  const [page, setPage] = useState(1);
+
+  const [pageSize, setPageSize] = useState(20);
+
   const [error, setError] = useState<string | null>(null);
 
   const comments = trpc.panel.comments.list.useQuery({
-    search: search.trim() || undefined,
+    page,
+    pageSize,
+
+    search: debouncedSearch.trim() || undefined,
   });
 
   const deleteComment = trpc.panel.comments.delete.useMutation();
+
+  function clearSearch() {
+    setSearch("");
+    setDebouncedSearch("");
+    setPage(1);
+  }
 
   async function handleDelete(commentId: string) {
     const confirmed = window.confirm("آیا از حذف این کامنت مطمئن هستید؟");
@@ -53,7 +74,7 @@ export function CommentsManager() {
         </Text>
       </div>
 
-      <div
+      <section
         className="
           rounded-xl
           border
@@ -62,25 +83,22 @@ export function CommentsManager() {
           p-4
         "
       >
-        <div className="relative">
-          <FiSearch
-            className="
-              absolute
-              right-5
-              top-1/2
-              -translate-y-1/2
-              text-(--color-text-secondary)
-            "
-          />
+        <SearchInput
+          value={search}
+          onChange={(event) => {
+            setSearch(event.target.value);
 
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="جستجو در متن، کاربر، مکان یا رویداد..."
-            className="pr-12"
-          />
-        </div>
-      </div>
+            setPage(1);
+          }}
+          onDebouncedChange={(value) => {
+            setDebouncedSearch(value);
+
+            setPage(1);
+          }}
+          onClear={clearSearch}
+          placeholder="جستجو در متن، کاربر، مکان یا رویداد..."
+        />
+      </section>
 
       {error && <InlineMessage variant="error">{error}</InlineMessage>}
 
@@ -94,75 +112,119 @@ export function CommentsManager() {
         </InlineMessage>
       )}
 
-      {comments.data && comments.data.length > 0 && (
-        <div className="space-y-4">
-          {comments.data.map((comment) => (
-            <CommentCard
-              key={comment.id}
-              comment={comment}
-              deleting={deleteComment.isPending}
-              onDelete={() => handleDelete(comment.id)}
+      {comments.data && (
+        <>
+          <CommentsList
+            comments={comments.data.items}
+            deleting={deleteComment.isPending}
+            onDelete={handleDelete}
+          />
+
+          {comments.data.pagination.total > 0 && (
+            <Pagination
+              page={comments.data.pagination.page}
+              pageSize={comments.data.pagination.pageSize}
+              totalItems={comments.data.pagination.total}
+              totalPages={comments.data.pagination.totalPages}
+              disabled={comments.isFetching}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPage(1);
+              }}
             />
-          ))}
-        </div>
-      )}
-
-      {comments.data?.length === 0 && (
-        <div
-          className="
-            rounded-xl
-            border
-            border-dashed
-            border-(--color-border)
-            bg-(--color-surface)
-            p-12
-            text-center
-          "
-        >
-          <FiMessageSquare size={32} className="mx-auto mb-3" />
-
-          <Text variant="heading-md">کامنتی پیدا نشد</Text>
-
-          <Text tone="secondary" className="mt-2">
-            هنوز نظری ثبت نشده یا نتیجه‌ای برای جستجو وجود ندارد.
-          </Text>
-        </div>
+          )}
+        </>
       )}
     </div>
   );
 }
 
-type CommentCardProps = {
-  comment: {
+type CommentListItem = {
+  id: string;
+  content: string;
+
+  createdAt: Date | string;
+
+  user: {
     id: string;
-    content: string;
-    createdAt: Date | string;
+    fullName: string;
+    phoneNumber: string;
 
-    user: {
-      id: string;
-      fullName: string;
-      phoneNumber: string;
-      profileImage: string | null;
-      roles: string[];
-    };
+    profileImage: string | null;
 
-    place: {
-      id: string;
-      placeName: string;
-    } | null;
-
-    event: {
-      id: string;
-      eventName: string;
-    } | null;
+    roles: string[];
   };
+
+  place: {
+    id: string;
+    placeName: string;
+  } | null;
+
+  event: {
+    id: string;
+    eventName: string;
+  } | null;
+};
+
+type CommentsListProps = {
+  comments: CommentListItem[];
+
+  deleting: boolean;
+
+  onDelete: (commentId: string) => void;
+};
+
+function CommentsList({ comments, deleting, onDelete }: CommentsListProps) {
+  if (comments.length === 0) {
+    return (
+      <div
+        className="
+          rounded-xl
+          border
+          border-dashed
+          border-(--color-border)
+          bg-(--color-surface)
+          p-12
+          text-center
+        "
+      >
+        <FiMessageSquare size={32} className="mx-auto mb-3" />
+
+        <Text variant="heading-md">کامنتی پیدا نشد</Text>
+
+        <Text tone="secondary" className="mt-2">
+          هنوز نظری ثبت نشده یا نتیجه‌ای برای جستجو وجود ندارد.
+        </Text>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {comments.map((comment) => (
+        <CommentCard
+          key={comment.id}
+          comment={comment}
+          deleting={deleting}
+          onDelete={() => onDelete(comment.id)}
+        />
+      ))}
+    </div>
+  );
+}
+
+function CommentCard({
+  comment,
+  deleting,
+  onDelete,
+}: {
+  comment: CommentListItem;
 
   deleting: boolean;
 
   onDelete: () => void;
-};
-
-function CommentCard({ comment, deleting, onDelete }: CommentCardProps) {
+}) {
   return (
     <article
       className="
@@ -175,9 +237,7 @@ function CommentCard({ comment, deleting, onDelete }: CommentCardProps) {
     >
       <div
         className="
-          flex
-          flex-col
-          gap-4
+          flex flex-col gap-4
           sm:flex-row
           sm:items-start
           sm:justify-between
@@ -262,16 +322,6 @@ function CommentCard({ comment, deleting, onDelete }: CommentCardProps) {
             رویداد: {comment.event.eventName}
           </span>
         )}
-
-        <span
-          className="
-            rounded-full
-            bg-gray-100
-            px-3 py-1.5
-          "
-        >
-          نقش‌ها: {comment.user.roles.join("، ")}
-        </span>
       </div>
     </article>
   );
@@ -287,16 +337,7 @@ function UserAvatar({
 }) {
   if (image) {
     return (
-      <div
-        className="
-          relative
-          h-11
-          w-11
-          shrink-0
-          overflow-hidden
-          rounded-full
-        "
-      >
+      <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full">
         <Image
           src={image}
           alt={name}
@@ -311,9 +352,7 @@ function UserAvatar({
   return (
     <div
       className="
-        flex
-        h-11
-        w-11
+        flex h-11 w-11
         shrink-0
         items-center
         justify-center
@@ -331,8 +370,8 @@ function UserAvatar({
 function formatDate(value: Date | string) {
   return new Intl.DateTimeFormat("fa-IR", {
     year: "numeric",
-    month: "long",
-    day: "numeric",
+    month: "2-digit",
+    day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));

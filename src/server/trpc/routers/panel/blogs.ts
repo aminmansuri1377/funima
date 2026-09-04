@@ -2,7 +2,11 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { adminProcedure, router } from "../../trpc";
-
+import {
+  getPagination,
+  getTotalPages,
+  paginationSchema,
+} from "@/lib/pagination";
 const blogInputSchema = z.object({
   title: z.string().trim().min(2, "عنوان کوتاه است").max(200),
 
@@ -16,57 +20,107 @@ const blogInputSchema = z.object({
 
   isPublished: z.boolean(),
 });
-
+const blogsListInputSchema = paginationSchema.extend({
+  search: z.string().trim().optional(),
+});
 export const panelBlogsRouter = router({
   list: adminProcedure
-
-    .input(
-      z
-        .object({
-          search: z.string().trim().optional(),
-        })
-        .optional(),
-    )
-
+    .input(blogsListInputSchema)
     .query(async ({ ctx, input }) => {
-      const search = input?.search?.trim() || undefined;
+      const search = input.search?.trim() || undefined;
 
-      return ctx.prisma.blog.findMany({
-        where: search
-          ? {
-              OR: [
-                {
-                  title: {
+      const where = search
+        ? {
+            OR: [
+              {
+                title: {
+                  contains: search,
+
+                  mode: "insensitive" as const,
+                },
+              },
+
+              {
+                slug: {
+                  contains: search,
+
+                  mode: "insensitive" as const,
+                },
+              },
+
+              {
+                excerpt: {
+                  contains: search,
+
+                  mode: "insensitive" as const,
+                },
+              },
+
+              {
+                author: {
+                  fullName: {
                     contains: search,
-                    mode: "insensitive",
+
+                    mode: "insensitive" as const,
                   },
                 },
-                {
-                  slug: {
-                    contains: search,
-                    mode: "insensitive",
-                  },
-                },
-              ],
-            }
-          : undefined,
+              },
+            ],
+          }
+        : {};
 
-        include: {
-          author: {
-            select: {
-              id: true,
-              fullName: true,
-              profileImage: true,
+      const { skip, take } = getPagination({
+        page: input.page,
+
+        pageSize: input.pageSize,
+      });
+
+      const [blogs, total] = await Promise.all([
+        ctx.prisma.blog.findMany({
+          where,
+
+          skip,
+          take,
+
+          include: {
+            author: {
+              select: {
+                id: true,
+                fullName: true,
+                profileImage: true,
+              },
             },
           },
-        },
 
-        orderBy: {
-          createdAt: "desc",
+          orderBy: {
+            createdAt: "desc",
+          },
+        }),
+
+        ctx.prisma.blog.count({
+          where,
+        }),
+      ]);
+
+      /*
+       * content برای list لازم نیست،
+       * ولی چون Prisma Json است
+       * همان مقدار را نگه می‌داریم.
+       */
+      return {
+        items: blogs,
+
+        pagination: {
+          page: input.page,
+
+          pageSize: input.pageSize,
+
+          total,
+
+          totalPages: getTotalPages(total, input.pageSize),
         },
-      });
+      };
     }),
-
   getById: adminProcedure
     .input(
       z.object({

@@ -1,6 +1,10 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-
+import {
+  getPagination,
+  getTotalPages,
+  paginationSchema,
+} from "@/lib/pagination";
 import { adminProcedure, router } from "../../trpc";
 import { PlaceType } from "@/generated/prisma/client";
 const createPlaceSchema = z.object({
@@ -18,85 +22,131 @@ const createPlaceSchema = z.object({
 
   description: z.string().trim().optional(),
 });
-
+const placesListInputSchema = paginationSchema.extend({
+  search: z.string().trim().optional(),
+});
 export const panelPlacesRouter = router({
   list: adminProcedure
-    .input(
-      z
-        .object({
-          search: z.string().trim().optional(),
-        })
-        .optional(),
-    )
+    .input(placesListInputSchema)
     .query(async ({ ctx, input }) => {
-      const search = input?.search?.trim() || undefined;
+      const search = input.search?.trim() || undefined;
 
-      return ctx.prisma.place.findMany({
-        where: search
-          ? {
-              OR: [
-                {
-                  placeName: {
-                    contains: search,
-                    mode: "insensitive",
-                  },
+      const where = search
+        ? {
+            OR: [
+              {
+                placeName: {
+                  contains: search,
+
+                  mode: "insensitive" as const,
                 },
-                {
-                  placeCity: {
-                    contains: search,
-                    mode: "insensitive",
-                  },
+              },
+
+              {
+                placeCity: {
+                  contains: search,
+
+                  mode: "insensitive" as const,
                 },
-                {
-                  host: {
-                    user: {
-                      fullName: {
-                        contains: search,
-                        mode: "insensitive",
-                      },
+              },
+
+              {
+                host: {
+                  user: {
+                    fullName: {
+                      contains: search,
+
+                      mode: "insensitive" as const,
                     },
                   },
                 },
-              ],
-            }
-          : undefined,
+              },
 
-        include: {
-          host: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  fullName: true,
-                  phoneNumber: true,
+              {
+                host: {
+                  user: {
+                    phoneNumber: {
+                      contains: search,
+                    },
+                  },
                 },
+              },
+            ],
+          }
+        : {};
+
+      const { skip, take } = getPagination({
+        page: input.page,
+
+        pageSize: input.pageSize,
+      });
+
+      const [items, total] = await Promise.all([
+        ctx.prisma.place.findMany({
+          where,
+
+          skip,
+          take,
+
+          include: {
+            host: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    fullName: true,
+                    phoneNumber: true,
+                  },
+                },
+              },
+            },
+
+            images: {
+              orderBy: {
+                sortOrder: "asc",
+              },
+
+              take: 1,
+
+              select: {
+                id: true,
+                url: true,
+                sortOrder: true,
+              },
+            },
+
+            _count: {
+              select: {
+                events: true,
+                comments: true,
               },
             },
           },
 
-          images: {
-            orderBy: {
-              sortOrder: "asc",
-            },
-            take: 1,
+          orderBy: {
+            createdAt: "desc",
           },
+        }),
 
-          _count: {
-            select: {
-              events: true,
-              comments: true,
-            },
-          },
+        ctx.prisma.place.count({
+          where,
+        }),
+      ]);
+
+      return {
+        items,
+
+        pagination: {
+          page: input.page,
+
+          pageSize: input.pageSize,
+
+          total,
+
+          totalPages: getTotalPages(total, input.pageSize),
         },
-
-        orderBy: {
-          createdAt: "desc",
-        },
-
-        take: 100,
-      });
+      };
     }),
-
   availableHosts: adminProcedure.query(async ({ ctx }) => {
     return ctx.prisma.host.findMany({
       where: {

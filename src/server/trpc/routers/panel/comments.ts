@@ -2,102 +2,135 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { adminProcedure, router } from "../../trpc";
-
+import {
+  getPagination,
+  getTotalPages,
+  paginationSchema,
+} from "@/lib/pagination";
+const commentsListInputSchema = paginationSchema.extend({
+  search: z.string().trim().optional(),
+});
 export const panelCommentsRouter = router({
   list: adminProcedure
-    .input(
-      z
-        .object({
-          search: z.string().trim().optional(),
-        })
-        .optional(),
-    )
+    .input(commentsListInputSchema)
     .query(async ({ ctx, input }) => {
-      const search = input?.search?.trim() || undefined;
+      const search = input.search?.trim() || undefined;
 
-      return ctx.prisma.comment.findMany({
-        where: search
-          ? {
-              OR: [
-                {
-                  content: {
+      const where = search
+        ? {
+            OR: [
+              {
+                content: {
+                  contains: search,
+
+                  mode: "insensitive" as const,
+                },
+              },
+
+              {
+                user: {
+                  fullName: {
                     contains: search,
-                    mode: "insensitive",
+
+                    mode: "insensitive" as const,
                   },
                 },
+              },
 
-                {
-                  user: {
-                    fullName: {
-                      contains: search,
-                      mode: "insensitive",
-                    },
+              {
+                user: {
+                  phoneNumber: {
+                    contains: search,
                   },
                 },
+              },
 
-                {
-                  user: {
-                    phoneNumber: {
-                      contains: search,
-                    },
+              {
+                place: {
+                  placeName: {
+                    contains: search,
+
+                    mode: "insensitive" as const,
                   },
                 },
+              },
 
-                {
-                  place: {
-                    placeName: {
-                      contains: search,
-                      mode: "insensitive",
-                    },
+              {
+                event: {
+                  eventName: {
+                    contains: search,
+
+                    mode: "insensitive" as const,
                   },
                 },
+              },
+            ],
+          }
+        : {};
 
-                {
-                  event: {
-                    eventName: {
-                      contains: search,
-                      mode: "insensitive",
-                    },
-                  },
-                },
-              ],
-            }
-          : undefined,
+      const { skip, take } = getPagination({
+        page: input.page,
 
-        include: {
-          user: {
-            select: {
-              id: true,
-              fullName: true,
-              phoneNumber: true,
-              profileImage: true,
-              roles: true,
-            },
-          },
-
-          place: {
-            select: {
-              id: true,
-              placeName: true,
-            },
-          },
-
-          event: {
-            select: {
-              id: true,
-              eventName: true,
-            },
-          },
-        },
-
-        orderBy: {
-          createdAt: "desc",
-        },
-
-        take: 200,
+        pageSize: input.pageSize,
       });
-    }),
 
+      const [items, total] = await Promise.all([
+        ctx.prisma.comment.findMany({
+          where,
+
+          skip,
+          take,
+
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                phoneNumber: true,
+                profileImage: true,
+                roles: true,
+              },
+            },
+
+            place: {
+              select: {
+                id: true,
+                placeName: true,
+              },
+            },
+
+            event: {
+              select: {
+                id: true,
+                eventName: true,
+              },
+            },
+          },
+
+          orderBy: {
+            createdAt: "desc",
+          },
+        }),
+
+        ctx.prisma.comment.count({
+          where,
+        }),
+      ]);
+
+      return {
+        items,
+
+        pagination: {
+          page: input.page,
+
+          pageSize: input.pageSize,
+
+          total,
+
+          totalPages: getTotalPages(total, input.pageSize),
+        },
+      };
+    }),
   delete: adminProcedure
     .input(
       z.object({

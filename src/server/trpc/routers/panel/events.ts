@@ -2,7 +2,11 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { adminProcedure, router } from "../../trpc";
-
+import {
+  getPagination,
+  getTotalPages,
+  paginationSchema,
+} from "@/lib/pagination";
 const eventInputSchema = z.object({
   placeId: z.string().min(1, "مکان الزامی است"),
 
@@ -22,85 +26,122 @@ const eventInputSchema = z.object({
 
   suitable: z.string().trim().optional(),
 });
-
+const eventsListInputSchema = paginationSchema.extend({
+  search: z.string().trim().optional(),
+});
 export const panelEventsRouter = router({
   list: adminProcedure
-    .input(
-      z
-        .object({
-          search: z.string().trim().optional(),
-        })
-        .optional(),
-    )
+    .input(eventsListInputSchema)
     .query(async ({ ctx, input }) => {
-      const search = input?.search?.trim() || undefined;
+      const search = input.search?.trim() || undefined;
 
-      const events = await ctx.prisma.event.findMany({
-        where: search
-          ? {
-              OR: [
-                {
-                  eventName: {
+      const where = search
+        ? {
+            OR: [
+              {
+                eventName: {
+                  contains: search,
+
+                  mode: "insensitive" as const,
+                },
+              },
+
+              {
+                place: {
+                  placeName: {
                     contains: search,
-                    mode: "insensitive",
+
+                    mode: "insensitive" as const,
                   },
                 },
-                {
-                  place: {
-                    placeName: {
-                      contains: search,
-                      mode: "insensitive",
-                    },
+              },
+
+              {
+                place: {
+                  placeCity: {
+                    contains: search,
+
+                    mode: "insensitive" as const,
                   },
                 },
-              ],
-            }
-          : undefined,
+              },
+            ],
+          }
+        : {};
 
-        include: {
-          place: {
-            select: {
-              id: true,
-              placeName: true,
-              placeCity: true,
+      const { skip, take } = getPagination({
+        page: input.page,
 
-              images: {
-                orderBy: {
-                  sortOrder: "asc",
+        pageSize: input.pageSize,
+      });
+
+      const [events, total] = await Promise.all([
+        ctx.prisma.event.findMany({
+          where,
+
+          skip,
+          take,
+
+          include: {
+            place: {
+              select: {
+                id: true,
+                placeName: true,
+                placeCity: true,
+
+                images: {
+                  orderBy: {
+                    sortOrder: "asc",
+                  },
+
+                  take: 1,
+
+                  select: {
+                    url: true,
+                  },
                 },
+              },
+            },
 
-                take: 1,
-
-                select: {
-                  url: true,
-                },
+            _count: {
+              select: {
+                plans: true,
+                comments: true,
+                savedBy: true,
               },
             },
           },
 
-          _count: {
-            select: {
-              plans: true,
-              comments: true,
-              savedBy: true,
-            },
+          orderBy: {
+            date: "desc",
           },
-        },
+        }),
 
-        orderBy: {
-          date: "desc",
-        },
+        ctx.prisma.event.count({
+          where,
+        }),
+      ]);
 
-        take: 100,
-      });
-
-      return events.map((event) => ({
+      const items = events.map((event) => ({
         ...event,
 
         price: event.price?.toString() ?? null,
       }));
-    }),
 
+      return {
+        items,
+
+        pagination: {
+          page: input.page,
+
+          pageSize: input.pageSize,
+
+          total,
+
+          totalPages: getTotalPages(total, input.pageSize),
+        },
+      };
+    }),
   places: adminProcedure.query(async ({ ctx }) => {
     return ctx.prisma.place.findMany({
       select: {

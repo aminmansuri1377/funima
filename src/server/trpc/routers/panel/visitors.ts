@@ -1,31 +1,36 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import {
+  getPagination,
+  getTotalPages,
+  paginationSchema,
+} from "@/lib/pagination";
+
 import { UserRole } from "@/generated/prisma/client";
 
 import { adminProcedure, router } from "../../trpc";
 
+const visitorsListInputSchema = paginationSchema.extend({
+  search: z.string().trim().optional(),
+});
+
 export const panelVisitorsRouter = router({
   list: adminProcedure
-    .input(
-      z
-        .object({
-          search: z.string().trim().optional(),
-        })
-        .optional(),
-    )
+    .input(visitorsListInputSchema)
     .query(async ({ ctx, input }) => {
-      const search = input?.search?.trim() || undefined;
+      const search = input.search?.trim() || undefined;
 
-      return ctx.prisma.visitor.findMany({
-        where: search
+      const where = {
+        ...(search
           ? {
               user: {
                 OR: [
                   {
                     fullName: {
                       contains: search,
-                      mode: "insensitive",
+
+                      mode: "insensitive" as const,
                     },
                   },
                   {
@@ -36,35 +41,68 @@ export const panelVisitorsRouter = router({
                 ],
               },
             }
-          : undefined,
+          : {}),
+      };
 
-        include: {
-          user: {
-            select: {
-              id: true,
-              fullName: true,
-              phoneNumber: true,
-              profileImage: true,
-              roles: true,
-              createdAt: true,
+      const { skip, take } = getPagination({
+        page: input.page,
 
-              _count: {
-                select: {
-                  comments: true,
-                  savedPlaces: true,
-                  savedEvents: true,
+        pageSize: input.pageSize,
+      });
+
+      const [items, total] = await Promise.all([
+        ctx.prisma.visitor.findMany({
+          where,
+
+          skip,
+          take,
+
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                phoneNumber: true,
+                profileImage: true,
+                roles: true,
+                createdAt: true,
+
+                _count: {
+                  select: {
+                    comments: true,
+
+                    savedPlaces: true,
+
+                    savedEvents: true,
+                  },
                 },
               },
             },
           },
-        },
 
-        orderBy: {
-          createdAt: "desc",
-        },
+          orderBy: {
+            createdAt: "desc",
+          },
+        }),
 
-        take: 100,
-      });
+        ctx.prisma.visitor.count({
+          where,
+        }),
+      ]);
+
+      return {
+        items,
+
+        pagination: {
+          page: input.page,
+
+          pageSize: input.pageSize,
+
+          total,
+
+          totalPages: getTotalPages(total, input.pageSize),
+        },
+      };
     }),
 
   delete: adminProcedure
@@ -74,94 +112,51 @@ export const panelVisitorsRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await ctx.prisma.$transaction(async (tx) => {
-        const visitor = await tx.visitor.findUnique({
-          where: {
-            id: input.visitorId,
-          },
+      const visitor = await ctx.prisma.visitor.findUnique({
+        where: {
+          id: input.visitorId,
+        },
 
-          include: {
-            user: true,
+        include: {
+          user: true,
+        },
+      });
+
+      if (!visitor) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+
+          message: "بازدیدکننده پیدا نشد.",
+        });
+      }
+
+      const remainingRoles = visitor.user.roles.filter(
+        (role) => role !== UserRole.VISITOR,
+      );
+
+      await ctx.prisma.visitor.delete({
+        where: {
+          id: visitor.id,
+        },
+      });
+
+      if (remainingRoles.length === 0) {
+        await ctx.prisma.user.delete({
+          where: {
+            id: visitor.userId,
           },
         });
-
-        if (!visitor) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "بازدیدکننده پیدا نشد.",
-          });
-        }
-
-        const remainingRoles = visitor.user.roles.filter(
-          (role) => role !== UserRole.VISITOR,
-        );
-
-        /*
-         * Audit را قبل از حذف می‌سازیم
-         * چون ممکن است خود User هم حذف شود.
-         */
-        await tx.auditLog.create({
-          data: {
-            adminId: ctx.session.user.id,
-
-            action: "DELETE_VISITOR",
-
-            entity: "Visitor",
-
-            entityId: visitor.id,
-
-            metadata: {
-              userId: visitor.user.id,
-
-              phoneNumber: visitor.user.phoneNumber,
-
-              remainingRoles: remainingRoles,
-            },
-          },
-        });
-
-        /*
-         * اگر VISITOR تنها role کاربر باشد،
-         * User هم حذف می‌شود.
-         *
-         * به دلیل Cascade:
-         * Visitor
-         * Comments
-         * SavedPlaces
-         * SavedEvents
-         * هم حذف می‌شوند.
-         */
-        if (remainingRoles.length === 0) {
-          await tx.user.delete({
-            where: {
-              id: visitor.user.id,
-            },
-          });
-
-          return;
-        }
-
-        /*
-         * اگر مثلاً کاربر HOST یا ADMIN هم باشد،
-         * فقط Visitor profile و role VISITOR
-         * را حذف می‌کنیم.
-         */
-        await tx.visitor.delete({
+      } else {
+        await ctx.prisma.user.update({
           where: {
-            id: visitor.id,
-          },
-        });
-
-        await tx.user.update({
-          where: {
-            id: visitor.user.id,
+            id: visitor.userId,
           },
 
           data: {
             roles: remainingRoles,
           },
         });
-      });
+      }
 
       return {
         success: true,

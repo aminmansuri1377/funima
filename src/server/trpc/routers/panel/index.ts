@@ -1,5 +1,6 @@
 import { router } from "../../trpc";
 import { panelAdminsRouter } from "./admins";
+import { panelAuditLogsRouter } from "./audit-logs";
 import { panelBlogsRouter } from "./blogs";
 import { panelCommentsRouter } from "./comments";
 import { panelEventsRouter } from "./events";
@@ -21,4 +22,5 @@ export const panelRouter = router({
   events: panelEventsRouter,
   comments: panelCommentsRouter,
   blogs: panelBlogsRouter,
+  auditLogs: panelAuditLogsRouter,
 });

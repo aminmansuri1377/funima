@@ -4,53 +4,53 @@ import Image from "next/image";
 
 import { useState } from "react";
 
-import { FiMapPin, FiPlus, FiSearch, FiTrash2 } from "react-icons/fi";
-import { FiEdit2 } from "react-icons/fi";
+import { useRouter } from "next/navigation";
+
+import { FiEdit2, FiMapPin, FiPlus, FiTrash2 } from "react-icons/fi";
+
 import {
   Button,
   FormField,
   InlineMessage,
   Input,
+  Pagination,
+  SearchInput,
   Text,
   Textarea,
 } from "@/components/ui";
 
-import { trpc } from "@/trpc/client";
-type PlaceTypeValue = "CAFE" | "RESTAURANT" | "CAFE_GAME" | "GALLERY" | "OTHER";
+import {
+  PLACE_TYPE_OPTIONS,
+  type PlaceTypeValue,
+} from "@/lib/place/place-type";
 
-const PLACE_TYPE_OPTIONS: Array<{
-  value: PlaceTypeValue;
-  label: string;
-}> = [
-  {
-    value: "CAFE",
-    label: "کافه",
-  },
-  {
-    value: "RESTAURANT",
-    label: "رستوران",
-  },
-  {
-    value: "CAFE_GAME",
-    label: "کافه بازی",
-  },
-  {
-    value: "GALLERY",
-    label: "گالری",
-  },
-  {
-    value: "OTHER",
-    label: "سایر",
-  },
-];
+import { trpc } from "@/trpc/client";
+
 export function PlacesManager() {
+  const router = useRouter();
+
   const [search, setSearch] = useState("");
+
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  const [page, setPage] = useState(1);
+
+  const [pageSize, setPageSize] = useState(20);
 
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   const places = trpc.panel.places.list.useQuery({
-    search: search.trim() || undefined,
+    page,
+    pageSize,
+
+    search: debouncedSearch.trim() || undefined,
   });
+
+  function handleClearSearch() {
+    setSearch("");
+    setDebouncedSearch("");
+    setPage(1);
+  }
 
   return (
     <div className="space-y-6">
@@ -84,6 +84,9 @@ export function PlacesManager() {
         <CreatePlaceForm
           onCreated={() => {
             setShowCreateForm(false);
+
+            setPage(1);
+
             void places.refetch();
           }}
         />
@@ -97,22 +100,21 @@ export function PlacesManager() {
           p-4
         "
       >
-        <div className="relative">
-          <FiSearch
-            className="
-              absolute right-5 top-1/2
-              -translate-y-1/2
-              text-(--color-text-secondary)
-            "
-          />
+        <SearchInput
+          value={search}
+          onChange={(event) => {
+            setSearch(event.target.value);
 
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="جستجو با نام مکان، شهر یا میزبان..."
-            className="pr-12"
-          />
-        </div>
+            setPage(1);
+          }}
+          onDebouncedChange={(value) => {
+            setDebouncedSearch(value);
+
+            setPage(1);
+          }}
+          onClear={handleClearSearch}
+          placeholder="جستجو با نام مکان، شهر یا میزبان..."
+        />
       </div>
 
       {places.isPending && (
@@ -126,11 +128,33 @@ export function PlacesManager() {
       )}
 
       {places.data && (
-        <PlacesTable places={places.data} onChanged={() => places.refetch()} />
+        <>
+          <PlacesTable
+            places={places.data.items}
+            onChanged={() => places.refetch()}
+            onEdit={(placeId) => router.push(`/panel/places/${placeId}`)}
+          />
+
+          {places.data.pagination.total > 0 && (
+            <Pagination
+              page={places.data.pagination.page}
+              pageSize={places.data.pagination.pageSize}
+              totalItems={places.data.pagination.total}
+              totalPages={places.data.pagination.totalPages}
+              disabled={places.isFetching}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPage(1);
+              }}
+            />
+          )}
+        </>
       )}
     </div>
   );
 }
+
 function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
   const hosts = trpc.panel.places.availableHosts.useQuery();
 
@@ -143,6 +167,7 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
   const [placePhone, setPlacePhone] = useState("");
 
   const [placeType, setPlaceType] = useState<PlaceTypeValue>("CAFE");
+
   const [placeCity, setPlaceCity] = useState("");
 
   const [instagramId, setInstagramId] = useState("");
@@ -204,8 +229,10 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
             className="
               h-14 w-full
               rounded-(--radius-full)
-              border border-(--color-border-strong)
-              bg-white px-5
+              border
+              border-(--color-border-strong)
+              bg-white
+              px-5
               outline-none
               focus:border-(--color-brand-500)
             "
@@ -214,7 +241,9 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
 
             {hosts.data?.map((host) => (
               <option key={host.id} value={host.id}>
-                {host.user.fullName} - {host.user.phoneNumber}
+                {host.user.fullName}
+                {" - "}
+                {host.user.phoneNumber}
               </option>
             ))}
           </select>
@@ -225,6 +254,7 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
             value={placeName}
             onChange={(event) => setPlaceName(event.target.value)}
             placeholder="نام کافه"
+            disabled={createPlace.isPending}
           />
         </FormField>
 
@@ -236,6 +266,7 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
             dir="ltr"
             className="text-left"
             placeholder="021..."
+            disabled={createPlace.isPending}
           />
         </FormField>
 
@@ -247,22 +278,22 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
             }
             disabled={createPlace.isPending}
             className="
-      h-14 w-full
-      rounded-(--radius-full)
-      border
-      border-(--color-border-strong)
-      bg-(--color-surface)
-      px-5
-      text-[16px]
-      text-(--color-text-primary)
-      outline-none
-      transition-colors
-      focus:border-(--color-brand-500)
-      focus:ring-2
-      focus:ring-(--color-brand-100)
-      disabled:cursor-not-allowed
-      disabled:bg-gray-100
-    "
+              h-14 w-full
+              rounded-(--radius-full)
+              border
+              border-(--color-border-strong)
+              bg-(--color-surface)
+              px-5
+              text-[16px]
+              text-(--color-text-primary)
+              outline-none
+              transition-colors
+              focus:border-(--color-brand-500)
+              focus:ring-2
+              focus:ring-(--color-brand-100)
+              disabled:cursor-not-allowed
+              disabled:bg-gray-100
+            "
           >
             {PLACE_TYPE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -277,6 +308,7 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
             value={placeCity}
             onChange={(event) => setPlaceCity(event.target.value)}
             placeholder="تهران"
+            disabled={createPlace.isPending}
           />
         </FormField>
 
@@ -287,6 +319,7 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
             dir="ltr"
             className="text-left"
             placeholder="@..."
+            disabled={createPlace.isPending}
           />
         </FormField>
       </div>
@@ -297,6 +330,7 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
           onChange={(event) => setDescription(event.target.value)}
           placeholder="توضیحات مکان..."
           resize={false}
+          disabled={createPlace.isPending}
         />
       </FormField>
 
@@ -318,12 +352,37 @@ function CreatePlaceForm({ onCreated }: { onCreated: () => void }) {
     </form>
   );
 }
-type PlacesTableProps = {
-  places: Array<any>;
-  onChanged: () => void | Promise<unknown>;
+
+type PlaceListItem = {
+  id: string;
+  placeName: string;
+  placeCity: string | null;
+
+  host: {
+    user: {
+      fullName: string;
+    };
+  };
+
+  images: Array<{
+    url: string;
+  }>;
+
+  _count: {
+    events: number;
+    comments: number;
+  };
 };
 
-function PlacesTable({ places, onChanged }: PlacesTableProps) {
+type PlacesTableProps = {
+  places: PlaceListItem[];
+
+  onChanged: () => void | Promise<unknown>;
+
+  onEdit: (placeId: string) => void;
+};
+
+function PlacesTable({ places, onChanged, onEdit }: PlacesTableProps) {
   const [error, setError] = useState<string | null>(null);
 
   const deletePlace = trpc.panel.places.delete.useMutation();
@@ -357,13 +416,15 @@ function PlacesTable({ places, onChanged }: PlacesTableProps) {
           rounded-xl
           border border-dashed
           border-(--color-border)
-          bg-white p-10 text-center
+          bg-white
+          p-10
+          text-center
         "
       >
         <Text variant="heading-md">مکانی پیدا نشد</Text>
 
         <Text tone="secondary" className="mt-2">
-          هنوز مکانی ثبت نشده است.
+          هنوز مکانی ثبت نشده یا نتیجه‌ای برای جستجو وجود ندارد.
         </Text>
       </div>
     );
@@ -421,33 +482,35 @@ function PlacesTable({ places, onChanged }: PlacesTableProps) {
 
                   <td className="px-5 py-4">{place.host.user.fullName}</td>
 
-                  <td className="px-5 py-4">{place.placeCity}</td>
+                  <td className="px-5 py-4">{place.placeCity ?? "—"}</td>
 
                   <td className="px-5 py-4">{place._count.events}</td>
 
                   <td className="px-5 py-4">{place._count.comments}</td>
 
                   <td className="px-5 py-4">
-                    <Button
-                      size="sm"
-                      variant="tertiary"
-                      startIcon={<FiTrash2 />}
-                      disabled={deletePlace.isPending}
-                      onClick={() => handleDelete(place.id, place.placeName)}
-                    >
-                      حذف
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      startIcon={<FiEdit2 />}
-                      onClick={() => {
-                        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-                        window.location.href = `/panel/places/${place.id}`;
-                      }}
-                    >
-                      ویرایش
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        startIcon={<FiEdit2 />}
+                        onClick={() => onEdit(place.id)}
+                      >
+                        ویرایش
+                      </Button>
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="tertiary"
+                        startIcon={<FiTrash2 />}
+                        disabled={deletePlace.isPending}
+                        onClick={() => handleDelete(place.id, place.placeName)}
+                      >
+                        حذف
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -471,7 +534,8 @@ function PlaceThumbnail({
       <div
         className="
           flex h-12 w-12
-          shrink-0 items-center
+          shrink-0
+          items-center
           justify-center
           rounded-md
           bg-(--color-brand-50)
@@ -487,7 +551,8 @@ function PlaceThumbnail({
     <div
       className="
         relative h-12 w-12
-        shrink-0 overflow-hidden
+        shrink-0
+        overflow-hidden
         rounded-md
       "
     >

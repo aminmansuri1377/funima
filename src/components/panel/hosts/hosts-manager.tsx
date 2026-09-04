@@ -2,20 +2,43 @@
 
 import { useState } from "react";
 
-import { FiPlus, FiSearch, FiTrash2 } from "react-icons/fi";
+import { FiPlus, FiTrash2 } from "react-icons/fi";
 
-import { Button, FormField, InlineMessage, Input, Text } from "@/components/ui";
+import {
+  Button,
+  FormField,
+  InlineMessage,
+  Input,
+  Pagination,
+  SearchInput,
+  Text,
+} from "@/components/ui";
 
 import { trpc } from "@/trpc/client";
 
 export function HostsManager() {
   const [search, setSearch] = useState("");
 
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  const [page, setPage] = useState(1);
+
+  const [pageSize, setPageSize] = useState(20);
+
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   const hosts = trpc.panel.hosts.list.useQuery({
-    search: search.trim() || undefined,
+    page,
+    pageSize,
+
+    search: debouncedSearch.trim() || undefined,
   });
+
+  function handleClearSearch() {
+    setSearch("");
+    setDebouncedSearch("");
+    setPage(1);
+  }
 
   return (
     <div className="space-y-6">
@@ -50,6 +73,8 @@ export function HostsManager() {
           onCreated={() => {
             setShowCreateForm(false);
 
+            setPage(1);
+
             void hosts.refetch();
           }}
         />
@@ -63,23 +88,21 @@ export function HostsManager() {
           p-4
         "
       >
-        <div className="relative">
-          <FiSearch
-            className="
-              absolute
-              right-5 top-1/2
-              -translate-y-1/2
-              text-(--color-text-secondary)
-            "
-          />
+        <SearchInput
+          value={search}
+          onChange={(event) => {
+            setSearch(event.target.value);
 
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="جستجو با نام یا شماره موبایل..."
-            className="pr-12"
-          />
-        </div>
+            setPage(1);
+          }}
+          onDebouncedChange={(value) => {
+            setDebouncedSearch(value);
+
+            setPage(1);
+          }}
+          onClear={handleClearSearch}
+          placeholder="جستجو با نام یا شماره موبایل..."
+        />
       </div>
 
       {hosts.isPending && (
@@ -93,7 +116,27 @@ export function HostsManager() {
       )}
 
       {hosts.data && (
-        <HostsTable hosts={hosts.data} onChanged={() => hosts.refetch()} />
+        <>
+          <HostsTable
+            hosts={hosts.data.items}
+            onChanged={() => hosts.refetch()}
+          />
+
+          {hosts.data.pagination.total > 0 && (
+            <Pagination
+              page={hosts.data.pagination.page}
+              pageSize={hosts.data.pagination.pageSize}
+              totalItems={hosts.data.pagination.total}
+              totalPages={hosts.data.pagination.totalPages}
+              disabled={hosts.isFetching}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPage(1);
+              }}
+            />
+          )}
+        </>
       )}
     </div>
   );
@@ -274,12 +317,7 @@ function HostsTable({ hosts, onChanged }: HostsTableProps) {
       >
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px]">
-            <thead
-              className="
-                bg-gray-50
-                text-right
-              "
-            >
+            <thead className="bg-gray-50 text-right">
               <tr>
                 <th className="px-5 py-4 text-sm font-semibold">نام</th>
 
@@ -320,6 +358,7 @@ function HostsTable({ hosts, onChanged }: HostsTableProps) {
 
                   <td className="px-5 py-4">
                     <Button
+                      type="button"
                       variant="tertiary"
                       size="sm"
                       startIcon={<FiTrash2 />}

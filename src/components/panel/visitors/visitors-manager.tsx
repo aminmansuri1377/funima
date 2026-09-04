@@ -1,25 +1,64 @@
 "use client";
 
+import Image from "next/image";
+
 import { useState } from "react";
 
 import {
-  FiMessageSquare,
-  FiSearch,
   FiBookmark,
   FiCalendar,
+  FiMessageSquare,
   FiTrash2,
 } from "react-icons/fi";
-import Image from "next/image";
-import { Button, InlineMessage, Input, Text } from "@/components/ui";
+
+import {
+  Button,
+  InlineMessage,
+  Pagination,
+  SearchInput,
+  Text,
+} from "@/components/ui";
 
 import { trpc } from "@/trpc/client";
 
 export function VisitorsManager() {
   const [search, setSearch] = useState("");
 
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  const [page, setPage] = useState(1);
+
+  const [pageSize, setPageSize] = useState(20);
+
   const visitors = trpc.panel.visitors.list.useQuery({
-    search: search.trim() || undefined,
+    page,
+    pageSize,
+
+    search: debouncedSearch.trim() || undefined,
   });
+
+  function handleSearchChange(event: React.ChangeEvent<HTMLInputElement>) {
+    setSearch(event.target.value);
+
+    /*
+     * اگر کاربر روی مثلاً صفحه 7 باشد
+     * و Search جدید بزند، باید به
+     * صفحه اول برگردد.
+     */
+    setPage(1);
+  }
+
+  function handleDebouncedSearch(value: string) {
+    setDebouncedSearch(value);
+
+    setPage(1);
+  }
+
+  function handleClearSearch() {
+    setSearch("");
+    setDebouncedSearch("");
+    setPage(1);
+  }
 
   return (
     <div className="space-y-6">
@@ -41,23 +80,13 @@ export function VisitorsManager() {
           p-4
         "
       >
-        <div className="relative">
-          <FiSearch
-            className="
-              absolute
-              right-5 top-1/2
-              -translate-y-1/2
-              text-(--color-text-secondary)
-            "
-          />
-
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="جستجو با نام یا شماره موبایل..."
-            className="pr-12"
-          />
-        </div>
+        <SearchInput
+          value={search}
+          onChange={handleSearchChange}
+          onDebouncedChange={handleDebouncedSearch}
+          onClear={handleClearSearch}
+          placeholder="جستجو با نام یا شماره موبایل..."
+        />
       </div>
 
       {visitors.isPending && (
@@ -71,10 +100,27 @@ export function VisitorsManager() {
       )}
 
       {visitors.data && (
-        <VisitorsTable
-          visitors={visitors.data}
-          onChanged={() => visitors.refetch()}
-        />
+        <>
+          <VisitorsTable
+            visitors={visitors.data.items}
+            onChanged={() => visitors.refetch()}
+          />
+
+          {visitors.data.pagination.total > 0 && (
+            <Pagination
+              page={visitors.data.pagination.page}
+              pageSize={visitors.data.pagination.pageSize}
+              totalItems={visitors.data.pagination.total}
+              totalPages={visitors.data.pagination.totalPages}
+              disabled={visitors.isFetching}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPage(1);
+              }}
+            />
+          )}
+        </>
       )}
     </div>
   );
@@ -142,7 +188,8 @@ function VisitorsTable({ visitors, onChanged }: VisitorsTableProps) {
           border border-dashed
           border-(--color-border)
           bg-(--color-surface)
-          p-10 text-center
+          p-10
+          text-center
         "
       >
         <Text variant="heading-md">بازدیدکننده‌ای پیدا نشد</Text>
@@ -209,9 +256,7 @@ function VisitorsTable({ visitors, onChanged }: VisitorsTableProps) {
                         image={visitor.user.profileImage}
                       />
 
-                      <div>
-                        <Text variant="label-md">{visitor.user.fullName}</Text>
-                      </div>
+                      <Text variant="label-md">{visitor.user.fullName}</Text>
                     </div>
                   </td>
 
@@ -249,6 +294,7 @@ function VisitorsTable({ visitors, onChanged }: VisitorsTableProps) {
 
                   <td className="px-5 py-4">
                     <Button
+                      type="button"
                       variant="tertiary"
                       size="sm"
                       startIcon={<FiTrash2 />}
@@ -276,7 +322,8 @@ function TableHead({ children }: { children: React.ReactNode }) {
       className="
         whitespace-nowrap
         px-5 py-4
-        text-sm font-semibold
+        text-sm
+        font-semibold
       "
     >
       {children}
@@ -311,7 +358,8 @@ function VisitorAvatar({
     <div
       className="
         flex h-10 w-10
-        items-center justify-center
+        items-center
+        justify-center
         rounded-full
         bg-(--color-brand-50)
         font-bold
