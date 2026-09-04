@@ -1,29 +1,86 @@
 import Link from "next/link";
 
+import { redirect } from "next/navigation";
+
 import { auth } from "@/auth";
 
-import { LogoutButton } from "@/components/auth/logout-button";
+import { VisitorHomePage } from "@/components/visitor";
 
 export default async function HomePage() {
   const session = await auth();
 
-  return (
-    <main>
-      <h1>Funima</h1>
+  /*
+   * هنوز وارد نشده:
+   * فعلاً یک entry ساده نگه می‌داریم.
+   * بعداً اگر خواستیم Landing عمومی جدا طراحی می‌کنیم.
+   */
+  if (!session?.user?.id || !session.user.activeRole) {
+    return (
+      <main
+        className="
+          flex
+          min-h-screen
+          items-center
+          justify-center
+          bg-[#f7f7f7]
+          px-4
+        "
+      >
+        <div
+          className="
+            w-full
+            max-w-md
+            rounded-[30px]
+            bg-white
+            p-8
+            text-center
+            shadow-[0_10px_40px_rgba(0,0,0,0.05)]
+          "
+        >
+          <h1 className="text-3xl font-bold">فونیما</h1>
 
-      {session?.user ? (
-        <>
-          <p>ورود با نقش: {session.user.activeRole}</p>
+          <p
+            className="
+              mt-3
+              leading-7
+              text-(--color-text-secondary)
+            "
+          >
+            مکان‌ها و تجربه‌های جذاب اطرافت را پیدا کن.
+          </p>
 
-          <p>شماره: {session.user.phoneNumber}</p>
+          <Link
+            href="/auth"
+            className="
+              mt-7
+              inline-flex
+              min-h-12
+              items-center
+              justify-center
+              rounded-full
+              bg-(--color-brand-500)
+              px-7
+              font-semibold
+              text-white
+            "
+          >
+            ورود / ثبت نام
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
-          <p>نقش‌های حساب: {session.user.roles.join(", ")}</p>
+  /*
+   * Root فقط Home نقش Visitor است.
+   */
+  if (session.user.activeRole === "HOST") {
+    redirect("/host");
+  }
 
-          <LogoutButton />
-        </>
-      ) : (
-        <Link href="/auth">ورود / ثبت نام</Link>
-      )}
-    </main>
-  );
+  if (session.user.activeRole === "ADMIN") {
+    redirect("/panel");
+  }
+
+  return <VisitorHomePage />;
 }

@@ -16,13 +16,11 @@ const commentContentSchema = z
   .min(2, "متن نظر کوتاه است.")
   .max(2000, "متن نظر بیش از حد طولانی است.");
 
-const createCommentSchema = z
+const commentTargetSchema = z
   .object({
     placeId: z.string().min(1).optional(),
 
     eventId: z.string().min(1).optional(),
-
-    content: commentContentSchema,
   })
   .superRefine((value, ctx) => {
     const hasPlace = Boolean(value.placeId);
@@ -35,12 +33,147 @@ const createCommentSchema = z
 
         path: ["placeId"],
 
-        message: "نظر باید فقط برای یک مکان یا یک ایونت ثبت شود.",
+        message: "باید فقط یک مکان یا یک ایونت مشخص شود.",
       });
     }
   });
 
+const createCommentSchema = commentTargetSchema.and(
+  z.object({
+    content: commentContentSchema,
+  }),
+);
+
+const commentsListSchema = paginationSchema.and(commentTargetSchema);
+
 export const visitorCommentsRouter = router({
+  /*
+   * ========================================
+   * COMMENTS FOR PLACE / EVENT
+   * ========================================
+   *
+   * این query برای Single Place و
+   * Single Event قابل استفاده است.
+   */
+  list: visitorProcedure
+    .input(commentsListSchema)
+    .query(async ({ ctx, input }) => {
+      const where = input.placeId
+        ? {
+            placeId: input.placeId,
+          }
+        : {
+            eventId: input.eventId,
+          };
+
+      /*
+       * قبل از query مطمئن می‌شویم target
+       * واقعی وجود دارد.
+       */
+      if (input.placeId) {
+        const place = await ctx.prisma.place.findUnique({
+          where: {
+            id: input.placeId,
+          },
+
+          select: {
+            id: true,
+          },
+        });
+
+        if (!place) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+
+            message: "مکان پیدا نشد.",
+          });
+        }
+      }
+
+      if (input.eventId) {
+        const event = await ctx.prisma.event.findUnique({
+          where: {
+            id: input.eventId,
+          },
+
+          select: {
+            id: true,
+          },
+        });
+
+        if (!event) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+
+            message: "ایونت پیدا نشد.",
+          });
+        }
+      }
+
+      const { skip, take } = getPagination({
+        page: input.page,
+
+        pageSize: input.pageSize,
+      });
+
+      const [items, total] = await Promise.all([
+        ctx.prisma.comment.findMany({
+          where,
+
+          skip,
+
+          take,
+
+          orderBy: {
+            createdAt: "desc",
+          },
+
+          select: {
+            id: true,
+
+            content: true,
+
+            createdAt: true,
+
+            updatedAt: true,
+
+            user: {
+              select: {
+                id: true,
+
+                fullName: true,
+
+                profileImage: true,
+              },
+            },
+          },
+        }),
+
+        ctx.prisma.comment.count({
+          where,
+        }),
+      ]);
+
+      return {
+        items,
+
+        pagination: {
+          page: input.page,
+
+          pageSize: input.pageSize,
+
+          total,
+
+          totalPages: getTotalPages(total, input.pageSize),
+        },
+      };
+    }),
+
+  /*
+   * ========================================
+   * CURRENT USER COMMENTS
+   * ========================================
+   */
   mine: visitorProcedure
     .input(paginationSchema)
     .query(async ({ ctx, input }) => {
@@ -157,6 +290,11 @@ export const visitorCommentsRouter = router({
       };
     }),
 
+  /*
+   * ========================================
+   * CREATE
+   * ========================================
+   */
   create: visitorProcedure
     .input(createCommentSchema)
     .mutation(async ({ ctx, input }) => {
@@ -235,6 +373,11 @@ export const visitorCommentsRouter = router({
       };
     }),
 
+  /*
+   * ========================================
+   * UPDATE
+   * ========================================
+   */
   update: visitorProcedure
     .input(
       z.object({
@@ -246,6 +389,9 @@ export const visitorCommentsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
+      /*
+       * ownership سمت backend
+       */
       const comment = await ctx.prisma.comment.findFirst({
         where: {
           id: input.commentId,
@@ -291,6 +437,11 @@ export const visitorCommentsRouter = router({
       };
     }),
 
+  /*
+   * ========================================
+   * DELETE
+   * ========================================
+   */
   delete: visitorProcedure
     .input(
       z.object({
