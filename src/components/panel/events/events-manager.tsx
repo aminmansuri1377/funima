@@ -18,6 +18,40 @@ import {
 
 import { trpc } from "@/trpc/client";
 
+type EventListItem = {
+  id: string;
+
+  eventName: string;
+
+  date: Date | string;
+
+  hour: string | null;
+
+  price: string | null;
+
+  images: Array<{
+    id: string;
+    url: string;
+    sortOrder: number;
+  }>;
+
+  place: {
+    id: string;
+
+    placeName: string;
+
+    placeCity: string | null;
+  };
+
+  _count: {
+    plans: number;
+
+    comments: number;
+
+    savedBy: number;
+  };
+};
+
 export function EventsManager() {
   const router = useRouter();
 
@@ -27,7 +61,7 @@ export function EventsManager() {
 
   const [page, setPage] = useState(1);
 
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(10);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -40,14 +74,8 @@ export function EventsManager() {
 
   const deleteEvent = trpc.panel.events.delete.useMutation();
 
-  function clearSearch() {
-    setSearch("");
-    setDebouncedSearch("");
-    setPage(1);
-  }
-
-  async function handleDelete(eventId: string, eventName: string) {
-    const confirmed = window.confirm(`رویداد «${eventName}» حذف شود؟`);
+  async function handleDelete(eventId: string, name: string) {
+    const confirmed = window.confirm(`رویداد «${name}» حذف شود؟`);
 
     if (!confirmed) {
       return;
@@ -89,6 +117,7 @@ export function EventsManager() {
         </div>
 
         <Button
+          type="button"
           startIcon={<FiPlus />}
           onClick={() => router.push("/panel/events/new")}
         >
@@ -96,10 +125,11 @@ export function EventsManager() {
         </Button>
       </div>
 
-      <section
+      <div
         className="
           rounded-xl
-          border border-(--color-border)
+          border
+          border-(--color-border)
           bg-(--color-surface)
           p-4
         "
@@ -116,10 +146,16 @@ export function EventsManager() {
 
             setPage(1);
           }}
-          onClear={clearSearch}
-          placeholder="جستجوی نام رویداد، مکان یا شهر..."
+          onClear={() => {
+            setSearch("");
+
+            setDebouncedSearch("");
+
+            setPage(1);
+          }}
+          placeholder="جستجو با نام رویداد یا مکان..."
         />
-      </section>
+      </div>
 
       {error && <InlineMessage variant="error">{error}</InlineMessage>}
 
@@ -129,95 +165,69 @@ export function EventsManager() {
 
       {events.error && (
         <InlineMessage variant="error">
-          دریافت رویدادها با خطا مواجه شد.
+          دریافت رویدادها انجام نشد.
         </InlineMessage>
       )}
 
       {events.data && (
-        <>
-          <EventsTable
-            events={events.data.items}
-            deleting={deleteEvent.isPending}
-            onEdit={(eventId) => router.push(`/panel/events/${eventId}`)}
-            onDelete={handleDelete}
-          />
+        <EventsTable
+          events={events.data.items as EventListItem[]}
+          deleting={deleteEvent.isPending}
+          onEdit={(eventId) => router.push(`/panel/events/${eventId}`)}
+          onDelete={handleDelete}
+        />
+      )}
 
-          {events.data.pagination.total > 0 && (
-            <Pagination
-              page={events.data.pagination.page}
-              pageSize={events.data.pagination.pageSize}
-              totalItems={events.data.pagination.total}
-              totalPages={events.data.pagination.totalPages}
-              disabled={events.isFetching}
-              onPageChange={setPage}
-              onPageSizeChange={(size) => {
-                setPageSize(size);
-                setPage(1);
-              }}
-            />
-          )}
-        </>
+      {events.data && events.data.pagination.totalPages > 1 && (
+        <Pagination
+          page={events.data.pagination.page}
+          pageSize={events.data.pagination.pageSize}
+          totalItems={events.data.pagination.total}
+          totalPages={events.data.pagination.totalPages}
+          disabled={events.isFetching}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+
+            setPage(1);
+          }}
+        />
       )}
     </div>
   );
 }
 
-type EventListItem = {
-  id: string;
-  eventName: string;
-
-  date: Date | string;
-
-  hour: string | null;
-
-  price: string | null;
-
-  place: {
-    id: string;
-    placeName: string;
-    placeCity: string | null;
-
-    images: Array<{
-      url: string;
-    }>;
-  };
-
-  _count: {
-    plans: number;
-    comments: number;
-    savedBy: number;
-  };
-};
-
-type EventsTableProps = {
+function EventsTable({
+  events,
+  deleting,
+  onEdit,
+  onDelete,
+}: {
   events: EventListItem[];
 
   deleting: boolean;
 
   onEdit: (eventId: string) => void;
 
-  onDelete: (eventId: string, eventName: string) => void;
-};
-
-function EventsTable({ events, deleting, onEdit, onDelete }: EventsTableProps) {
+  onDelete: (eventId: string, name: string) => void | Promise<unknown>;
+}) {
   if (events.length === 0) {
     return (
       <div
         className="
           rounded-xl
-          border border-dashed
+          border
+          border-dashed
           border-(--color-border)
           bg-(--color-surface)
-          p-12
+          p-10
           text-center
         "
       >
-        <FiCalendar size={32} className="mx-auto mb-3" />
+        <FiCalendar size={32} className="mx-auto" />
 
-        <Text variant="heading-md">رویدادی پیدا نشد</Text>
-
-        <Text tone="secondary" className="mt-2">
-          هنوز رویدادی ثبت نشده یا نتیجه‌ای برای جستجو وجود ندارد.
+        <Text variant="heading-md" className="mt-4">
+          رویدادی پیدا نشد
         </Text>
       </div>
     );
@@ -234,24 +244,20 @@ function EventsTable({ events, deleting, onEdit, onDelete }: EventsTableProps) {
       "
     >
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1050px]">
+        <table className="w-full min-w-[900px]">
           <thead className="bg-gray-50 text-right">
             <tr>
-              <th className="px-5 py-4">رویداد</th>
+              <TableHead>رویداد</TableHead>
 
-              <th className="px-5 py-4">مکان</th>
+              <TableHead>مکان</TableHead>
 
-              <th className="px-5 py-4">تاریخ</th>
+              <TableHead>تاریخ</TableHead>
 
-              <th className="px-5 py-4">ساعت</th>
+              <TableHead>قیمت</TableHead>
 
-              <th className="px-5 py-4">قیمت</th>
+              <TableHead>فعالیت</TableHead>
 
-              <th className="px-5 py-4">برنامه‌ها</th>
-
-              <th className="px-5 py-4">ذخیره‌ها</th>
-
-              <th className="px-5 py-4">عملیات</th>
+              <TableHead>عملیات</TableHead>
             </tr>
           </thead>
 
@@ -267,7 +273,7 @@ function EventsTable({ events, deleting, onEdit, onDelete }: EventsTableProps) {
                 <td className="px-5 py-4">
                   <div className="flex items-center gap-3">
                     <EventThumbnail
-                      image={event.place.images[0]?.url ?? null}
+                      image={event.images[0]?.url ?? null}
                       name={event.eventName}
                     />
 
@@ -276,28 +282,36 @@ function EventsTable({ events, deleting, onEdit, onDelete }: EventsTableProps) {
                 </td>
 
                 <td className="px-5 py-4">
-                  {event.place.placeName}
+                  <div>
+                    <Text variant="label-md">{event.place.placeName}</Text>
 
-                  {event.place.placeCity && (
-                    <Text variant="caption" tone="secondary" className="mt-1">
-                      {event.place.placeCity}
-                    </Text>
-                  )}
-                </td>
-
-                <td className="px-5 py-4">{formatDate(event.date)}</td>
-
-                <td dir="ltr" className="px-5 py-4 text-right">
-                  {event.hour ?? "—"}
+                    {event.place.placeCity && (
+                      <Text variant="caption" tone="secondary">
+                        {event.place.placeCity}
+                      </Text>
+                    )}
+                  </div>
                 </td>
 
                 <td className="px-5 py-4">
-                  {event.price ? `${event.price} تومان` : "رایگان / ثبت نشده"}
+                  {formatDate(event.date)}
+
+                  {event.hour && ` - ${event.hour}`}
                 </td>
 
-                <td className="px-5 py-4">{event._count.plans}</td>
+                <td className="px-5 py-4">
+                  {event.price
+                    ? `${Number(event.price).toLocaleString("fa-IR")} تومان`
+                    : "رایگان"}
+                </td>
 
-                <td className="px-5 py-4">{event._count.savedBy}</td>
+                <td className="px-5 py-4">
+                  <div className="space-y-1 text-sm">
+                    <div>{event._count.plans} برنامه</div>
+
+                    <div>{event._count.comments} نظر</div>
+                  </div>
+                </td>
 
                 <td className="px-5 py-4">
                   <div className="flex gap-2">
@@ -344,12 +358,13 @@ function EventThumbnail({
     return (
       <div
         className="
-          flex h-12 w-12
+          flex h-14 w-14
           shrink-0
           items-center
           justify-center
-          rounded-md
+          rounded-lg
           bg-(--color-brand-50)
+          text-(--color-brand-500)
         "
       >
         <FiCalendar />
@@ -358,15 +373,37 @@ function EventThumbnail({
   }
 
   return (
-    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md">
+    <div
+      className="
+        relative
+        h-14 w-14
+        shrink-0
+        overflow-hidden
+        rounded-lg
+      "
+    >
       <Image
         src={image}
         alt={name}
         fill
-        sizes="48px"
+        sizes="56px"
         className="object-cover"
       />
     </div>
+  );
+}
+
+function TableHead({ children }: { children: React.ReactNode }) {
+  return (
+    <th
+      className="
+        whitespace-nowrap
+        px-5 py-4
+        text-sm font-semibold
+      "
+    >
+      {children}
+    </th>
   );
 }
 

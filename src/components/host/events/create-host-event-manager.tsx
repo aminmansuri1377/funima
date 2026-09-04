@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import {
-  FiArrowRight,
   FiCalendar,
   FiCheck,
   FiClock,
@@ -19,11 +18,13 @@ import {
 
 import {
   Button,
+  EventImagePicker,
   FormField,
   InlineMessage,
   Input,
   Text,
   Textarea,
+  uploadEventImages,
 } from "@/components/ui";
 
 import { trpc } from "@/trpc/client";
@@ -38,6 +39,8 @@ export function CreateHostEventManager() {
   const router = useRouter();
 
   const createEvent = trpc.host.events.create.useMutation();
+
+  const deleteEvent = trpc.host.events.delete.useMutation();
 
   const addPlan = trpc.host.events.addPlan.useMutation();
 
@@ -56,6 +59,8 @@ export function CreateHostEventManager() {
   const [rule, setRule] = useState("");
 
   const [info, setInfo] = useState("");
+
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
 
   const [plans, setPlans] = useState<DraftPlan[]>([
     {
@@ -126,6 +131,8 @@ export function CreateHostEventManager() {
 
     const validPlans = plans.filter((item) => item.plan.trim().length > 0);
 
+    let createdEventId: string | null = null;
+
     try {
       const result = await createEvent.mutateAsync({
         eventName: eventName.trim(),
@@ -145,6 +152,15 @@ export function CreateHostEventManager() {
         info: info.trim(),
       });
 
+      createdEventId = result.eventId;
+
+      /*
+       * تصاویر کاملاً اختیاری هستند.
+       */
+      if (imageFiles.length > 0) {
+        await uploadEventImages(result.eventId, imageFiles);
+      }
+
       for (const planItem of validPlans) {
         await addPlan.mutateAsync({
           eventId: result.eventId,
@@ -159,13 +175,32 @@ export function CreateHostEventManager() {
 
       router.refresh();
     } catch (error) {
+      /*
+       * اگر Event ساخته شده ولی آپلود عکس یا
+       * ساخت Plan شکست خورده، Event نیمه‌کاره
+       * باقی نماند.
+       *
+       * mutation delete خودش تصاویر Storage
+       * را هم پاک می‌کند.
+       */
+      if (createdEventId) {
+        try {
+          await deleteEvent.mutateAsync({
+            eventId: createdEventId,
+          });
+        } catch (rollbackError) {
+          console.error("[Host Event Create Rollback]", rollbackError);
+        }
+      }
+
       setError(
         error instanceof Error ? error.message : "ساخت ایونت انجام نشد.",
       );
     }
   }
 
-  const loading = createEvent.isPending || addPlan.isPending;
+  const loading =
+    createEvent.isPending || deleteEvent.isPending || addPlan.isPending;
 
   return (
     <HostEventShell>
@@ -180,14 +215,12 @@ export function CreateHostEventManager() {
         >
           <button
             type="button"
+            aria-label="بازگشت"
             onClick={() => router.push("/host")}
             className="
-              flex
-              h-11
-              w-11
+              flex h-11 w-11
               shrink-0
-              items-center
-              justify-center
+              items-center justify-center
               rounded-full
               bg-white
               text-xl
@@ -195,9 +228,8 @@ export function CreateHostEventManager() {
               transition-colors
               hover:bg-gray-50
             "
-            aria-label="بازگشت"
           >
-            <FiArrowRight />
+            ←
           </button>
 
           <div className="min-w-0 flex-1">
@@ -229,8 +261,7 @@ export function CreateHostEventManager() {
 
               <div
                 className="
-                  grid
-                  gap-4
+                  grid gap-4
                   sm:grid-cols-2
                   lg:grid-cols-3
                 "
@@ -283,6 +314,18 @@ export function CreateHostEventManager() {
 
           <FormCard
             number="۲"
+            title="تصاویر ایونت"
+            description="اختیاری — تصاویر مخصوص همین ایونت"
+          >
+            <EventImagePicker
+              files={imageFiles}
+              onChange={setImageFiles}
+              maxFiles={8}
+            />
+          </FormCard>
+
+          <FormCard
+            number="۳"
             title="مخاطبان ایونت"
             description="این رویداد برای چه کسانی مناسب است؟"
             icon={<FiUsers />}
@@ -290,14 +333,14 @@ export function CreateHostEventManager() {
             <Textarea
               value={suitable}
               onChange={(event) => setSuitable(event.target.value)}
-              placeholder="مثلاً مناسب علاقه‌مندان به بازی‌های گروهی، دانشجوها و..."
+              placeholder="مثلاً مناسب علاقه‌مندان به بازی‌های گروهی..."
               resize={false}
               disabled={loading}
             />
           </FormCard>
 
           <FormCard
-            number="۳"
+            number="۴"
             title="برنامه ایونت"
             description="زمان‌بندی و مراحل رویداد"
           >
@@ -313,27 +356,15 @@ export function CreateHostEventManager() {
                     p-4
                   "
                 >
-                  <div
-                    className="
-                      flex
-                      items-center
-                      justify-between
-                      gap-3
-                    "
-                  >
+                  <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <div
                         className="
-                          flex
-                          h-8
-                          w-8
-                          items-center
-                          justify-center
+                          flex h-8 w-8
+                          items-center justify-center
                           rounded-full
                           bg-(--color-brand-500)
-                          text-sm
-                          font-bold
-                          text-white
+                          text-sm font-bold text-white
                         "
                       >
                         {index + 1}
@@ -347,11 +378,8 @@ export function CreateHostEventManager() {
                       aria-label="حذف برنامه"
                       onClick={() => removePlan(planItem.id)}
                       className="
-                        flex
-                        h-9
-                        w-9
-                        items-center
-                        justify-center
+                        flex h-9 w-9
+                        items-center justify-center
                         rounded-full
                         text-red-500
                         transition-colors
@@ -365,8 +393,7 @@ export function CreateHostEventManager() {
                   <div
                     className="
                       mt-4
-                      grid
-                      gap-3
+                      grid gap-3
                       sm:grid-cols-[140px_1fr]
                     "
                   >
@@ -396,18 +423,14 @@ export function CreateHostEventManager() {
                 onClick={addPlanRow}
                 disabled={loading}
                 className="
-                  flex
-                  min-h-14
+                  flex min-h-14
                   w-full
-                  items-center
-                  justify-center
+                  items-center justify-center
                   gap-2
                   rounded-[20px]
-                  border-2
-                  border-dashed
+                  border-2 border-dashed
                   border-(--color-border)
-                  text-sm
-                  font-semibold
+                  text-sm font-semibold
                   text-(--color-text-secondary)
                   transition-colors
                   hover:border-(--color-brand-400)
@@ -422,7 +445,7 @@ export function CreateHostEventManager() {
           </FormCard>
 
           <FormCard
-            number="۴"
+            number="۵"
             title="قوانین ایونت"
             description="مواردی که شرکت‌کنندگان باید بدانند"
             icon={<FiShield />}
@@ -437,7 +460,7 @@ export function CreateHostEventManager() {
           </FormCard>
 
           <FormCard
-            number="۵"
+            number="۶"
             title="درباره ایونت"
             description="هر توضیح تکمیلی که لازم است"
             icon={<FiInfo />}
@@ -455,8 +478,7 @@ export function CreateHostEventManager() {
 
           <div
             className="
-              sticky
-              bottom-3
+              sticky bottom-3
               z-20
               rounded-3xl
               bg-white/95
@@ -507,12 +529,9 @@ function FormCard({
       <div className="mb-6 flex items-start gap-3">
         <div
           className="
-            flex
-            h-11
-            w-11
+            flex h-11 w-11
             shrink-0
-            items-center
-            justify-center
+            items-center justify-center
             rounded-2xl
             bg-(--color-brand-50)
             font-bold
@@ -542,10 +561,8 @@ function HostEventShell({ children }: { children: React.ReactNode }) {
       className="
         min-h-screen
         bg-[#f5f5f5]
-        px-3
-        py-4
-        sm:px-6
-        sm:py-7
+        px-3 py-4
+        sm:px-6 sm:py-7
       "
     >
       <div className="mx-auto w-full max-w-3xl">{children}</div>

@@ -3,54 +3,58 @@
 import { useState } from "react";
 
 import {
-  Button,
+  EventImagePicker,
   FormField,
-  InlineMessage,
   Input,
+  SearchSelect,
   Text,
   Textarea,
+  Button,
 } from "@/components/ui";
 
 import { trpc } from "@/trpc/client";
 
-type EventInitialValues = {
-  placeId?: string;
-  eventName?: string;
-  date?: string;
-  hour?: string;
-  price?: string;
-  description?: string;
-  rule?: string;
-  info?: string;
-  suitable?: string;
+export type EventFormValues = {
+  placeId: string;
+
+  eventName: string;
+
+  date: string;
+
+  hour: string;
+
+  price: string;
+
+  description: string;
+
+  rule: string;
+
+  info: string;
+
+  suitable: string;
+
+  imageFiles: File[];
 };
 
-type EventFormProps = {
-  initialValues?: EventInitialValues;
-
-  loading?: boolean;
+type Props = {
+  initialValues?: Partial<Omit<EventFormValues, "imageFiles">>;
 
   submitLabel: string;
 
-  onSubmit: (values: {
-    placeId: string;
-    eventName: string;
-    date: string;
-    hour: string;
-    price: string;
-    description: string;
-    rule: string;
-    info: string;
-    suitable: string;
-  }) => Promise<void>;
+  loading?: boolean;
+
+  enableImagePicker?: boolean;
+
+  onSubmit: (values: EventFormValues) => void | Promise<void>;
 };
 
 export function EventForm({
   initialValues,
-  loading = false,
   submitLabel,
+  loading = false,
+  enableImagePicker = false,
   onSubmit,
-}: EventFormProps) {
+}: Props) {
   const places = trpc.panel.events.places.useQuery();
 
   const [placeId, setPlaceId] = useState(initialValues?.placeId ?? "");
@@ -73,167 +77,172 @@ export function EventForm({
 
   const [suitable, setSuitable] = useState(initialValues?.suitable ?? "");
 
-  const [error, setError] = useState<string | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
 
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    setError(null);
+    await onSubmit({
+      placeId,
 
-    if (!placeId) {
-      setError("لطفاً مکان را انتخاب کنید.");
+      eventName: eventName.trim(),
 
-      return;
-    }
+      date,
 
-    if (!eventName.trim()) {
-      setError("نام رویداد الزامی است.");
+      hour: hour.trim(),
 
-      return;
-    }
+      price: normalizeNumberInput(price),
 
-    if (!date) {
-      setError("تاریخ رویداد الزامی است.");
+      description: description.trim(),
 
-      return;
-    }
+      rule: rule.trim(),
 
-    try {
-      await onSubmit({
-        placeId,
-        eventName,
-        date,
-        hour,
-        price,
-        description,
-        rule,
-        info,
-        suitable,
-      });
-    } catch (error) {
-      setError(
-        error instanceof Error ? error.message : "ذخیره رویداد انجام نشد.",
-      );
-    }
+      info: info.trim(),
+
+      suitable: suitable.trim(),
+
+      imageFiles,
+    });
   }
 
+  const placeOptions =
+    places.data?.map((place) => ({
+      value: place.id,
+
+      label: [place.placeName, place.placeCity].filter(Boolean).join(" - "),
+    })) ?? [];
+
   return (
-    <form
-      onSubmit={submit}
-      className="
-        rounded-xl
-        border border-(--color-border)
-        bg-(--color-surface)
-        p-5
-      "
-    >
-      <div className="grid gap-5 md:grid-cols-2">
-        <FormField label="مکان" required>
-          <select
-            value={placeId}
-            onChange={(event) => setPlaceId(event.target.value)}
-            disabled={loading || places.isPending}
-            className="
-              h-14 w-full
-              rounded-(--radius-full)
-              border
-              border-(--color-border-strong)
-              bg-white px-5
-              outline-none
-            "
-          >
-            <option value="">انتخاب مکان</option>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <section
+        className="
+          rounded-xl
+          border
+          border-(--color-border)
+          bg-(--color-surface)
+          p-5
+        "
+      >
+        <Text variant="heading-md">اطلاعات رویداد</Text>
 
-            {places.data?.map((place) => (
-              <option key={place.id} value={place.id}>
-                {place.placeName}
-                {" — "}
-                {place.placeCity ?? "بدون شهر"}
-              </option>
-            ))}
-          </select>
-        </FormField>
+        <div className="mt-5 space-y-5">
+          <FormField label="مکان" required>
+            <SearchSelect
+              value={placeId}
+              options={placeOptions}
+              onChange={setPlaceId}
+              placeholder="انتخاب مکان"
+              searchPlaceholder="جستجوی مکان..."
+              disabled={loading || places.isPending}
+            />
+          </FormField>
 
-        <FormField label="نام رویداد" required>
-          <Input
-            value={eventName}
-            onChange={(event) => setEventName(event.target.value)}
-            placeholder="نام رویداد"
+          <FormField label="نام رویداد" required>
+            <Input
+              value={eventName}
+              onChange={(event) => setEventName(event.target.value)}
+              disabled={loading}
+            />
+          </FormField>
+
+          <div className="grid gap-5 md:grid-cols-3">
+            <FormField label="تاریخ" required>
+              <Input
+                type="date"
+                value={date}
+                onChange={(event) => setDate(event.target.value)}
+                disabled={loading}
+              />
+            </FormField>
+
+            <FormField label="ساعت">
+              <Input
+                type="time"
+                value={hour}
+                onChange={(event) => setHour(event.target.value)}
+                disabled={loading}
+              />
+            </FormField>
+
+            <FormField label="قیمت">
+              <Input
+                value={price}
+                onChange={(event) => setPrice(event.target.value)}
+                inputMode="numeric"
+                dir="ltr"
+                className="text-left"
+                disabled={loading}
+              />
+            </FormField>
+          </div>
+
+          <FormField label="معرفی کوتاه">
+            <Textarea
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              resize={false}
+              disabled={loading}
+            />
+          </FormField>
+
+          <FormField label="مناسب چه کسانی است؟">
+            <Textarea
+              value={suitable}
+              onChange={(event) => setSuitable(event.target.value)}
+              resize={false}
+              disabled={loading}
+            />
+          </FormField>
+
+          <FormField label="قوانین">
+            <Textarea
+              value={rule}
+              onChange={(event) => setRule(event.target.value)}
+              resize={false}
+              disabled={loading}
+            />
+          </FormField>
+
+          <FormField label="اطلاعات تکمیلی">
+            <Textarea
+              value={info}
+              onChange={(event) => setInfo(event.target.value)}
+              resize={false}
+              disabled={loading}
+            />
+          </FormField>
+        </div>
+      </section>
+
+      {enableImagePicker && (
+        <section
+          className="
+            rounded-xl
+            border
+            border-(--color-border)
+            bg-(--color-surface)
+            p-5
+          "
+        >
+          <EventImagePicker
+            files={imageFiles}
+            onChange={setImageFiles}
+            maxFiles={8}
           />
-        </FormField>
-
-        <FormField label="تاریخ" required>
-          <Input
-            type="date"
-            value={date}
-            onChange={(event) => setDate(event.target.value)}
-            dir="ltr"
-          />
-        </FormField>
-
-        <FormField label="ساعت">
-          <Input
-            type="time"
-            value={hour}
-            onChange={(event) => setHour(event.target.value)}
-            dir="ltr"
-          />
-        </FormField>
-
-        <FormField label="قیمت">
-          <Input
-            value={price}
-            onChange={(event) => setPrice(event.target.value)}
-            inputMode="decimal"
-            dir="ltr"
-            placeholder="مثلاً 250000"
-          />
-        </FormField>
-
-        <FormField label="مناسب برای">
-          <Input
-            value={suitable}
-            onChange={(event) => setSuitable(event.target.value)}
-            placeholder="مثلاً همه سنین"
-          />
-        </FormField>
-      </div>
-
-      <FormField label="توضیحات" className="mt-5">
-        <Textarea
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          resize={false}
-        />
-      </FormField>
-
-      <FormField label="قوانین" className="mt-5">
-        <Textarea
-          value={rule}
-          onChange={(event) => setRule(event.target.value)}
-          resize={false}
-        />
-      </FormField>
-
-      <FormField label="اطلاعات تکمیلی" className="mt-5">
-        <Textarea
-          value={info}
-          onChange={(event) => setInfo(event.target.value)}
-          resize={false}
-        />
-      </FormField>
-
-      {error && (
-        <InlineMessage variant="error" className="mt-4">
-          {error}
-        </InlineMessage>
+        </section>
       )}
 
-      <div className="mt-6">
-        <Button type="submit" loading={loading}>
-          {submitLabel}
-        </Button>
-      </div>
+      <Button type="submit" loading={loading}>
+        {submitLabel}
+      </Button>
     </form>
   );
+}
+
+function normalizeNumberInput(value: string) {
+  return value
+    .replaceAll(",", "")
+    .replaceAll("٬", "")
+    .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
+    .trim();
 }

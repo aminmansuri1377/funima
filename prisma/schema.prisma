@@ -205,14 +205,19 @@ model PlaceFilterValue {
 // EVENT
 // =====================================================
 
+// =====================================================
+// EVENT
+// =====================================================
+
 model Event {
   id      String @id @default(cuid())
   placeId String
 
   eventName String
-  date      DateTime
-  hour      String?
-  price     Decimal? @db.Decimal(12, 2)
+
+  date  DateTime
+  hour  String?
+  price Decimal? @db.Decimal(12, 2)
 
   description String?
   rule        String?
@@ -221,6 +226,7 @@ model Event {
 
   place Place @relation(fields: [placeId], references: [id], onDelete: Cascade)
 
+  images   EventImage[]
   plans    EventPlan[]
   comments Comment[]
   savedBy  SavedEvent[]
@@ -230,6 +236,27 @@ model Event {
 
   @@index([placeId])
   @@index([date])
+}
+
+// =====================================================
+// EVENT IMAGES
+// =====================================================
+
+model EventImage {
+  id String @id @default(cuid())
+
+  eventId String
+
+  url         String
+  storagePath String @unique
+
+  sortOrder Int @default(0)
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([eventId])
 }
 
 // =====================================================

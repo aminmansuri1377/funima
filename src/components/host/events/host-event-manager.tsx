@@ -24,6 +24,7 @@ import {
 
 import {
   Button,
+  EventImageUploader,
   FormField,
   InlineMessage,
   Input,
@@ -55,11 +56,9 @@ export function HostEventManager({ eventId }: Props) {
   if (event.error || !event.data) {
     return (
       <HostEventShell>
-        <div className="mx-auto max-w-xl pt-10">
-          <InlineMessage variant="error">
-            دریافت اطلاعات ایونت انجام نشد.
-          </InlineMessage>
-        </div>
+        <InlineMessage variant="error">
+          دریافت اطلاعات ایونت انجام نشد.
+        </InlineMessage>
       </HostEventShell>
     );
   }
@@ -94,6 +93,12 @@ type EventData = {
 
   suitable: string | null;
 
+  images: Array<{
+    id: string;
+    url: string;
+    sortOrder: number;
+  }>;
+
   place: {
     id: string;
 
@@ -102,11 +107,6 @@ type EventData = {
     placeProvince: string | null;
 
     placeCity: string | null;
-
-    images: Array<{
-      id: string;
-      url: string;
-    }>;
   };
 
   plans: Array<{
@@ -173,6 +173,7 @@ function HostEventContent({
     return (
       <HostEventEdit
         event={event}
+        onChanged={onChanged}
         onCancel={() => setEditing(false)}
         onSaved={async () => {
           await onChanged();
@@ -183,52 +184,38 @@ function HostEventContent({
     );
   }
 
-  const mainImage = event.place.images[0]?.url ?? null;
+  const mainImage = event.images[0]?.url ?? null;
 
   return (
     <HostEventShell>
       <div className="space-y-4 sm:space-y-5">
-        <header
-          className="
-            flex
-            items-center
-            justify-between
-            gap-3
-          "
-        >
+        <header className="flex items-center justify-between gap-3">
           <button
             type="button"
             aria-label="بازگشت"
             onClick={onBack}
             className="
-              flex
-              h-11
-              w-11
-              shrink-0
-              items-center
-              justify-center
+              flex h-11 w-11
+              items-center justify-center
               rounded-full
               bg-white
               text-xl
               shadow-sm
-              transition-colors
               hover:bg-gray-50
             "
           >
             <FiArrowRight />
           </button>
 
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              startIcon={<FiEdit2 />}
-              onClick={() => setEditing(true)}
-            >
-              ویرایش
-            </Button>
-          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            startIcon={<FiEdit2 />}
+            onClick={() => setEditing(true)}
+          >
+            ویرایش
+          </Button>
         </header>
 
         <section
@@ -239,82 +226,18 @@ function HostEventContent({
             shadow-[0_8px_30px_rgba(0,0,0,0.05)]
           "
         >
-          <div className="relative aspect-4/3 overflow-hidden sm:aspect-16/8">
-            {mainImage ? (
-              <>
-                <Image
-                  src={mainImage}
-                  alt={event.eventName}
-                  fill
-                  priority
-                  sizes="(max-width:768px) 100vw, 850px"
-                  className="object-cover"
-                />
-
-                <div
-                  className="
-                    pointer-events-none
-                    absolute
-                    inset-x-0
-                    bottom-0
-                    h-36
-                    bg-gradient-to-t
-                    from-black/50
-                    via-black/15
-                    to-transparent
-                  "
-                />
-              </>
-            ) : (
-              <div
-                className="
-                  flex
-                  h-full
-                  items-center
-                  justify-center
-                  bg-(--color-brand-50)
-                  text-(--color-brand-500)
-                "
-              >
-                <FiCalendar size={52} />
-              </div>
-            )}
-
-            <div
-              className="
-                absolute
-                left-4
-                top-4
-                rounded-[18px]
-                bg-white/95
-                px-4
-                py-2.5
-                text-center
-                shadow-sm
-                backdrop-blur
-              "
-            >
-              <Text variant="heading-md">{formatDay(event.date)}</Text>
-
-              <Text variant="caption" tone="secondary">
-                {formatMonth(event.date)}
-              </Text>
-            </div>
-          </div>
+          <EventGallery
+            eventName={event.eventName}
+            images={event.images}
+            date={event.date}
+          />
 
           <div className="p-5 sm:p-7">
             <Text as="h1" variant="heading-xl" className="leading-10">
               {event.eventName}
             </Text>
 
-            <div
-              className="
-                mt-5
-                grid
-                gap-3
-                sm:grid-cols-3
-              "
-            >
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
               <EventMeta
                 icon={<FiCalendar />}
                 label="تاریخ"
@@ -334,14 +257,7 @@ function HostEventContent({
               />
             </div>
 
-            <div
-              className="
-                mt-5
-                grid
-                gap-3
-                sm:grid-cols-[1fr_auto]
-              "
-            >
+            <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]">
               <div
                 className="
                   rounded-[22px]
@@ -355,7 +271,10 @@ function HostEventContent({
 
                 <Text
                   variant="heading-md"
-                  className="mt-1 text-(--color-brand-700)"
+                  className="
+                    mt-1
+                    text-(--color-brand-700)
+                  "
                 >
                   {event.price
                     ? `${Number(event.price).toLocaleString("fa-IR")} تومان`
@@ -363,14 +282,7 @@ function HostEventContent({
                 </Text>
               </div>
 
-              <div
-                className="
-                  grid
-                  grid-cols-2
-                  gap-2
-                  sm:min-w-[210px]
-                "
-              >
+              <div className="grid grid-cols-2 gap-2 sm:min-w-[210px]">
                 <CounterCard
                   icon={<FiMessageCircle />}
                   value={event._count.comments}
@@ -384,29 +296,6 @@ function HostEventContent({
                 />
               </div>
             </div>
-
-            {(event.place.placeProvince || event.place.placeCity) && (
-              <div
-                className="
-                  mt-5
-                  flex
-                  items-center
-                  gap-2
-                  rounded-[18px]
-                  bg-[#f8f8f8]
-                  px-4
-                  py-3
-                  text-sm
-                  text-(--color-text-secondary)
-                "
-              >
-                <FiMapPin className="text-(--color-brand-500)" />
-
-                {[event.place.placeProvince, event.place.placeCity]
-                  .filter(Boolean)
-                  .join("، ")}
-              </div>
-            )}
           </div>
         </section>
 
@@ -446,43 +335,21 @@ function HostEventContent({
         <section
           className="
             rounded-[28px]
-            border
-            border-red-100
+            border border-red-100
             bg-white
             p-5
-            shadow-[0_8px_30px_rgba(0,0,0,0.04)]
+            shadow-sm
             sm:p-7
           "
         >
-          <div className="flex items-start gap-3">
-            <div
-              className="
-                flex
-                h-11
-                w-11
-                shrink-0
-                items-center
-                justify-center
-                rounded-2xl
-                bg-red-50
-                text-red-500
-              "
-            >
-              <FiTrash2 />
-            </div>
+          <Text variant="heading-md">حذف ایونت</Text>
 
-            <div>
-              <Text variant="heading-md">حذف ایونت</Text>
-
-              <Text tone="secondary" className="mt-1 leading-7">
-                با حذف ایونت، برنامه‌ها و تمام اطلاعات وابسته به آن نیز حذف
-                می‌شوند.
-              </Text>
-            </div>
-          </div>
+          <Text tone="secondary" className="mt-2">
+            با حذف ایونت، تصاویر، برنامه‌ها و اطلاعات وابسته نیز حذف می‌شوند.
+          </Text>
 
           {deleteError && (
-            <InlineMessage variant="error" className="mt-5">
+            <InlineMessage variant="error" className="mt-4">
               {deleteError}
             </InlineMessage>
           )}
@@ -503,18 +370,122 @@ function HostEventContent({
   );
 }
 
+function EventGallery({
+  eventName,
+  images,
+  date,
+}: {
+  eventName: string;
+
+  images: EventData["images"];
+
+  date: Date | string;
+}) {
+  if (images.length === 0) {
+    return (
+      <div
+        className="
+          relative
+          flex aspect-16/8
+          items-center justify-center
+          bg-(--color-brand-50)
+          text-(--color-brand-500)
+        "
+      >
+        <FiCalendar size={52} />
+
+        <DateBadge date={date} />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="relative aspect-4/3 overflow-hidden sm:aspect-16/8">
+        <Image
+          src={images[0].url}
+          alt={eventName}
+          fill
+          priority
+          sizes="(max-width:768px) 100vw, 850px"
+          className="object-cover"
+        />
+
+        <DateBadge date={date} />
+      </div>
+
+      {images.length > 1 && (
+        <div
+          className="
+            grid grid-cols-4
+            gap-2
+            p-2
+          "
+        >
+          {images.slice(1, 5).map((image, index) => (
+            <div
+              key={image.id}
+              className="
+                    relative
+                    aspect-square
+                    overflow-hidden
+                    rounded-[18px]
+                  "
+            >
+              <Image
+                src={image.url}
+                alt={`${eventName} ${index + 2}`}
+                fill
+                sizes="25vw"
+                className="object-cover"
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DateBadge({ date }: { date: Date | string }) {
+  return (
+    <div
+      className="
+        absolute left-4 top-4
+        rounded-[18px]
+        bg-white/95
+        px-4 py-2.5
+        text-center
+        shadow-sm
+        backdrop-blur
+      "
+    >
+      <Text variant="heading-md">{formatDay(date)}</Text>
+
+      <Text variant="caption" tone="secondary">
+        {formatMonth(date)}
+      </Text>
+    </div>
+  );
+}
+
 function HostEventEdit({
   event,
+  onChanged,
   onCancel,
   onSaved,
 }: {
   event: EventData;
+
+  onChanged: () => void | Promise<unknown>;
 
   onCancel: () => void;
 
   onSaved: () => void | Promise<unknown>;
 }) {
   const update = trpc.host.events.update.useMutation();
+
+  const deleteImage = trpc.host.events.deleteImage.useMutation();
 
   const [eventName, setEventName] = useState(event.eventName);
 
@@ -534,22 +505,29 @@ function HostEventEdit({
 
   const [error, setError] = useState<string | null>(null);
 
+  async function handleDeleteImage(imageId: string) {
+    const confirmed = window.confirm("این تصویر ایونت حذف شود؟");
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await deleteImage.mutateAsync({
+        eventId: event.id,
+        imageId,
+      });
+
+      await onChanged();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "حذف تصویر انجام نشد.");
+    }
+  }
+
   async function save(formEvent: React.FormEvent<HTMLFormElement>) {
     formEvent.preventDefault();
 
     setError(null);
-
-    if (eventName.trim().length < 2) {
-      setError("نام ایونت را وارد کنید.");
-
-      return;
-    }
-
-    if (!date) {
-      setError("تاریخ ایونت را انتخاب کنید.");
-
-      return;
-    }
 
     try {
       await update.mutateAsync({
@@ -583,14 +561,7 @@ function HostEventEdit({
   return (
     <HostEventShell>
       <form onSubmit={save} className="space-y-4">
-        <header
-          className="
-            flex
-            items-center
-            justify-between
-            gap-4
-          "
-        >
+        <header className="flex items-center justify-between gap-4">
           <div>
             <Text as="h1" variant="heading-xl">
               ویرایش ایونت
@@ -606,6 +577,24 @@ function HostEventEdit({
           </Button>
         </header>
 
+        <section
+          className="
+            rounded-[28px]
+            bg-white
+            p-5
+            shadow-sm
+            sm:p-7
+          "
+        >
+          <EventImageUploader
+            eventId={event.id}
+            images={event.images}
+            maxFiles={8}
+            onUploaded={onChanged}
+            onDelete={handleDeleteImage}
+          />
+        </section>
+
         <EditFormCard
           number="۱"
           title="اطلاعات اصلی"
@@ -616,25 +605,15 @@ function HostEventEdit({
               <Input
                 value={eventName}
                 onChange={(event) => setEventName(event.target.value)}
-                disabled={update.isPending}
               />
             </FormField>
 
-            <div
-              className="
-                grid
-                gap-4
-                sm:grid-cols-2
-                lg:grid-cols-3
-              "
-            >
+            <div className="grid gap-4 sm:grid-cols-3">
               <FormField label="تاریخ" required>
                 <Input
                   type="date"
                   value={date}
                   onChange={(event) => setDate(event.target.value)}
-                  startIcon={<FiCalendar />}
-                  disabled={update.isPending}
                 />
               </FormField>
 
@@ -643,19 +622,16 @@ function HostEventEdit({
                   type="time"
                   value={hour}
                   onChange={(event) => setHour(event.target.value)}
-                  startIcon={<FiClock />}
-                  disabled={update.isPending}
                 />
               </FormField>
 
-              <FormField label="قیمت هر نفر">
+              <FormField label="قیمت">
                 <Input
                   value={price}
                   onChange={(event) => setPrice(event.target.value)}
                   inputMode="numeric"
                   dir="ltr"
                   className="text-left"
-                  disabled={update.isPending}
                 />
               </FormField>
             </div>
@@ -665,7 +641,6 @@ function HostEventEdit({
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
                 resize={false}
-                disabled={update.isPending}
               />
             </FormField>
           </div>
@@ -681,21 +656,19 @@ function HostEventEdit({
             value={suitable}
             onChange={(event) => setSuitable(event.target.value)}
             resize={false}
-            disabled={update.isPending}
           />
         </EditFormCard>
 
         <EditFormCard
           number="۳"
           title="قوانین"
-          description="قوانین شرکت در این ایونت"
+          description="قوانین شرکت در ایونت"
           icon={<FiShield />}
         >
           <Textarea
             value={rule}
             onChange={(event) => setRule(event.target.value)}
             resize={false}
-            disabled={update.isPending}
           />
         </EditFormCard>
 
@@ -709,34 +682,20 @@ function HostEventEdit({
             value={info}
             onChange={(event) => setInfo(event.target.value)}
             resize={false}
-            disabled={update.isPending}
           />
         </EditFormCard>
 
         {error && <InlineMessage variant="error">{error}</InlineMessage>}
 
-        <div
-          className="
-            sticky
-            bottom-3
-            z-20
-            rounded-3xl
-            bg-white/95
-            p-2
-            shadow-[0_10px_40px_rgba(0,0,0,0.10)]
-            backdrop-blur-xl
-          "
+        <Button
+          type="submit"
+          size="xl"
+          fullWidth
+          startIcon={<FiCheck />}
+          loading={update.isPending}
         >
-          <Button
-            type="submit"
-            size="xl"
-            fullWidth
-            startIcon={<FiCheck />}
-            loading={update.isPending}
-          >
-            ذخیره تغییرات
-          </Button>
-        </div>
+          ذخیره تغییرات
+        </Button>
       </form>
     </HostEventShell>
   );
@@ -782,7 +741,6 @@ function EventPlans({
       });
 
       setHour("");
-
       setPlan("");
 
       await onChanged();
@@ -799,8 +757,6 @@ function EventPlans({
     if (!confirmed) {
       return;
     }
-
-    setError(null);
 
     try {
       await remove.mutateAsync({
@@ -822,121 +778,61 @@ function EventPlans({
         rounded-[28px]
         bg-white
         p-5
-        shadow-[0_8px_30px_rgba(0,0,0,0.04)]
+        shadow-sm
         sm:p-7
       "
     >
-      <div>
-        <Text variant="heading-md">برنامه ایونت</Text>
+      <Text variant="heading-md">برنامه ایونت</Text>
 
-        <Text tone="secondary" className="mt-1">
-          زمان‌بندی و مراحل این رویداد
-        </Text>
-      </div>
-
-      {plans.length === 0 ? (
-        <div
-          className="
-            mt-6
-            rounded-[22px]
-            border-2
-            border-dashed
-            border-(--color-border)
-            px-5
-            py-8
-            text-center
-          "
-        >
-          <FiCalendar
-            size={30}
-            className="mx-auto text-(--color-text-secondary)"
-          />
-
-          <Text variant="label-lg" className="mt-3">
-            هنوز برنامه‌ای ثبت نشده
-          </Text>
-
-          <Text tone="secondary" variant="caption" className="mt-1">
-            اولین برنامه این ایونت را اضافه کنید.
-          </Text>
-        </div>
-      ) : (
+      {plans.length > 0 && (
         <div className="mt-6 space-y-3">
           {plans.map((item, index) => (
             <div
               key={item.id}
               className="
-                flex
-                items-start
-                gap-4
-                rounded-[22px]
-                border
-                border-(--color-border)
-                bg-[#fafafa]
-                p-4
-              "
+                  flex items-start
+                  gap-4
+                  rounded-[22px]
+                  bg-gray-50
+                  p-4
+                "
             >
               <div
                 className="
-                  flex
-                  h-9
-                  w-9
-                  shrink-0
-                  items-center
-                  justify-center
-                  rounded-full
-                  bg-(--color-brand-500)
-                  text-sm
-                  font-bold
-                  text-white
-                "
+                    flex h-9 w-9
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-(--color-brand-500)
+                    text-sm font-bold
+                    text-white
+                  "
               >
                 {index + 1}
               </div>
 
               <div className="min-w-0 flex-1">
                 {item.hour && (
-                  <div
-                    className="
-                      mb-1
-                      inline-flex
-                      items-center
-                      gap-1
-                      rounded-full
-                      bg-white
-                      px-2.5
-                      py-1
-                      text-xs
-                      text-(--color-text-secondary)
-                    "
-                  >
-                    <FiClock />
-
+                  <Text variant="caption" tone="secondary">
                     {item.hour}
-                  </div>
+                  </Text>
                 )}
 
-                <Text className="leading-7">{item.plan}</Text>
+                <Text className="mt-1">{item.plan}</Text>
               </div>
 
               <button
                 type="button"
-                aria-label="حذف برنامه"
-                disabled={remove.isPending}
                 onClick={() => deletePlan(item.id)}
                 className="
-                  flex
-                  h-9
-                  w-9
-                  shrink-0
-                  items-center
-                  justify-center
-                  rounded-full
-                  text-red-500
-                  transition-colors
-                  hover:bg-red-50
-                  disabled:opacity-50
-                "
+                    flex h-9 w-9
+                    items-center
+                    justify-center
+                    rounded-full
+                    text-red-500
+                    hover:bg-red-50
+                  "
               >
                 <FiTrash2 />
               </button>
@@ -945,47 +841,27 @@ function EventPlans({
         </div>
       )}
 
-      <div
-        className="
-          mt-6
-          rounded-[22px]
-          bg-[#f8f8f8]
-          p-4
-        "
-      >
-        <Text variant="label-lg">برنامه جدید</Text>
+      <div className="mt-6 grid gap-3 sm:grid-cols-[140px_1fr_auto]">
+        <Input
+          type="time"
+          value={hour}
+          onChange={(event) => setHour(event.target.value)}
+        />
 
-        <div
-          className="
-            mt-4
-            grid
-            gap-3
-            sm:grid-cols-[140px_1fr_auto]
-          "
+        <Input
+          value={plan}
+          onChange={(event) => setPlan(event.target.value)}
+          placeholder="برنامه جدید..."
+        />
+
+        <Button
+          type="button"
+          startIcon={<FiPlus />}
+          loading={add.isPending}
+          onClick={addPlan}
         >
-          <Input
-            type="time"
-            value={hour}
-            onChange={(event) => setHour(event.target.value)}
-            disabled={add.isPending}
-          />
-
-          <Input
-            value={plan}
-            onChange={(event) => setPlan(event.target.value)}
-            placeholder="مثلاً شروع پذیرش شرکت‌کنندگان"
-            disabled={add.isPending}
-          />
-
-          <Button
-            type="button"
-            startIcon={<FiPlus />}
-            loading={add.isPending}
-            onClick={addPlan}
-          >
-            افزودن
-          </Button>
-        </div>
+          افزودن
+        </Button>
       </div>
 
       {error && (
@@ -1003,9 +879,7 @@ function ContentSection({
   children,
 }: {
   title: string;
-
   icon?: React.ReactNode;
-
   children: React.ReactNode;
 }) {
   return (
@@ -1014,29 +888,12 @@ function ContentSection({
         rounded-[28px]
         bg-white
         p-5
-        shadow-[0_8px_30px_rgba(0,0,0,0.04)]
+        shadow-sm
         sm:p-7
       "
     >
       <div className="flex items-center gap-3">
-        {icon && (
-          <div
-            className="
-              flex
-              h-11
-              w-11
-              shrink-0
-              items-center
-              justify-center
-              rounded-2xl
-              bg-(--color-brand-50)
-              text-lg
-              text-(--color-brand-600)
-            "
-          >
-            {icon}
-          </div>
-        )}
+        {icon}
 
         <Text variant="heading-md">{title}</Text>
       </div>
@@ -1044,7 +901,7 @@ function ContentSection({
       <Text
         tone="secondary"
         className="
-          mt-5
+          mt-4
           whitespace-pre-wrap
           leading-8
         "
@@ -1061,47 +918,27 @@ function EventMeta({
   value,
 }: {
   icon: React.ReactNode;
-
   label: string;
-
   value: string;
 }) {
   return (
     <div
       className="
-        flex
-        items-center
+        flex items-center
         gap-3
         rounded-[20px]
-        bg-[#f8f8f8]
+        bg-gray-50
         p-4
       "
     >
-      <div
-        className="
-          flex
-          h-10
-          w-10
-          shrink-0
-          items-center
-          justify-center
-          rounded-2xl
-          bg-white
-          text-lg
-          text-(--color-brand-500)
-        "
-      >
-        {icon}
-      </div>
+      <div className="text-(--color-brand-500)">{icon}</div>
 
-      <div className="min-w-0">
+      <div>
         <Text variant="caption" tone="secondary">
           {label}
         </Text>
 
-        <Text variant="label-md" className="mt-0.5 truncate">
-          {value}
-        </Text>
+        <Text variant="label-md">{value}</Text>
       </div>
     </div>
   );
@@ -1113,21 +950,17 @@ function CounterCard({
   label,
 }: {
   icon: React.ReactNode;
-
   value: number;
-
   label: string;
 }) {
   return (
     <div
       className="
-        flex
-        min-h-20
-        items-center
+        flex items-center
         justify-center
         gap-2
         rounded-[20px]
-        bg-[#f8f8f8]
+        bg-gray-50
         p-3
       "
     >
@@ -1152,13 +985,9 @@ function EditFormCard({
   children,
 }: {
   number: string;
-
   title: string;
-
   description: string;
-
   icon?: React.ReactNode;
-
   children: React.ReactNode;
 }) {
   return (
@@ -1167,19 +996,15 @@ function EditFormCard({
         rounded-[28px]
         bg-white
         p-5
-        shadow-[0_8px_30px_rgba(0,0,0,0.04)]
+        shadow-sm
         sm:p-7
       "
     >
       <div className="mb-6 flex items-start gap-3">
         <div
           className="
-            flex
-            h-11
-            w-11
-            shrink-0
-            items-center
-            justify-center
+            flex h-11 w-11
+            items-center justify-center
             rounded-2xl
             bg-(--color-brand-50)
             font-bold
@@ -1209,10 +1034,8 @@ function HostEventShell({ children }: { children: React.ReactNode }) {
       className="
         min-h-screen
         bg-[#f5f5f5]
-        px-3
-        py-4
-        sm:px-6
-        sm:py-7
+        px-3 py-4
+        sm:px-6 sm:py-7
       "
     >
       <div className="mx-auto w-full max-w-3xl">{children}</div>
@@ -1221,40 +1044,7 @@ function HostEventShell({ children }: { children: React.ReactNode }) {
 }
 
 function EventLoading() {
-  return (
-    <div className="space-y-4">
-      <div className="h-11 w-11 animate-pulse rounded-full bg-white" />
-
-      <div
-        className="
-          overflow-hidden
-          rounded-[30px]
-          bg-white
-        "
-      >
-        <div className="aspect-video animate-pulse bg-gray-100" />
-
-        <div className="space-y-4 p-5">
-          <div className="h-8 w-2/3 animate-pulse rounded bg-gray-100" />
-
-          <div className="grid gap-3 sm:grid-cols-3">
-            {[1, 2, 3].map((item) => (
-              <div
-                key={item}
-                className="h-18 animate-pulse rounded-[20px] bg-gray-100"
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="h-36 animate-pulse rounded-[28px] bg-white" />
-
-      <Text tone="secondary" className="text-center">
-        در حال دریافت اطلاعات ایونت...
-      </Text>
-    </div>
-  );
+  return <Text tone="secondary">در حال دریافت اطلاعات ایونت...</Text>;
 }
 
 function formatDate(value: Date | string) {

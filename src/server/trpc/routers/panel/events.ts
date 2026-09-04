@@ -1,12 +1,17 @@
 import { TRPCError } from "@trpc/server";
+
 import { z } from "zod";
 
-import { adminProcedure, router } from "../../trpc";
 import {
   getPagination,
   getTotalPages,
   paginationSchema,
 } from "@/lib/pagination";
+
+import { eventStorageBucket, supabaseAdmin } from "@/server/supabase/storage";
+
+import { adminProcedure, router } from "../../trpc";
+
 const eventInputSchema = z.object({
   placeId: z.string().min(1, "مکان الزامی است"),
 
@@ -26,9 +31,67 @@ const eventInputSchema = z.object({
 
   suitable: z.string().trim().optional(),
 });
+
 const eventsListInputSchema = paginationSchema.extend({
   search: z.string().trim().optional(),
 });
+
+function parseDate(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+
+      message: "تاریخ معتبر نیست.",
+    });
+  }
+
+  return date;
+}
+
+function normalizePrice(value: string | undefined) {
+  const price = value?.trim();
+
+  if (!price) {
+    return null;
+  }
+
+  if (!/^\d+(\.\d{1,2})?$/.test(price)) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+
+      message: "قیمت معتبر نیست.",
+    });
+  }
+
+  return price;
+}
+
+async function removeStorageImages(
+  images: Array<{
+    storagePath: string;
+  }>,
+) {
+  if (images.length === 0) {
+    return;
+  }
+
+  const result = await supabaseAdmin.storage
+    .from(eventStorageBucket)
+    .remove(images.map((image) => image.storagePath));
+
+  if (result.error) {
+    console.error("[panel.events storage]", result.error);
+
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+
+      message: "حذف تصاویر ایونت از Storage انجام نشد.",
+    });
+  }
+}
+
 export const panelEventsRouter = router({
   list: adminProcedure
     .input(eventsListInputSchema)
@@ -78,35 +141,37 @@ export const panelEventsRouter = router({
       const [events, total] = await Promise.all([
         ctx.prisma.event.findMany({
           where,
-
           skip,
           take,
 
           include: {
+            images: {
+              orderBy: {
+                sortOrder: "asc",
+              },
+
+              select: {
+                id: true,
+                url: true,
+                sortOrder: true,
+              },
+            },
+
             place: {
               select: {
                 id: true,
                 placeName: true,
+
                 placeCity: true,
-
-                images: {
-                  orderBy: {
-                    sortOrder: "asc",
-                  },
-
-                  take: 1,
-
-                  select: {
-                    url: true,
-                  },
-                },
               },
             },
 
             _count: {
               select: {
                 plans: true,
+
                 comments: true,
+
                 savedBy: true,
               },
             },
@@ -122,14 +187,12 @@ export const panelEventsRouter = router({
         }),
       ]);
 
-      const items = events.map((event) => ({
-        ...event,
-
-        price: event.price?.toString() ?? null,
-      }));
-
       return {
-        items,
+        items: events.map((event) => ({
+          ...event,
+
+          price: event.price?.toString() ?? null,
+        })),
 
         pagination: {
           page: input.page,
@@ -142,11 +205,13 @@ export const panelEventsRouter = router({
         },
       };
     }),
+
   places: adminProcedure.query(async ({ ctx }) => {
     return ctx.prisma.place.findMany({
       select: {
         id: true,
         placeName: true,
+
         placeCity: true,
       },
 
@@ -169,10 +234,23 @@ export const panelEventsRouter = router({
         },
 
         include: {
+          images: {
+            orderBy: {
+              sortOrder: "asc",
+            },
+
+            select: {
+              id: true,
+              url: true,
+              sortOrder: true,
+            },
+          },
+
           place: {
             select: {
               id: true,
               placeName: true,
+
               placeCity: true,
             },
           },
@@ -182,6 +260,7 @@ export const panelEventsRouter = router({
               {
                 sortOrder: "asc",
               },
+
               {
                 createdAt: "asc",
               },
@@ -193,6 +272,7 @@ export const panelEventsRouter = router({
       if (!event) {
         throw new TRPCError({
           code: "NOT_FOUND",
+
           message: "رویداد پیدا نشد.",
         });
       }
@@ -221,16 +301,8 @@ export const panelEventsRouter = router({
       if (!place) {
         throw new TRPCError({
           code: "NOT_FOUND",
+
           message: "مکان پیدا نشد.",
-        });
-      }
-
-      const date = new Date(input.date);
-
-      if (Number.isNaN(date.getTime())) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "تاریخ معتبر نیست.",
         });
       }
 
@@ -240,11 +312,11 @@ export const panelEventsRouter = router({
 
           eventName: input.eventName.trim(),
 
-          date,
+          date: parseDate(input.date),
 
           hour: input.hour?.trim() || null,
 
-          price: input.price?.trim() || null,
+          price: normalizePrice(input.price),
 
           description: input.description?.trim() || null,
 
@@ -282,6 +354,7 @@ export const panelEventsRouter = router({
 
       return {
         success: true,
+
         eventId: event.id,
       };
     }),
@@ -293,25 +366,37 @@ export const panelEventsRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const event = await ctx.prisma.event.findUnique({
-        where: {
-          id: input.eventId,
-        },
-      });
+      const [event, place] = await Promise.all([
+        ctx.prisma.event.findUnique({
+          where: {
+            id: input.eventId,
+          },
+        }),
+
+        ctx.prisma.place.findUnique({
+          where: {
+            id: input.placeId,
+          },
+
+          select: {
+            id: true,
+          },
+        }),
+      ]);
 
       if (!event) {
         throw new TRPCError({
           code: "NOT_FOUND",
+
           message: "رویداد پیدا نشد.",
         });
       }
 
-      const date = new Date(input.date);
-
-      if (Number.isNaN(date.getTime())) {
+      if (!place) {
         throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "تاریخ معتبر نیست.",
+          code: "NOT_FOUND",
+
+          message: "مکان پیدا نشد.",
         });
       }
 
@@ -321,15 +406,15 @@ export const panelEventsRouter = router({
         },
 
         data: {
-          placeId: input.placeId,
+          placeId: place.id,
 
           eventName: input.eventName.trim(),
 
-          date,
+          date: parseDate(input.date),
 
           hour: input.hour?.trim() || null,
 
-          price: input.price?.trim() || null,
+          price: normalizePrice(input.price),
 
           description: input.description?.trim() || null,
 
@@ -377,14 +462,30 @@ export const panelEventsRouter = router({
         where: {
           id: input.eventId,
         },
+
+        select: {
+          id: true,
+          eventName: true,
+
+          placeId: true,
+
+          images: {
+            select: {
+              storagePath: true,
+            },
+          },
+        },
       });
 
       if (!event) {
         throw new TRPCError({
           code: "NOT_FOUND",
+
           message: "رویداد پیدا نشد.",
         });
       }
+
+      await removeStorageImages(event.images);
 
       await ctx.prisma.event.delete({
         where: {
@@ -419,6 +520,71 @@ export const panelEventsRouter = router({
       };
     }),
 
+  deleteImage: adminProcedure
+    .input(
+      z.object({
+        eventId: z.string().min(1),
+
+        imageId: z.string().min(1),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const image = await ctx.prisma.eventImage.findFirst({
+        where: {
+          id: input.imageId,
+
+          eventId: input.eventId,
+        },
+
+        select: {
+          id: true,
+          storagePath: true,
+        },
+      });
+
+      if (!image) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+
+          message: "تصویر پیدا نشد.",
+        });
+      }
+
+      await removeStorageImages([image]);
+
+      await ctx.prisma.eventImage.delete({
+        where: {
+          id: image.id,
+        },
+      });
+
+      try {
+        await ctx.prisma.auditLog.create({
+          data: {
+            adminId: ctx.session.user.id,
+
+            action: "DELETE_EVENT_IMAGE",
+
+            entity: "EventImage",
+
+            entityId: image.id,
+
+            metadata: {
+              eventId: input.eventId,
+
+              storagePath: image.storagePath,
+            },
+          },
+        });
+      } catch (error) {
+        console.error("[panel.events.deleteImage]", error);
+      }
+
+      return {
+        success: true,
+      };
+    }),
+
   addPlan: adminProcedure
     .input(
       z.object({
@@ -444,6 +610,7 @@ export const panelEventsRouter = router({
       if (!event) {
         throw new TRPCError({
           code: "NOT_FOUND",
+
           message: "رویداد پیدا نشد.",
         });
       }
@@ -474,37 +641,13 @@ export const panelEventsRouter = router({
         },
       });
 
-      try {
-        await ctx.prisma.auditLog.create({
-          data: {
-            adminId: ctx.session.user.id,
-
-            action: "CREATE_EVENT_PLAN",
-
-            entity: "EventPlan",
-
-            entityId: created.id,
-
-            metadata: {
-              eventId: event.id,
-
-              eventName: event.eventName,
-
-              hour: created.hour,
-
-              plan: created.plan,
-            },
-          },
-        });
-      } catch (error) {
-        console.error("[events.addPlan] AuditLog:", error);
-      }
-
       return {
         success: true,
+
         plan: created,
       };
     }),
+
   reorderPlans: adminProcedure
     .input(
       z.object({
@@ -514,10 +657,34 @@ export const panelEventsRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      for (let index = 0; index < input.planIds.length; index++) {
+      const ids = Array.from(new Set(input.planIds));
+
+      const plans = await ctx.prisma.eventPlan.findMany({
+        where: {
+          eventId: input.eventId,
+
+          id: {
+            in: ids,
+          },
+        },
+
+        select: {
+          id: true,
+        },
+      });
+
+      if (plans.length !== ids.length) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+
+          message: "ترتیب برنامه‌ها معتبر نیست.",
+        });
+      }
+
+      for (let index = 0; index < ids.length; index++) {
         await ctx.prisma.eventPlan.update({
           where: {
-            id: input.planIds[index],
+            id: ids[index],
           },
 
           data: {
@@ -530,6 +697,7 @@ export const panelEventsRouter = router({
         success: true,
       };
     }),
+
   updatePlan: adminProcedure
     .input(
       z.object({
@@ -550,11 +718,12 @@ export const panelEventsRouter = router({
       if (!existing) {
         throw new TRPCError({
           code: "NOT_FOUND",
+
           message: "برنامه پیدا نشد.",
         });
       }
 
-      const updated = await ctx.prisma.eventPlan.update({
+      await ctx.prisma.eventPlan.update({
         where: {
           id: existing.id,
         },
@@ -566,34 +735,11 @@ export const panelEventsRouter = router({
         },
       });
 
-      try {
-        await ctx.prisma.auditLog.create({
-          data: {
-            adminId: ctx.session.user.id,
-
-            action: "UPDATE_EVENT_PLAN",
-
-            entity: "EventPlan",
-
-            entityId: updated.id,
-
-            metadata: {
-              eventId: updated.eventId,
-
-              hour: updated.hour,
-
-              plan: updated.plan,
-            },
-          },
-        });
-      } catch (error) {
-        console.error("[events.updatePlan] AuditLog:", error);
-      }
-
       return {
         success: true,
       };
     }),
+
   deletePlan: adminProcedure
     .input(
       z.object({
@@ -610,6 +756,7 @@ export const panelEventsRouter = router({
       if (!plan) {
         throw new TRPCError({
           code: "NOT_FOUND",
+
           message: "برنامه رویداد پیدا نشد.",
         });
       }

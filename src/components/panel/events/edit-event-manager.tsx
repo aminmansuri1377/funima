@@ -4,19 +4,20 @@ import { useState } from "react";
 
 import { useRouter } from "next/navigation";
 
+import { FiArrowDown, FiArrowUp, FiPlus, FiTrash2 } from "react-icons/fi";
+
 import {
-  FiArrowDown,
-  FiArrowUp,
-  FiEdit2,
-  FiPlus,
-  FiTrash2,
-} from "react-icons/fi";
-
-import { Button, FormField, InlineMessage, Input, Text } from "@/components/ui";
-
-import { EventForm } from "./event-form";
+  Button,
+  EventImageUploader,
+  FormField,
+  InlineMessage,
+  Input,
+  Text,
+} from "@/components/ui";
 
 import { trpc } from "@/trpc/client";
+
+import { EventForm } from "./event-form";
 
 type Props = {
   eventId: string;
@@ -30,14 +31,12 @@ export function EditEventManager({ eventId }: Props) {
   });
 
   if (event.isPending) {
-    return <Text tone="secondary">در حال دریافت اطلاعات رویداد...</Text>;
+    return <Text tone="secondary">در حال دریافت رویداد...</Text>;
   }
 
   if (event.error || !event.data) {
     return (
-      <InlineMessage variant="error">
-        دریافت اطلاعات رویداد با خطا مواجه شد.
-      </InlineMessage>
+      <InlineMessage variant="error">دریافت رویداد انجام نشد.</InlineMessage>
     );
   }
 
@@ -51,64 +50,68 @@ export function EditEventManager({ eventId }: Props) {
   );
 }
 
-type EditEventContentProps = {
-  event: {
+type EditEventData = {
+  id: string;
+
+  placeId: string;
+
+  eventName: string;
+
+  date: Date | string;
+
+  hour: string | null;
+
+  price: string | null;
+
+  description: string | null;
+
+  rule: string | null;
+
+  info: string | null;
+
+  suitable: string | null;
+
+  images: Array<{
     id: string;
+    url: string;
+    sortOrder: number;
+  }>;
 
-    placeId: string;
-
-    eventName: string;
-
-    date: Date | string;
+  plans: Array<{
+    id: string;
 
     hour: string | null;
 
-    price: string | null;
+    plan: string;
 
-    description: string | null;
+    sortOrder: number;
+  }>;
+};
 
-    rule: string | null;
-
-    info: string | null;
-
-    suitable: string | null;
-
-    place: {
-      id: string;
-      placeName: string;
-      placeCity: string | null;
-    };
-
-    plans: Array<{
-      id: string;
-      hour: string | null;
-      plan: string;
-      sortOrder: number;
-    }>;
-  };
+function EditEventContent({
+  event,
+  onUpdated,
+  onBack,
+}: {
+  event: EditEventData;
 
   onUpdated: () => void | Promise<unknown>;
 
   onBack: () => void;
-};
-
-function EditEventContent({ event, onUpdated, onBack }: EditEventContentProps) {
+}) {
   const update = trpc.panel.events.update.useMutation();
-
-  const [success, setSuccess] = useState<string | null>(null);
 
   const [error, setError] = useState<string | null>(null);
 
-  const dateValue = new Date(event.date).toISOString().slice(0, 10);
+  const [success, setSuccess] = useState<string | null>(null);
 
   return (
     <div className="space-y-6">
       <div
         className="
-          flex flex-col gap-4
-          sm:flex-row
-          sm:items-center
-          sm:justify-between
+          flex items-start
+          justify-between
+          gap-4
         "
       >
         <div>
@@ -121,7 +124,7 @@ function EditEventContent({ event, onUpdated, onBack }: EditEventContentProps) {
           </Text>
         </div>
 
-        <Button type="button" variant="secondary" onClick={onBack}>
+        <Button type="button" variant="tertiary" onClick={onBack}>
           بازگشت
         </Button>
       </div>
@@ -136,7 +139,7 @@ function EditEventContent({ event, onUpdated, onBack }: EditEventContentProps) {
 
           eventName: event.eventName,
 
-          date: dateValue,
+          date: toDateInputValue(event.date),
 
           hour: event.hour ?? "",
 
@@ -154,18 +157,21 @@ function EditEventContent({ event, onUpdated, onBack }: EditEventContentProps) {
         loading={update.isPending}
         onSubmit={async (values) => {
           setError(null);
+
           setSuccess(null);
 
           try {
+            const { imageFiles: _imageFiles, ...eventValues } = values;
+
             await update.mutateAsync({
               eventId: event.id,
 
-              ...values,
+              ...eventValues,
             });
 
-            setSuccess("اطلاعات رویداد با موفقیت ذخیره شد.");
-
             await onUpdated();
+
+            setSuccess("اطلاعات رویداد با موفقیت ذخیره شد.");
           } catch (error) {
             setError(
               error instanceof Error
@@ -174,6 +180,12 @@ function EditEventContent({ event, onUpdated, onBack }: EditEventContentProps) {
             );
           }
         }}
+      />
+
+      <PanelEventImages
+        eventId={event.id}
+        images={event.images}
+        onChanged={onUpdated}
       />
 
       <EventPlansEditor
@@ -185,69 +197,127 @@ function EditEventContent({ event, onUpdated, onBack }: EditEventContentProps) {
   );
 }
 
-type EventPlansEditorProps = {
+function PanelEventImages({
+  eventId,
+  images,
+  onChanged,
+}: {
   eventId: string;
 
-  plans: Array<{
+  images: Array<{
     id: string;
-    hour: string | null;
-    plan: string;
+    url: string;
     sortOrder: number;
   }>;
 
   onChanged: () => void | Promise<unknown>;
-};
+}) {
+  const deleteImage = trpc.panel.events.deleteImage.useMutation();
+
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <section
+      className="
+        rounded-xl
+        border
+        border-(--color-border)
+        bg-(--color-surface)
+        p-5
+      "
+    >
+      {error && (
+        <InlineMessage variant="error" className="mb-4">
+          {error}
+        </InlineMessage>
+      )}
+
+      <EventImageUploader
+        eventId={eventId}
+        images={images}
+        maxFiles={8}
+        onUploaded={onChanged}
+        onDelete={async (imageId) => {
+          const confirmed = window.confirm("این تصویر حذف شود؟");
+
+          if (!confirmed) {
+            return;
+          }
+
+          setError(null);
+
+          try {
+            await deleteImage.mutateAsync({
+              eventId,
+              imageId,
+            });
+
+            await onChanged();
+          } catch (error) {
+            setError(
+              error instanceof Error ? error.message : "حذف تصویر انجام نشد.",
+            );
+          }
+        }}
+      />
+    </section>
+  );
+}
 
 function EventPlansEditor({
   eventId,
   plans,
   onChanged,
-}: EventPlansEditorProps) {
+}: {
+  eventId: string;
+
+  plans: Array<{
+    id: string;
+
+    hour: string | null;
+
+    plan: string;
+
+    sortOrder: number;
+  }>;
+
+  onChanged: () => void | Promise<unknown>;
+}) {
+  const add = trpc.panel.events.addPlan.useMutation();
+
+  const update = trpc.panel.events.updatePlan.useMutation();
+
+  const remove = trpc.panel.events.deletePlan.useMutation();
+
+  const reorder = trpc.panel.events.reorderPlans.useMutation();
+
   const [hour, setHour] = useState("");
 
   const [plan, setPlan] = useState("");
 
-  const [editingId, setEditingId] = useState<string | null>(null);
-
-  const [editingHour, setEditingHour] = useState("");
-
-  const [editingPlan, setEditingPlan] = useState("");
-
   const [error, setError] = useState<string | null>(null);
 
-  const [success, setSuccess] = useState<string | null>(null);
-
-  const addPlan = trpc.panel.events.addPlan.useMutation();
-
-  const updatePlan = trpc.panel.events.updatePlan.useMutation();
-
-  const deletePlan = trpc.panel.events.deletePlan.useMutation();
-
-  const reorderPlans = trpc.panel.events.reorderPlans.useMutation();
-
-  async function handleAdd(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    setError(null);
-    setSuccess(null);
-
+  async function handleAdd() {
     if (!plan.trim()) {
-      setError("متن برنامه الزامی است.");
+      setError("متن برنامه را وارد کنید.");
 
       return;
     }
 
+    setError(null);
+
     try {
-      await addPlan.mutateAsync({
+      await add.mutateAsync({
         eventId,
-        hour,
-        plan,
+
+        hour: hour.trim(),
+
+        plan: plan.trim(),
       });
 
       setHour("");
-      setPlan("");
 
-      setSuccess("برنامه با موفقیت اضافه شد.");
+      setPlan("");
 
       await onChanged();
     } catch (error) {
@@ -257,177 +327,37 @@ function EventPlansEditor({
     }
   }
 
-  function startEdit(item: { id: string; hour: string | null; plan: string }) {
-    setEditingId(item.id);
+  async function movePlan(index: number, direction: "up" | "down") {
+    const next = [...plans];
 
-    setEditingHour(item.hour ?? "");
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
 
-    setEditingPlan(item.plan);
-
-    setError(null);
-    setSuccess(null);
-  }
-
-  function cancelEdit() {
-    setEditingId(null);
-    setEditingHour("");
-    setEditingPlan("");
-  }
-
-  async function saveEdit() {
-    if (!editingId) {
+    if (targetIndex < 0 || targetIndex >= next.length) {
       return;
     }
 
-    setError(null);
-    setSuccess(null);
+    [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
 
-    if (!editingPlan.trim()) {
-      setError("متن برنامه الزامی است.");
+    await reorder.mutateAsync({
+      eventId,
 
-      return;
-    }
+      planIds: next.map((item) => item.id),
+    });
 
-    try {
-      await updatePlan.mutateAsync({
-        planId: editingId,
-
-        hour: editingHour,
-
-        plan: editingPlan,
-      });
-
-      cancelEdit();
-
-      setSuccess("برنامه با موفقیت ویرایش شد.");
-
-      await onChanged();
-    } catch (error) {
-      setError(
-        error instanceof Error ? error.message : "ویرایش برنامه انجام نشد.",
-      );
-    }
+    await onChanged();
   }
-
-  async function handleDelete(planId: string) {
-    const confirmed = window.confirm("این برنامه حذف شود؟");
-
-    if (!confirmed) {
-      return;
-    }
-
-    setError(null);
-    setSuccess(null);
-
-    try {
-      await deletePlan.mutateAsync({
-        planId,
-      });
-
-      if (editingId === planId) {
-        cancelEdit();
-      }
-
-      setSuccess("برنامه با موفقیت حذف شد.");
-
-      await onChanged();
-    } catch (error) {
-      setError(
-        error instanceof Error ? error.message : "حذف برنامه انجام نشد.",
-      );
-    }
-  }
-
-  async function movePlan(index: number, direction: "UP" | "DOWN") {
-    const targetIndex = direction === "UP" ? index - 1 : index + 1;
-
-    if (targetIndex < 0 || targetIndex >= plans.length) {
-      return;
-    }
-
-    const ids = plans.map((item) => item.id);
-
-    [ids[index], ids[targetIndex]] = [ids[targetIndex], ids[index]];
-
-    setError(null);
-    setSuccess(null);
-
-    try {
-      await reorderPlans.mutateAsync({
-        eventId,
-        planIds: ids,
-      });
-
-      await onChanged();
-    } catch (error) {
-      setError(
-        error instanceof Error
-          ? error.message
-          : "تغییر ترتیب برنامه‌ها انجام نشد.",
-      );
-    }
-  }
-
-  const isWorking =
-    addPlan.isPending ||
-    updatePlan.isPending ||
-    deletePlan.isPending ||
-    reorderPlans.isPending;
 
   return (
     <section
       className="
-        rounded-[var(--radius-xl)]
+        rounded-xl
         border
-        border-[var(--color-border)]
-        bg-[var(--color-surface)]
+        border-(--color-border)
+        bg-(--color-surface)
         p-5
       "
     >
-      <div className="mb-6">
-        <Text variant="heading-md">برنامه رویداد</Text>
-
-        <Text variant="body-sm" tone="secondary" className="mt-1">
-          مراحل و زمان‌بندی رویداد را به ترتیب اضافه کنید.
-        </Text>
-      </div>
-
-      <form
-        onSubmit={handleAdd}
-        className="
-          grid gap-4
-          lg:grid-cols-[180px_1fr_auto]
-        "
-      >
-        <FormField label="ساعت">
-          <Input
-            type="time"
-            value={hour}
-            onChange={(event) => setHour(event.target.value)}
-            dir="ltr"
-            disabled={isWorking}
-          />
-        </FormField>
-
-        <FormField label="برنامه" required>
-          <Input
-            value={plan}
-            onChange={(event) => setPlan(event.target.value)}
-            placeholder="مثلاً شروع اجرای موسیقی"
-            disabled={isWorking}
-          />
-        </FormField>
-
-        <div className="flex items-end">
-          <Button
-            type="submit"
-            startIcon={<FiPlus />}
-            loading={addPlan.isPending}
-          >
-            افزودن برنامه
-          </Button>
-        </div>
-      </form>
+      <Text variant="heading-md">برنامه‌های رویداد</Text>
 
       {error && (
         <InlineMessage variant="error" className="mt-4">
@@ -435,171 +365,199 @@ function EventPlansEditor({
         </InlineMessage>
       )}
 
-      {success && (
-        <InlineMessage variant="success" className="mt-4">
-          {success}
-        </InlineMessage>
-      )}
+      <div className="mt-5 space-y-3">
+        {plans.map((item, index) => (
+          <PlanRow
+            key={item.id}
+            item={item}
+            first={index === 0}
+            last={index === plans.length - 1}
+            loading={update.isPending || remove.isPending || reorder.isPending}
+            onUp={() => movePlan(index, "up")}
+            onDown={() => movePlan(index, "down")}
+            onSave={async (values) => {
+              await update.mutateAsync({
+                planId: item.id,
 
-      <div className="mt-8 space-y-3">
-        {plans.map((item, index) => {
-          const isEditing = editingId === item.id;
+                hour: values.hour,
 
-          return (
-            <div
-              key={item.id}
-              className="
-                  rounded-[var(--radius-lg)]
-                  border
-                  border-[var(--color-border)]
-                  p-4
-                "
-            >
-              {isEditing ? (
-                <div className="space-y-4">
-                  <div
-                    className="
-                        grid gap-4
-                        md:grid-cols-[180px_1fr]
-                      "
-                  >
-                    <FormField label="ساعت">
-                      <Input
-                        type="time"
-                        value={editingHour}
-                        onChange={(event) => setEditingHour(event.target.value)}
-                        dir="ltr"
-                        disabled={isWorking}
-                      />
-                    </FormField>
+                plan: values.plan,
+              });
 
-                    <FormField label="برنامه" required>
-                      <Input
-                        value={editingPlan}
-                        onChange={(event) => setEditingPlan(event.target.value)}
-                        disabled={isWorking}
-                      />
-                    </FormField>
-                  </div>
+              await onChanged();
+            }}
+            onDelete={async () => {
+              const confirmed = window.confirm("این برنامه حذف شود؟");
 
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      loading={updatePlan.isPending}
-                      onClick={saveEdit}
-                    >
-                      ذخیره
-                    </Button>
+              if (!confirmed) {
+                return;
+              }
 
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="secondary"
-                      disabled={isWorking}
-                      onClick={cancelEdit}
-                    >
-                      انصراف
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-                  <div className="flex min-w-0 flex-1 items-center gap-4">
-                    <div
-                      className="
-                          flex h-10 w-10
-                          shrink-0
-                          items-center
-                          justify-center
-                          rounded-full
-                          bg-[var(--color-brand-50)]
-                          font-bold
-                          text-[var(--color-brand-600)]
-                        "
-                    >
-                      {index + 1}
-                    </div>
+              await remove.mutateAsync({
+                planId: item.id,
+              });
 
-                    <div className="min-w-0 flex-1">
-                      <Text variant="label-lg">{item.plan}</Text>
+              await onChanged();
+            }}
+          />
+        ))}
+      </div>
 
-                      <Text variant="caption" tone="secondary" className="mt-1">
-                        {item.hour ? `ساعت ${item.hour}` : "بدون ساعت مشخص"}
-                      </Text>
-                    </div>
-                  </div>
+      <div
+        className="
+          mt-6
+          grid gap-3
+          md:grid-cols-[150px_1fr_auto]
+        "
+      >
+        <Input
+          type="time"
+          value={hour}
+          onChange={(event) => setHour(event.target.value)}
+        />
 
-                  <div className="flex flex-wrap gap-1">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="tertiary"
-                      aria-label="انتقال برنامه به بالا"
-                      disabled={index === 0 || isWorking}
-                      onClick={() => movePlan(index, "UP")}
-                    >
-                      <FiArrowUp />
-                    </Button>
+        <Input
+          value={plan}
+          onChange={(event) => setPlan(event.target.value)}
+          placeholder="برنامه جدید..."
+        />
 
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="tertiary"
-                      aria-label="انتقال برنامه به پایین"
-                      disabled={index === plans.length - 1 || isWorking}
-                      onClick={() => movePlan(index, "DOWN")}
-                    >
-                      <FiArrowDown />
-                    </Button>
-
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="secondary"
-                      startIcon={<FiEdit2 />}
-                      disabled={isWorking}
-                      onClick={() => startEdit(item)}
-                    >
-                      ویرایش
-                    </Button>
-
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="tertiary"
-                      startIcon={<FiTrash2 />}
-                      disabled={isWorking}
-                      onClick={() => handleDelete(item.id)}
-                    >
-                      حذف
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        {plans.length === 0 && (
-          <div
-            className="
-              rounded-[var(--radius-lg)]
-              border
-              border-dashed
-              border-[var(--color-border)]
-              p-8
-              text-center
-            "
-          >
-            <Text variant="heading-md">هنوز برنامه‌ای وجود ندارد</Text>
-
-            <Text tone="secondary" className="mt-2">
-              اولین مرحله برنامه رویداد را از فرم بالا اضافه کنید.
-            </Text>
-          </div>
-        )}
+        <Button
+          type="button"
+          startIcon={<FiPlus />}
+          loading={add.isPending}
+          onClick={handleAdd}
+        >
+          افزودن
+        </Button>
       </div>
     </section>
   );
+}
+
+function PlanRow({
+  item,
+  first,
+  last,
+  loading,
+  onUp,
+  onDown,
+  onSave,
+  onDelete,
+}: {
+  item: {
+    id: string;
+
+    hour: string | null;
+
+    plan: string;
+  };
+
+  first: boolean;
+
+  last: boolean;
+
+  loading: boolean;
+
+  onUp: () => void;
+
+  onDown: () => void;
+
+  onSave: (values: { hour: string; plan: string }) => void | Promise<unknown>;
+
+  onDelete: () => void | Promise<unknown>;
+}) {
+  const [hour, setHour] = useState(item.hour ?? "");
+
+  const [plan, setPlan] = useState(item.plan);
+
+  return (
+    <div
+      className="
+        rounded-lg
+        border
+        border-(--color-border)
+        bg-gray-50
+        p-4
+      "
+    >
+      <div className="grid gap-3 md:grid-cols-[140px_1fr_auto]">
+        <Input
+          type="time"
+          value={hour}
+          onChange={(event) => setHour(event.target.value)}
+          disabled={loading}
+        />
+
+        <Input
+          value={plan}
+          onChange={(event) => setPlan(event.target.value)}
+          disabled={loading}
+        />
+
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          disabled={loading || !plan.trim()}
+          onClick={() =>
+            onSave({
+              hour: hour.trim(),
+
+              plan: plan.trim(),
+            })
+          }
+        >
+          ذخیره
+        </Button>
+      </div>
+
+      <div className="mt-3 flex gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant="tertiary"
+          startIcon={<FiArrowUp />}
+          disabled={first || loading}
+          onClick={onUp}
+        >
+          بالا
+        </Button>
+
+        <Button
+          type="button"
+          size="sm"
+          variant="tertiary"
+          startIcon={<FiArrowDown />}
+          disabled={last || loading}
+          onClick={onDown}
+        >
+          پایین
+        </Button>
+
+        <Button
+          type="button"
+          size="sm"
+          variant="tertiary"
+          startIcon={<FiTrash2 />}
+          disabled={loading}
+          onClick={onDelete}
+        >
+          حذف
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function toDateInputValue(value: Date | string) {
+  const date = new Date(value);
+
+  const year = date.getFullYear();
+
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }

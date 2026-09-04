@@ -9,3 +9,9 @@ export { Divider } from "./divider/divider";
 export { ImageUploader } from "./uploader/image-uploader";
 export { Pagination } from "./pagination";
 export { SearchSelect } from "./search-select";
+export {
+  EventImagePicker,
+  EventImageUploader,
+  uploadEventImages,
+  type EventImageItem,
+} from "./uploader/event-image-uploader";

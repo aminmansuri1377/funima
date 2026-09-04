@@ -61,6 +61,7 @@ export const ModelName = {
   FilterValue: 'FilterValue',
   PlaceFilterValue: 'PlaceFilterValue',
   Event: 'Event',
+  EventImage: 'EventImage',
   EventPlan: 'EventPlan',
   Comment: 'Comment',
   SavedPlace: 'SavedPlace',
@@ -209,6 +210,18 @@ export const EventScalarFieldEnum = {
 } as const
 
 export type EventScalarFieldEnum = (typeof EventScalarFieldEnum)[keyof typeof EventScalarFieldEnum]
+
+
+export const EventImageScalarFieldEnum = {
+  id: 'id',
+  eventId: 'eventId',
+  url: 'url',
+  storagePath: 'storagePath',
+  sortOrder: 'sortOrder',
+  createdAt: 'createdAt'
+} as const
+
+export type EventImageScalarFieldEnum = (typeof EventImageScalarFieldEnum)[keyof typeof EventImageScalarFieldEnum]
 
 
 export const EventPlanScalarFieldEnum = {

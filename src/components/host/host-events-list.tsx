@@ -74,8 +74,7 @@ export function HostEventsList() {
     <div className="space-y-5">
       <div
         className="
-          flex
-          flex-col
+          flex flex-col
           gap-4
           sm:flex-row
           sm:items-center
@@ -101,63 +100,42 @@ export function HostEventsList() {
         </Button>
       </div>
 
-      {events.data && (
-        <div
-          className="
-            flex
-            items-center
-            gap-2
-            rounded-[20px]
-            bg-(--color-brand-50)
-            px-4
-            py-3
-            text-sm
-            text-(--color-brand-700)
-          "
-        >
-          <FiCalendar />
-
-          <span>
-            مجموعاً{" "}
-            <strong>
-              {events.data.pagination.total.toLocaleString("fa-IR")}
-            </strong>{" "}
-            ایونت دارید
-          </span>
-        </div>
-      )}
-
       <div
         className="
-          rounded-[24px]
+          rounded-3xl
           bg-white
-          p-3
-          shadow-[0_8px_30px_rgba(0,0,0,0.04)]
-          sm:p-4
+          p-4
+          shadow-sm
         "
       >
         <SearchInput
           value={search}
           onChange={(event) => {
             setSearch(event.target.value);
+
             setPage(1);
           }}
           onDebouncedChange={(value) => {
             setDebouncedSearch(value);
+
             setPage(1);
           }}
           onClear={() => {
             setSearch("");
+
             setDebouncedSearch("");
+
             setPage(1);
           }}
-          placeholder="جستجو بین ایونت‌های شما..."
+          placeholder="جستجو بین ایونت‌ها..."
         />
       </div>
 
       {error && <InlineMessage variant="error">{error}</InlineMessage>}
 
-      {events.isPending && <EventsLoading />}
+      {events.isPending && (
+        <Text tone="secondary">در حال دریافت ایونت‌ها...</Text>
+      )}
 
       {events.error && (
         <InlineMessage variant="error">
@@ -166,166 +144,130 @@ export function HostEventsList() {
       )}
 
       {events.data && events.data.items.length === 0 && (
-        <EmptyEvents onCreate={() => router.push("/host/events/new")} />
+        <div
+          className="
+              rounded-[30px]
+              bg-white
+              p-12
+              text-center
+              shadow-sm
+            "
+        >
+          <FiCalendar
+            size={38}
+            className="
+                mx-auto
+                text-(--color-brand-500)
+              "
+          />
+
+          <Text variant="heading-md" className="mt-4">
+            هنوز ایونتی ندارید
+          </Text>
+        </div>
       )}
 
       {events.data && events.data.items.length > 0 && (
         <>
-          <div
-            className="
-              grid
-              gap-4
-              md:grid-cols-2
-            "
-          >
+          <div className="grid gap-4 md:grid-cols-2">
             {events.data.items.map((event) => (
               <article
                 key={event.id}
                 className="
-                  group
-                  overflow-hidden
-                  rounded-[28px]
-                  bg-white
-                  shadow-[0_8px_30px_rgba(0,0,0,0.04)]
-                  transition-transform
-                  duration-200
-                  hover:-translate-y-0.5
-                "
+                      overflow-hidden
+                      rounded-[28px]
+                      bg-white
+                      shadow-sm
+                    "
               >
-                <button
-                  type="button"
-                  className="block w-full text-right"
-                  onClick={() => router.push(`/host/events/${event.id}`)}
-                >
-                  <EventImage
-                    image={event.place.images[0]?.url ?? null}
-                    name={event.eventName}
-                    date={event.date}
-                  />
+                <EventImage
+                  image={event.images[0]?.url ?? null}
+                  name={event.eventName}
+                />
 
-                  <div className="p-5">
-                    <Text variant="heading-md" className="line-clamp-2">
-                      {event.eventName}
-                    </Text>
+                <div className="p-5">
+                  <Text variant="heading-md">{event.eventName}</Text>
 
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <MetaPill icon={<FiCalendar />}>
-                        {formatDate(event.date)}
-                      </MetaPill>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <MetaPill icon={<FiCalendar />}>
+                      {formatDate(event.date)}
+                    </MetaPill>
 
-                      {event.hour && (
-                        <MetaPill icon={<FiClock />}>{event.hour}</MetaPill>
-                      )}
-                    </div>
-
-                    {event.price ? (
-                      <div className="mt-5">
-                        <Text variant="caption" tone="secondary">
-                          هزینه هر نفر
-                        </Text>
-
-                        <Text variant="heading-md" className="mt-1">
-                          {Number(event.price).toLocaleString("fa-IR")} تومان
-                        </Text>
-                      </div>
-                    ) : (
-                      <Text
-                        variant="label-lg"
-                        className="mt-5 text-(--color-brand-600)"
-                      >
-                        رایگان
-                      </Text>
+                    {event.hour && (
+                      <MetaPill icon={<FiClock />}>{event.hour}</MetaPill>
                     )}
-
-                    <div
-                      className="
-                        mt-5
-                        flex
-                        items-center
-                        gap-4
-                        border-t
-                        border-(--color-border)
-                        pt-4
-                        text-sm
-                        text-(--color-text-secondary)
-                      "
-                    >
-                      <EventCount value={event._count.plans}>برنامه</EventCount>
-
-                      <EventCount
-                        icon={<FiMessageCircle />}
-                        value={event._count.comments}
-                      >
-                        نظر
-                      </EventCount>
-
-                      <EventCount
-                        icon={<FiBookmark />}
-                        value={event._count.savedBy}
-                      >
-                        ذخیره
-                      </EventCount>
-                    </div>
                   </div>
-                </button>
 
-                <div
-                  className="
-                    flex
-                    gap-2
-                    border-t
-                    border-(--color-border)
-                    px-5
-                    py-4
-                  "
-                >
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    startIcon={<FiEdit2 />}
-                    onClick={() => router.push(`/host/events/${event.id}`)}
-                  >
-                    مشاهده و ویرایش
-                  </Button>
+                  <Text variant="label-lg" className="mt-4">
+                    {event.price
+                      ? `${Number(event.price).toLocaleString("fa-IR")} تومان`
+                      : "رایگان"}
+                  </Text>
 
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="tertiary"
-                    startIcon={<FiTrash2 />}
-                    disabled={deleteEvent.isPending}
-                    onClick={() => handleDelete(event.id, event.eventName)}
+                  <div
+                    className="
+                          mt-4
+                          flex gap-4
+                          text-sm
+                          text-(--color-text-secondary)
+                        "
                   >
-                    حذف
-                  </Button>
+                    <span>{event._count.plans} برنامه</span>
+
+                    <span className="flex items-center gap-1">
+                      <FiMessageCircle />
+
+                      {event._count.comments}
+                    </span>
+
+                    <span className="flex items-center gap-1">
+                      <FiBookmark />
+
+                      {event._count.savedBy}
+                    </span>
+                  </div>
+
+                  <div className="mt-5 flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      startIcon={<FiEdit2 />}
+                      onClick={() => router.push(`/host/events/${event.id}`)}
+                    >
+                      مشاهده و ویرایش
+                    </Button>
+
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="tertiary"
+                      startIcon={<FiTrash2 />}
+                      disabled={deleteEvent.isPending}
+                      onClick={() => handleDelete(event.id, event.eventName)}
+                    >
+                      حذف
+                    </Button>
+                  </div>
                 </div>
               </article>
             ))}
           </div>
 
           {events.data.pagination.totalPages > 1 && (
-            <div
-              className="
-                rounded-3xl
-                bg-white
-                p-4
-                shadow-[0_8px_30px_rgba(0,0,0,0.04)]
-              "
-            >
-              <Pagination
-                page={events.data.pagination.page}
-                pageSize={events.data.pagination.pageSize}
-                totalItems={events.data.pagination.total}
-                totalPages={events.data.pagination.totalPages}
-                disabled={events.isFetching}
-                onPageChange={setPage}
-                onPageSizeChange={(size) => {
-                  setPageSize(size);
-                  setPage(1);
-                }}
-              />
-            </div>
+            <Pagination
+              page={events.data.pagination.page}
+              pageSize={events.data.pagination.pageSize}
+              totalItems={events.data.pagination.total}
+              totalPages={events.data.pagination.totalPages}
+              disabled={events.isFetching}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+
+                setPage(1);
+              }}
+            />
           )}
         </>
       )}
@@ -333,66 +275,32 @@ export function HostEventsList() {
   );
 }
 
-function EventImage({
-  image,
-  name,
-  date,
-}: {
-  image: string | null;
-  name: string;
-  date: Date | string;
-}) {
-  return (
-    <div className="relative aspect-video overflow-hidden bg-gray-100">
-      {image ? (
-        <Image
-          src={image}
-          alt={name}
-          fill
-          sizes="(max-width:768px) 100vw, 50vw"
-          className="
-            object-cover
-            transition-transform
-            duration-300
-            group-hover:scale-[1.02]
-          "
-        />
-      ) : (
-        <div
-          className="
-            flex
-            h-full
-            items-center
-            justify-center
-            bg-(--color-brand-50)
-            text-(--color-brand-500)
-          "
-        >
-          <FiCalendar size={42} />
-        </div>
-      )}
-
+function EventImage({ image, name }: { image: string | null; name: string }) {
+  if (!image) {
+    return (
       <div
         className="
-          absolute
-          left-3
-          top-3
-          min-w-14
-          rounded-2xl
-          bg-white/95
-          px-3
-          py-2
-          text-center
-          shadow-sm
-          backdrop-blur
+          flex aspect-video
+          items-center
+          justify-center
+          bg-(--color-brand-50)
+          text-(--color-brand-500)
         "
       >
-        <Text variant="label-lg">{formatDay(date)}</Text>
-
-        <Text variant="caption" tone="secondary">
-          {formatMonth(date)}
-        </Text>
+        <FiCalendar size={42} />
       </div>
+    );
+  }
+
+  return (
+    <div className="relative aspect-video">
+      <Image
+        src={image}
+        alt={name}
+        fill
+        sizes="(max-width:768px) 100vw, 50vw"
+        className="object-cover"
+      />
     </div>
   );
 }
@@ -401,19 +309,17 @@ function MetaPill({
   icon,
   children,
 }: {
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <span
       className="
         inline-flex
-        items-center
-        gap-1.5
+        items-center gap-1.5
         rounded-full
         bg-gray-50
-        px-3
-        py-2
+        px-3 py-2
         text-sm
         text-(--color-text-secondary)
       "
@@ -424,119 +330,10 @@ function MetaPill({
   );
 }
 
-function EventCount({
-  value,
-  icon,
-  children,
-}: {
-  value: number;
-  icon?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      {icon}
-
-      <span>{value.toLocaleString("fa-IR")}</span>
-
-      <span>{children}</span>
-    </span>
-  );
-}
-
-function EmptyEvents({ onCreate }: { onCreate: () => void }) {
-  return (
-    <div
-      className="
-        rounded-[30px]
-        bg-white
-        px-5
-        py-14
-        text-center
-        shadow-[0_8px_30px_rgba(0,0,0,0.04)]
-      "
-    >
-      <div
-        className="
-          mx-auto
-          flex
-          h-16
-          w-16
-          items-center
-          justify-center
-          rounded-[22px]
-          bg-(--color-brand-50)
-          text-(--color-brand-500)
-        "
-      >
-        <FiCalendar size={30} />
-      </div>
-
-      <Text variant="heading-md" className="mt-5">
-        هنوز ایونتی ندارید
-      </Text>
-
-      <Text tone="secondary" className="mx-auto mt-2 max-w-sm">
-        اولین ایونت مجموعه خود را بسازید و اطلاعات کامل آن را برای کاربران
-        فونیما منتشر کنید.
-      </Text>
-
-      <Button
-        type="button"
-        startIcon={<FiPlus />}
-        className="mt-6"
-        onClick={onCreate}
-      >
-        ساخت اولین ایونت
-      </Button>
-    </div>
-  );
-}
-
-function EventsLoading() {
-  return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {[1, 2].map((item) => (
-        <div
-          key={item}
-          className="
-            overflow-hidden
-            rounded-[28px]
-            bg-white
-            shadow-sm
-          "
-        >
-          <div className="aspect-video animate-pulse bg-gray-100" />
-
-          <div className="space-y-3 p-5">
-            <div className="h-6 w-2/3 animate-pulse rounded bg-gray-100" />
-
-            <div className="h-4 w-1/2 animate-pulse rounded bg-gray-100" />
-
-            <div className="h-10 animate-pulse rounded-xl bg-gray-100" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function formatDate(value: Date | string) {
   return new Intl.DateTimeFormat("fa-IR", {
     year: "numeric",
     month: "long",
     day: "numeric",
-  }).format(new Date(value));
-}
-
-function formatDay(value: Date | string) {
-  return new Intl.DateTimeFormat("fa-IR", {
-    day: "numeric",
-  }).format(new Date(value));
-}
-
-function formatMonth(value: Date | string) {
-  return new Intl.DateTimeFormat("fa-IR", {
-    month: "short",
   }).format(new Date(value));
 }

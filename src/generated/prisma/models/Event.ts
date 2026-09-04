@@ -273,6 +273,7 @@ export type EventWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Event"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Event"> | Date | string
   place?: Prisma.XOR<Prisma.PlaceScalarRelationFilter, Prisma.PlaceWhereInput>
+  images?: Prisma.EventImageListRelationFilter
   plans?: Prisma.EventPlanListRelationFilter
   comments?: Prisma.CommentListRelationFilter
   savedBy?: Prisma.SavedEventListRelationFilter
@@ -292,6 +293,7 @@ export type EventOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   place?: Prisma.PlaceOrderByWithRelationInput
+  images?: Prisma.EventImageOrderByRelationAggregateInput
   plans?: Prisma.EventPlanOrderByRelationAggregateInput
   comments?: Prisma.CommentOrderByRelationAggregateInput
   savedBy?: Prisma.SavedEventOrderByRelationAggregateInput
@@ -314,6 +316,7 @@ export type EventWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Event"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Event"> | Date | string
   place?: Prisma.XOR<Prisma.PlaceScalarRelationFilter, Prisma.PlaceWhereInput>
+  images?: Prisma.EventImageListRelationFilter
   plans?: Prisma.EventPlanListRelationFilter
   comments?: Prisma.CommentListRelationFilter
   savedBy?: Prisma.SavedEventListRelationFilter
@@ -370,6 +373,7 @@ export type EventCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   place: Prisma.PlaceCreateNestedOneWithoutEventsInput
+  images?: Prisma.EventImageCreateNestedManyWithoutEventInput
   plans?: Prisma.EventPlanCreateNestedManyWithoutEventInput
   comments?: Prisma.CommentCreateNestedManyWithoutEventInput
   savedBy?: Prisma.SavedEventCreateNestedManyWithoutEventInput
@@ -388,6 +392,7 @@ export type EventUncheckedCreateInput = {
   suitable?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  images?: Prisma.EventImageUncheckedCreateNestedManyWithoutEventInput
   plans?: Prisma.EventPlanUncheckedCreateNestedManyWithoutEventInput
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutEventInput
   savedBy?: Prisma.SavedEventUncheckedCreateNestedManyWithoutEventInput
@@ -406,6 +411,7 @@ export type EventUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   place?: Prisma.PlaceUpdateOneRequiredWithoutEventsNestedInput
+  images?: Prisma.EventImageUpdateManyWithoutEventNestedInput
   plans?: Prisma.EventPlanUpdateManyWithoutEventNestedInput
   comments?: Prisma.CommentUpdateManyWithoutEventNestedInput
   savedBy?: Prisma.SavedEventUpdateManyWithoutEventNestedInput
@@ -424,6 +430,7 @@ export type EventUncheckedUpdateInput = {
   suitable?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  images?: Prisma.EventImageUncheckedUpdateManyWithoutEventNestedInput
   plans?: Prisma.EventPlanUncheckedUpdateManyWithoutEventNestedInput
   comments?: Prisma.CommentUncheckedUpdateManyWithoutEventNestedInput
   savedBy?: Prisma.SavedEventUncheckedUpdateManyWithoutEventNestedInput
@@ -596,6 +603,20 @@ export type NullableDecimalFieldUpdateOperationsInput = {
   divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
 }
 
+export type EventCreateNestedOneWithoutImagesInput = {
+  create?: Prisma.XOR<Prisma.EventCreateWithoutImagesInput, Prisma.EventUncheckedCreateWithoutImagesInput>
+  connectOrCreate?: Prisma.EventCreateOrConnectWithoutImagesInput
+  connect?: Prisma.EventWhereUniqueInput
+}
+
+export type EventUpdateOneRequiredWithoutImagesNestedInput = {
+  create?: Prisma.XOR<Prisma.EventCreateWithoutImagesInput, Prisma.EventUncheckedCreateWithoutImagesInput>
+  connectOrCreate?: Prisma.EventCreateOrConnectWithoutImagesInput
+  upsert?: Prisma.EventUpsertWithoutImagesInput
+  connect?: Prisma.EventWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EventUpdateToOneWithWhereWithoutImagesInput, Prisma.EventUpdateWithoutImagesInput>, Prisma.EventUncheckedUpdateWithoutImagesInput>
+}
+
 export type EventCreateNestedOneWithoutPlansInput = {
   create?: Prisma.XOR<Prisma.EventCreateWithoutPlansInput, Prisma.EventUncheckedCreateWithoutPlansInput>
   connectOrCreate?: Prisma.EventCreateOrConnectWithoutPlansInput
@@ -652,6 +673,7 @@ export type EventCreateWithoutPlaceInput = {
   suitable?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  images?: Prisma.EventImageCreateNestedManyWithoutEventInput
   plans?: Prisma.EventPlanCreateNestedManyWithoutEventInput
   comments?: Prisma.CommentCreateNestedManyWithoutEventInput
   savedBy?: Prisma.SavedEventCreateNestedManyWithoutEventInput
@@ -669,6 +691,7 @@ export type EventUncheckedCreateWithoutPlaceInput = {
   suitable?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  images?: Prisma.EventImageUncheckedCreateNestedManyWithoutEventInput
   plans?: Prisma.EventPlanUncheckedCreateNestedManyWithoutEventInput
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutEventInput
   savedBy?: Prisma.SavedEventUncheckedCreateNestedManyWithoutEventInput
@@ -718,6 +741,94 @@ export type EventScalarWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"Event"> | Date | string
 }
 
+export type EventCreateWithoutImagesInput = {
+  id?: string
+  eventName: string
+  date: Date | string
+  hour?: string | null
+  price?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  description?: string | null
+  rule?: string | null
+  info?: string | null
+  suitable?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  place: Prisma.PlaceCreateNestedOneWithoutEventsInput
+  plans?: Prisma.EventPlanCreateNestedManyWithoutEventInput
+  comments?: Prisma.CommentCreateNestedManyWithoutEventInput
+  savedBy?: Prisma.SavedEventCreateNestedManyWithoutEventInput
+}
+
+export type EventUncheckedCreateWithoutImagesInput = {
+  id?: string
+  placeId: string
+  eventName: string
+  date: Date | string
+  hour?: string | null
+  price?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  description?: string | null
+  rule?: string | null
+  info?: string | null
+  suitable?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  plans?: Prisma.EventPlanUncheckedCreateNestedManyWithoutEventInput
+  comments?: Prisma.CommentUncheckedCreateNestedManyWithoutEventInput
+  savedBy?: Prisma.SavedEventUncheckedCreateNestedManyWithoutEventInput
+}
+
+export type EventCreateOrConnectWithoutImagesInput = {
+  where: Prisma.EventWhereUniqueInput
+  create: Prisma.XOR<Prisma.EventCreateWithoutImagesInput, Prisma.EventUncheckedCreateWithoutImagesInput>
+}
+
+export type EventUpsertWithoutImagesInput = {
+  update: Prisma.XOR<Prisma.EventUpdateWithoutImagesInput, Prisma.EventUncheckedUpdateWithoutImagesInput>
+  create: Prisma.XOR<Prisma.EventCreateWithoutImagesInput, Prisma.EventUncheckedCreateWithoutImagesInput>
+  where?: Prisma.EventWhereInput
+}
+
+export type EventUpdateToOneWithWhereWithoutImagesInput = {
+  where?: Prisma.EventWhereInput
+  data: Prisma.XOR<Prisma.EventUpdateWithoutImagesInput, Prisma.EventUncheckedUpdateWithoutImagesInput>
+}
+
+export type EventUpdateWithoutImagesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  eventName?: Prisma.StringFieldUpdateOperationsInput | string
+  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  hour?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  price?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  info?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  suitable?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  place?: Prisma.PlaceUpdateOneRequiredWithoutEventsNestedInput
+  plans?: Prisma.EventPlanUpdateManyWithoutEventNestedInput
+  comments?: Prisma.CommentUpdateManyWithoutEventNestedInput
+  savedBy?: Prisma.SavedEventUpdateManyWithoutEventNestedInput
+}
+
+export type EventUncheckedUpdateWithoutImagesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  placeId?: Prisma.StringFieldUpdateOperationsInput | string
+  eventName?: Prisma.StringFieldUpdateOperationsInput | string
+  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  hour?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  price?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  info?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  suitable?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  plans?: Prisma.EventPlanUncheckedUpdateManyWithoutEventNestedInput
+  comments?: Prisma.CommentUncheckedUpdateManyWithoutEventNestedInput
+  savedBy?: Prisma.SavedEventUncheckedUpdateManyWithoutEventNestedInput
+}
+
 export type EventCreateWithoutPlansInput = {
   id?: string
   eventName: string
@@ -731,6 +842,7 @@ export type EventCreateWithoutPlansInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   place: Prisma.PlaceCreateNestedOneWithoutEventsInput
+  images?: Prisma.EventImageCreateNestedManyWithoutEventInput
   comments?: Prisma.CommentCreateNestedManyWithoutEventInput
   savedBy?: Prisma.SavedEventCreateNestedManyWithoutEventInput
 }
@@ -748,6 +860,7 @@ export type EventUncheckedCreateWithoutPlansInput = {
   suitable?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  images?: Prisma.EventImageUncheckedCreateNestedManyWithoutEventInput
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutEventInput
   savedBy?: Prisma.SavedEventUncheckedCreateNestedManyWithoutEventInput
 }
@@ -781,6 +894,7 @@ export type EventUpdateWithoutPlansInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   place?: Prisma.PlaceUpdateOneRequiredWithoutEventsNestedInput
+  images?: Prisma.EventImageUpdateManyWithoutEventNestedInput
   comments?: Prisma.CommentUpdateManyWithoutEventNestedInput
   savedBy?: Prisma.SavedEventUpdateManyWithoutEventNestedInput
 }
@@ -798,6 +912,7 @@ export type EventUncheckedUpdateWithoutPlansInput = {
   suitable?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  images?: Prisma.EventImageUncheckedUpdateManyWithoutEventNestedInput
   comments?: Prisma.CommentUncheckedUpdateManyWithoutEventNestedInput
   savedBy?: Prisma.SavedEventUncheckedUpdateManyWithoutEventNestedInput
 }
@@ -815,6 +930,7 @@ export type EventCreateWithoutCommentsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   place: Prisma.PlaceCreateNestedOneWithoutEventsInput
+  images?: Prisma.EventImageCreateNestedManyWithoutEventInput
   plans?: Prisma.EventPlanCreateNestedManyWithoutEventInput
   savedBy?: Prisma.SavedEventCreateNestedManyWithoutEventInput
 }
@@ -832,6 +948,7 @@ export type EventUncheckedCreateWithoutCommentsInput = {
   suitable?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  images?: Prisma.EventImageUncheckedCreateNestedManyWithoutEventInput
   plans?: Prisma.EventPlanUncheckedCreateNestedManyWithoutEventInput
   savedBy?: Prisma.SavedEventUncheckedCreateNestedManyWithoutEventInput
 }
@@ -865,6 +982,7 @@ export type EventUpdateWithoutCommentsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   place?: Prisma.PlaceUpdateOneRequiredWithoutEventsNestedInput
+  images?: Prisma.EventImageUpdateManyWithoutEventNestedInput
   plans?: Prisma.EventPlanUpdateManyWithoutEventNestedInput
   savedBy?: Prisma.SavedEventUpdateManyWithoutEventNestedInput
 }
@@ -882,6 +1000,7 @@ export type EventUncheckedUpdateWithoutCommentsInput = {
   suitable?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  images?: Prisma.EventImageUncheckedUpdateManyWithoutEventNestedInput
   plans?: Prisma.EventPlanUncheckedUpdateManyWithoutEventNestedInput
   savedBy?: Prisma.SavedEventUncheckedUpdateManyWithoutEventNestedInput
 }
@@ -899,6 +1018,7 @@ export type EventCreateWithoutSavedByInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   place: Prisma.PlaceCreateNestedOneWithoutEventsInput
+  images?: Prisma.EventImageCreateNestedManyWithoutEventInput
   plans?: Prisma.EventPlanCreateNestedManyWithoutEventInput
   comments?: Prisma.CommentCreateNestedManyWithoutEventInput
 }
@@ -916,6 +1036,7 @@ export type EventUncheckedCreateWithoutSavedByInput = {
   suitable?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  images?: Prisma.EventImageUncheckedCreateNestedManyWithoutEventInput
   plans?: Prisma.EventPlanUncheckedCreateNestedManyWithoutEventInput
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutEventInput
 }
@@ -949,6 +1070,7 @@ export type EventUpdateWithoutSavedByInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   place?: Prisma.PlaceUpdateOneRequiredWithoutEventsNestedInput
+  images?: Prisma.EventImageUpdateManyWithoutEventNestedInput
   plans?: Prisma.EventPlanUpdateManyWithoutEventNestedInput
   comments?: Prisma.CommentUpdateManyWithoutEventNestedInput
 }
@@ -966,6 +1088,7 @@ export type EventUncheckedUpdateWithoutSavedByInput = {
   suitable?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  images?: Prisma.EventImageUncheckedUpdateManyWithoutEventNestedInput
   plans?: Prisma.EventPlanUncheckedUpdateManyWithoutEventNestedInput
   comments?: Prisma.CommentUncheckedUpdateManyWithoutEventNestedInput
 }
@@ -996,6 +1119,7 @@ export type EventUpdateWithoutPlaceInput = {
   suitable?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  images?: Prisma.EventImageUpdateManyWithoutEventNestedInput
   plans?: Prisma.EventPlanUpdateManyWithoutEventNestedInput
   comments?: Prisma.CommentUpdateManyWithoutEventNestedInput
   savedBy?: Prisma.SavedEventUpdateManyWithoutEventNestedInput
@@ -1013,6 +1137,7 @@ export type EventUncheckedUpdateWithoutPlaceInput = {
   suitable?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  images?: Prisma.EventImageUncheckedUpdateManyWithoutEventNestedInput
   plans?: Prisma.EventPlanUncheckedUpdateManyWithoutEventNestedInput
   comments?: Prisma.CommentUncheckedUpdateManyWithoutEventNestedInput
   savedBy?: Prisma.SavedEventUncheckedUpdateManyWithoutEventNestedInput
@@ -1038,12 +1163,14 @@ export type EventUncheckedUpdateManyWithoutPlaceInput = {
  */
 
 export type EventCountOutputType = {
+  images: number
   plans: number
   comments: number
   savedBy: number
 }
 
 export type EventCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  images?: boolean | EventCountOutputTypeCountImagesArgs
   plans?: boolean | EventCountOutputTypeCountPlansArgs
   comments?: boolean | EventCountOutputTypeCountCommentsArgs
   savedBy?: boolean | EventCountOutputTypeCountSavedByArgs
@@ -1057,6 +1184,13 @@ export type EventCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extens
    * Select specific fields to fetch from the EventCountOutputType
    */
   select?: Prisma.EventCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * EventCountOutputType without action
+ */
+export type EventCountOutputTypeCountImagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.EventImageWhereInput
 }
 
 /**
@@ -1095,6 +1229,7 @@ export type EventSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   createdAt?: boolean
   updatedAt?: boolean
   place?: boolean | Prisma.PlaceDefaultArgs<ExtArgs>
+  images?: boolean | Prisma.Event$imagesArgs<ExtArgs>
   plans?: boolean | Prisma.Event$plansArgs<ExtArgs>
   comments?: boolean | Prisma.Event$commentsArgs<ExtArgs>
   savedBy?: boolean | Prisma.Event$savedByArgs<ExtArgs>
@@ -1151,6 +1286,7 @@ export type EventSelectScalar = {
 export type EventOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "placeId" | "eventName" | "date" | "hour" | "price" | "description" | "rule" | "info" | "suitable" | "createdAt" | "updatedAt", ExtArgs["result"]["event"]>
 export type EventInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   place?: boolean | Prisma.PlaceDefaultArgs<ExtArgs>
+  images?: boolean | Prisma.Event$imagesArgs<ExtArgs>
   plans?: boolean | Prisma.Event$plansArgs<ExtArgs>
   comments?: boolean | Prisma.Event$commentsArgs<ExtArgs>
   savedBy?: boolean | Prisma.Event$savedByArgs<ExtArgs>
@@ -1167,6 +1303,7 @@ export type $EventPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   name: "Event"
   objects: {
     place: Prisma.$PlacePayload<ExtArgs>
+    images: Prisma.$EventImagePayload<ExtArgs>[]
     plans: Prisma.$EventPlanPayload<ExtArgs>[]
     comments: Prisma.$CommentPayload<ExtArgs>[]
     savedBy: Prisma.$SavedEventPayload<ExtArgs>[]
@@ -1579,6 +1716,7 @@ readonly fields: EventFieldRefs;
 export interface Prisma__EventClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   place<T extends Prisma.PlaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PlaceDefaultArgs<ExtArgs>>): Prisma.Prisma__PlaceClient<runtime.Types.Result.GetResult<Prisma.$PlacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  images<T extends Prisma.Event$imagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Event$imagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EventImagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   plans<T extends Prisma.Event$plansArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Event$plansArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EventPlanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   comments<T extends Prisma.Event$commentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Event$commentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   savedBy<T extends Prisma.Event$savedByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Event$savedByArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SavedEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -2021,6 +2159,30 @@ export type EventDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
    * Limit how many Events to delete.
    */
   limit?: number
+}
+
+/**
+ * Event.images
+ */
+export type Event$imagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EventImage
+   */
+  select?: Prisma.EventImageSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EventImage
+   */
+  omit?: Prisma.EventImageOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EventImageInclude<ExtArgs> | null
+  where?: Prisma.EventImageWhereInput
+  orderBy?: Prisma.EventImageOrderByWithRelationInput | Prisma.EventImageOrderByWithRelationInput[]
+  cursor?: Prisma.EventImageWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.EventImageScalarFieldEnum | Prisma.EventImageScalarFieldEnum[]
 }
 
 /**

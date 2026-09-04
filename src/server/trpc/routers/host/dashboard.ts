@@ -33,7 +33,6 @@ async function getHostOrThrow(ctx: {
   if (!host) {
     throw new TRPCError({
       code: "FORBIDDEN",
-
       message: "پروفایل میزبان پیدا نشد.",
     });
   }
@@ -55,38 +54,31 @@ export const hostDashboardRouter = router({
       },
 
       include: {
+        images: {
+          orderBy: {
+            sortOrder: "asc",
+          },
+
+          select: {
+            id: true,
+            url: true,
+            sortOrder: true,
+          },
+        },
+
         place: {
           select: {
             id: true,
-
             placeName: true,
-
             placeProvince: true,
-
             placeCity: true,
-
-            images: {
-              orderBy: {
-                sortOrder: "asc",
-              },
-
-              take: 1,
-
-              select: {
-                id: true,
-
-                url: true,
-              },
-            },
           },
         },
 
         _count: {
           select: {
             plans: true,
-
             comments: true,
-
             savedBy: true,
           },
         },

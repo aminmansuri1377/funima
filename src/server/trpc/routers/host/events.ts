@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+
 import { z } from "zod";
 
 import {
@@ -7,7 +8,10 @@ import {
   paginationSchema,
 } from "@/lib/pagination";
 
+import { eventStorageBucket, supabaseAdmin } from "@/server/supabase/storage";
+
 import { hostProcedure } from "../../procedures/host";
+
 import { router } from "../../trpc";
 
 const eventFieldsSchema = z.object({
@@ -61,6 +65,7 @@ async function getHostPlaceOrThrow(ctx: {
   if (!host) {
     throw new TRPCError({
       code: "FORBIDDEN",
+
       message: "پروفایل میزبان پیدا نشد.",
     });
   }
@@ -85,6 +90,7 @@ function parseEventDate(value: string) {
   if (Number.isNaN(date.getTime())) {
     throw new TRPCError({
       code: "BAD_REQUEST",
+
       message: "تاریخ رویداد معتبر نیست.",
     });
   }
@@ -102,11 +108,36 @@ function normalizePrice(value: string | undefined) {
   if (!/^\d+(\.\d{1,2})?$/.test(price)) {
     throw new TRPCError({
       code: "BAD_REQUEST",
+
       message: "قیمت واردشده معتبر نیست.",
     });
   }
 
   return price;
+}
+
+async function removeStorageImages(
+  images: Array<{
+    storagePath: string;
+  }>,
+) {
+  if (images.length === 0) {
+    return;
+  }
+
+  const result = await supabaseAdmin.storage
+    .from(eventStorageBucket)
+    .remove(images.map((image) => image.storagePath));
+
+  if (result.error) {
+    console.error("[host.events storage remove]", result.error);
+
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+
+      message: "حذف تصاویر ایونت از Storage انجام نشد.",
+    });
+  }
 }
 
 export const hostEventsRouter = router({
@@ -171,29 +202,31 @@ export const hostEventsRouter = router({
         take,
 
         include: {
+          images: {
+            orderBy: {
+              sortOrder: "asc",
+            },
+
+            select: {
+              id: true,
+              url: true,
+              sortOrder: true,
+            },
+          },
+
           place: {
             select: {
               id: true,
               placeName: true,
-
-              images: {
-                take: 1,
-
-                orderBy: {
-                  sortOrder: "asc",
-                },
-
-                select: {
-                  url: true,
-                },
-              },
             },
           },
 
           _count: {
             select: {
               plans: true,
+
               comments: true,
+
               savedBy: true,
             },
           },
@@ -251,23 +284,26 @@ export const hostEventsRouter = router({
         },
 
         include: {
+          images: {
+            orderBy: {
+              sortOrder: "asc",
+            },
+
+            select: {
+              id: true,
+              url: true,
+              sortOrder: true,
+            },
+          },
+
           place: {
             select: {
               id: true,
               placeName: true,
+
               placeProvince: true,
+
               placeCity: true,
-
-              images: {
-                orderBy: {
-                  sortOrder: "asc",
-                },
-
-                select: {
-                  id: true,
-                  url: true,
-                },
-              },
             },
           },
 
@@ -422,6 +458,12 @@ export const hostEventsRouter = router({
 
         select: {
           id: true,
+
+          images: {
+            select: {
+              storagePath: true,
+            },
+          },
         },
       });
 
@@ -433,9 +475,60 @@ export const hostEventsRouter = router({
         });
       }
 
+      await removeStorageImages(event.images);
+
       await ctx.prisma.event.delete({
         where: {
           id: event.id,
+        },
+      });
+
+      return {
+        success: true,
+      };
+    }),
+
+  deleteImage: hostProcedure
+    .input(
+      z.object({
+        eventId: z.string().min(1),
+
+        imageId: z.string().min(1),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { place } = await getHostPlaceOrThrow(ctx);
+
+      const image = await ctx.prisma.eventImage.findFirst({
+        where: {
+          id: input.imageId,
+
+          eventId: input.eventId,
+
+          event: {
+            placeId: place.id,
+          },
+        },
+
+        select: {
+          id: true,
+          storagePath: true,
+        },
+      });
+
+      if (!image) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+
+          message: "تصویر ایونت پیدا نشد.",
+        });
+      }
+
+      await removeStorageImages([image]);
+
+      await ctx.prisma.eventImage.delete({
+        where: {
+          id: image.id,
         },
       });
 
@@ -451,7 +544,7 @@ export const hostEventsRouter = router({
 
         hour: z.string().trim().optional(),
 
-        plan: z.string().trim().min(1, "متن برنامه الزامی است."),
+        plan: z.string().trim().min(1, "متن برنامه الزامی است.").max(500),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -505,6 +598,7 @@ export const hostEventsRouter = router({
 
       return {
         success: true,
+
         plan,
       };
     }),
@@ -518,7 +612,7 @@ export const hostEventsRouter = router({
 
         hour: z.string().trim().optional(),
 
-        plan: z.string().trim().min(1, "متن برنامه الزامی است."),
+        plan: z.string().trim().min(1, "متن برنامه الزامی است.").max(500),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -596,7 +690,7 @@ export const hostEventsRouter = router({
         throw new TRPCError({
           code: "NOT_FOUND",
 
-          message: "برنامه پیدا نشد.",
+          message: "برنامه رویداد پیدا نشد.",
         });
       }
 
@@ -642,14 +736,14 @@ export const hostEventsRouter = router({
         });
       }
 
-      const ids = Array.from(new Set(input.planIds));
+      const uniqueIds = Array.from(new Set(input.planIds));
 
       const plans = await ctx.prisma.eventPlan.findMany({
         where: {
           eventId: event.id,
 
           id: {
-            in: ids,
+            in: uniqueIds,
           },
         },
 
@@ -658,7 +752,7 @@ export const hostEventsRouter = router({
         },
       });
 
-      if (plans.length !== ids.length) {
+      if (plans.length !== uniqueIds.length) {
         throw new TRPCError({
           code: "BAD_REQUEST",
 
@@ -666,10 +760,10 @@ export const hostEventsRouter = router({
         });
       }
 
-      for (let index = 0; index < ids.length; index++) {
+      for (let index = 0; index < uniqueIds.length; index++) {
         await ctx.prisma.eventPlan.update({
           where: {
-            id: ids[index],
+            id: uniqueIds[index],
           },
 
           data: {
