@@ -8,6 +8,8 @@ import { prisma } from "@/server/db/prisma";
 
 import { storageBucket, supabaseAdmin } from "@/server/supabase/storage";
 
+export const runtime = "nodejs";
+
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 const ALLOWED_TYPES = new Set([
@@ -125,10 +127,6 @@ export async function POST(request: Request) {
     );
   }
 
-  /*
-   * ADMIN می‌تواند برای همه Placeها آپلود کند.
-   * HOST فقط برای Place خودش.
-   */
   const isAdmin = session.user.activeRole === "ADMIN";
 
   const isOwnerHost =
@@ -160,9 +158,7 @@ export async function POST(request: Request) {
 
   const storagePath = `places/${place.id}/${randomUUID()}.${extension}`;
 
-  const arrayBuffer = await file.arrayBuffer();
-
-  const bytes = new Uint8Array(arrayBuffer);
+  const bytes = new Uint8Array(await file.arrayBuffer());
 
   const upload = await supabaseAdmin.storage
     .from(storageBucket)
@@ -191,9 +187,6 @@ export async function POST(request: Request) {
     .from(storageBucket)
     .getPublicUrl(storagePath);
 
-  /*
-   * ترتیب عکس جدید
-   */
   const lastImage = await prisma.placeImage.findFirst({
     where: {
       placeId: place.id,
@@ -208,44 +201,59 @@ export async function POST(request: Request) {
     },
   });
 
-  const image = await prisma.placeImage.create({
-    data: {
-      placeId: place.id,
+  let image;
 
-      url: publicData.publicUrl,
-
-      sortOrder: (lastImage?.sortOrder ?? -1) + 1,
-    },
-  });
-
-  /*
-   * Audit failure نباید
-   * upload موفق را خراب کند.
-   */
   try {
-    await prisma.auditLog.create({
+    image = await prisma.placeImage.create({
       data: {
-        adminId: session.user.id,
+        placeId: place.id,
 
-        action: "UPLOAD_PLACE_IMAGE",
+        url: publicData.publicUrl,
 
-        entity: "PlaceImage",
-
-        entityId: image.id,
-
-        metadata: {
-          placeId: place.id,
-
-          storagePath,
-
-          size: file.size,
-
-          mimeType: file.type,
-        },
+        sortOrder: (lastImage?.sortOrder ?? -1) + 1,
       },
     });
   } catch (error) {
-    console.error("[Place Upload Audit]", error);
+    /*
+     * اگر ساخت رکورد DB شکست خورد،
+     * فایل orphan داخل Storage نماند.
+     */
+    await supabaseAdmin.storage.from(storageBucket).remove([storagePath]);
+
+    throw error;
+  }
+
+  /*
+   * AuditLog فقط برای Admin.
+   * Host upload نباید به عنوان
+   * Admin activity ذخیره شود.
+   */
+  if (isAdmin) {
+    try {
+      await prisma.auditLog.create({
+        data: {
+          adminId: session.user.id,
+
+          action: "UPLOAD_PLACE_IMAGE",
+
+          entity: "PlaceImage",
+
+          entityId: image.id,
+
+          metadata: {
+            placeId: place.id,
+
+            storagePath,
+
+            size: file.size,
+
+            mimeType: file.type,
+          },
+        },
+      });
+    } catch (error) {
+      console.error("[Place Upload Audit]", error);
+    }
   }
 
   return NextResponse.json({

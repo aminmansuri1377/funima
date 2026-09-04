@@ -1,25 +1,5 @@
-import { auth } from "@/auth";
+import { HostDashboard } from "@/components/host/host-dashboard";
 
-import {
-  LogoutButton,
-} from "@/components/auth/logout-button";
-
-export default async function HostPage() {
-  const session = await auth();
-
-  return (
-    <main>
-      <h1>Host Dashboard</h1>
-
-      <pre>
-        {JSON.stringify(
-          session,
-          null,
-          2,
-        )}
-      </pre>
-
-      <LogoutButton />
-    </main>
-  );
+export default function HostPage() {
+  return <HostDashboard />;
 }
