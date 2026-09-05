@@ -13,19 +13,25 @@ type Props = {
 export default async function EventSinglePage({ params }: Props) {
   const session = await auth();
 
-  if (!session?.user?.id || !session.user.activeRole) {
-    redirect("/auth");
-  }
+  const activeRole = session?.user?.activeRole;
 
-  if (session.user.activeRole === "HOST") {
+  if (activeRole === "HOST") {
     redirect("/host");
   }
 
-  if (session.user.activeRole === "ADMIN") {
+  if (activeRole === "ADMIN") {
     redirect("/panel");
   }
 
   const { eventId } = await params;
 
-  return <VisitorEventPage eventId={eventId} />;
+  const isVisitor = Boolean(session?.user?.id) && activeRole === "VISITOR";
+
+  return (
+    <VisitorEventPage
+      eventId={eventId}
+      canSave={isVisitor}
+      canComment={isVisitor}
+    />
+  );
 }

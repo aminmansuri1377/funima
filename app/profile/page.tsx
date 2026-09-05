@@ -7,17 +7,45 @@ import { VisitorProfilePage } from "@/components/visitor";
 export default async function ProfilePage() {
   const session = await auth();
 
-  if (!session?.user?.id || !session.user.activeRole) {
+  const activeRole = session?.user?.activeRole;
+
+  /*
+   * ========================================
+   * GUEST
+   * ========================================
+   *
+   * اگر کاربر وارد نشده،
+   * دقیقاً صفحه اصلی Auth را می‌بیند.
+   */
+  if (!session?.user?.id || !activeRole) {
     redirect("/auth");
   }
 
-  if (session.user.activeRole === "HOST") {
+  /*
+   * ========================================
+   * HOST
+   * ========================================
+   */
+
+  if (activeRole === "HOST") {
     redirect("/host");
   }
 
-  if (session.user.activeRole === "ADMIN") {
+  /*
+   * ========================================
+   * ADMIN
+   * ========================================
+   */
+
+  if (activeRole === "ADMIN") {
     redirect("/panel");
   }
+
+  /*
+   * ========================================
+   * VISITOR
+   * ========================================
+   */
 
   return <VisitorProfilePage />;
 }

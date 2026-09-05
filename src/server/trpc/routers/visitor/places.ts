@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 
 import { z } from "zod";
 
-import { PlaceType } from "@/generated/prisma/client";
+import { PlaceType, UserRole } from "@/generated/prisma/client";
 
 import {
   getPagination,
@@ -10,7 +10,9 @@ import {
   paginationSchema,
 } from "@/lib/pagination";
 
-import { router, visitorProcedure } from "../../trpc";
+import { publicProcedure, router, visitorProcedure } from "../../trpc";
+
+const GUEST_USER_ID = "__guest__";
 
 const placesListSchema = paginationSchema.extend({
   search: z.string().trim().optional(),
@@ -25,10 +27,15 @@ const placesListSchema = paginationSchema.extend({
 });
 
 export const visitorPlacesRouter = router({
-  list: visitorProcedure
+  list: publicProcedure
     .input(placesListSchema)
     .query(async ({ ctx, input }) => {
-      const userId = ctx.session.user.id;
+      const userId =
+        ctx.session?.user?.activeRole === UserRole.VISITOR
+          ? ctx.session.user.id
+          : null;
+
+      const savedUserId = userId ?? GUEST_USER_ID;
 
       const search = input.search?.trim() || undefined;
 
@@ -155,7 +162,7 @@ export const visitorPlacesRouter = router({
 
             savedBy: {
               where: {
-                userId,
+                userId: savedUserId,
               },
 
               take: 1,
@@ -204,7 +211,7 @@ export const visitorPlacesRouter = router({
         items: items.map((place) => ({
           ...place,
 
-          isSaved: place.savedBy.length > 0,
+          isSaved: userId ? place.savedBy.length > 0 : false,
 
           savedBy: undefined,
         })),
@@ -221,14 +228,19 @@ export const visitorPlacesRouter = router({
       };
     }),
 
-  getById: visitorProcedure
+  getById: publicProcedure
     .input(
       z.object({
         placeId: z.string().min(1),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const userId = ctx.session.user.id;
+      const userId =
+        ctx.session?.user?.activeRole === UserRole.VISITOR
+          ? ctx.session.user.id
+          : null;
+
+      const savedUserId = userId ?? GUEST_USER_ID;
 
       const place = await ctx.prisma.place.findUnique({
         where: {
@@ -316,7 +328,7 @@ export const visitorPlacesRouter = router({
 
           savedBy: {
             where: {
-              userId,
+              userId: savedUserId,
             },
 
             take: 1,
@@ -396,7 +408,7 @@ export const visitorPlacesRouter = router({
 
               savedBy: {
                 where: {
-                  userId,
+                  userId: savedUserId,
                 },
 
                 take: 1,
@@ -431,7 +443,7 @@ export const visitorPlacesRouter = router({
       return {
         ...place,
 
-        isSaved: place.savedBy.length > 0,
+        isSaved: userId ? place.savedBy.length > 0 : false,
 
         savedBy: undefined,
 
@@ -440,7 +452,7 @@ export const visitorPlacesRouter = router({
 
           price: event.price?.toString() ?? null,
 
-          isSaved: event.savedBy.length > 0,
+          isSaved: userId ? event.savedBy.length > 0 : false,
 
           savedBy: undefined,
         })),

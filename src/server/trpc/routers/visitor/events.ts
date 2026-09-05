@@ -2,13 +2,17 @@ import { TRPCError } from "@trpc/server";
 
 import { z } from "zod";
 
+import { UserRole } from "@/generated/prisma/client";
+
 import {
   getPagination,
   getTotalPages,
   paginationSchema,
 } from "@/lib/pagination";
 
-import { router, visitorProcedure } from "../../trpc";
+import { publicProcedure, router, visitorProcedure } from "../../trpc";
+
+const GUEST_USER_ID = "__guest__";
 
 const eventsListSchema = paginationSchema.extend({
   search: z.string().trim().optional(),
@@ -21,10 +25,15 @@ const eventsListSchema = paginationSchema.extend({
 });
 
 export const visitorEventsRouter = router({
-  list: visitorProcedure
+  list: publicProcedure
     .input(eventsListSchema)
     .query(async ({ ctx, input }) => {
-      const userId = ctx.session.user.id;
+      const userId =
+        ctx.session?.user?.activeRole === UserRole.VISITOR
+          ? ctx.session.user.id
+          : null;
+
+      const savedUserId = userId ?? GUEST_USER_ID;
 
       const search = input.search?.trim() || undefined;
 
@@ -185,7 +194,7 @@ export const visitorEventsRouter = router({
 
             savedBy: {
               where: {
-                userId,
+                userId: savedUserId,
               },
 
               take: 1,
@@ -218,7 +227,7 @@ export const visitorEventsRouter = router({
 
           price: event.price?.toString() ?? null,
 
-          isSaved: event.savedBy.length > 0,
+          isSaved: userId ? event.savedBy.length > 0 : false,
 
           savedBy: undefined,
         })),
@@ -235,14 +244,19 @@ export const visitorEventsRouter = router({
       };
     }),
 
-  getById: visitorProcedure
+  getById: publicProcedure
     .input(
       z.object({
         eventId: z.string().min(1),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const userId = ctx.session.user.id;
+      const userId =
+        ctx.session?.user?.activeRole === UserRole.VISITOR
+          ? ctx.session.user.id
+          : null;
+
+      const savedUserId = userId ?? GUEST_USER_ID;
 
       const event = await ctx.prisma.event.findUnique({
         where: {
@@ -346,7 +360,7 @@ export const visitorEventsRouter = router({
 
           savedBy: {
             where: {
-              userId,
+              userId: savedUserId,
             },
 
             take: 1,
@@ -444,7 +458,7 @@ export const visitorEventsRouter = router({
 
           savedBy: {
             where: {
-              userId,
+              userId: savedUserId,
             },
 
             take: 1,
@@ -461,7 +475,7 @@ export const visitorEventsRouter = router({
 
         price: event.price?.toString() ?? null,
 
-        isSaved: event.savedBy.length > 0,
+        isSaved: userId ? event.savedBy.length > 0 : false,
 
         savedBy: undefined,
 
@@ -470,7 +484,7 @@ export const visitorEventsRouter = router({
 
           price: item.price?.toString() ?? null,
 
-          isSaved: item.savedBy.length > 0,
+          isSaved: userId ? item.savedBy.length > 0 : false,
 
           savedBy: undefined,
         })),

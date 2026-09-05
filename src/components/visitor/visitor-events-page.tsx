@@ -5,8 +5,9 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 
 import { FaFire } from "react-icons/fa";
+import { FiSearch } from "react-icons/fi";
+
 import { useEventSave } from "@/hooks/visitor/use-event-save";
-import { FiCalendar, FiSearch } from "react-icons/fi";
 
 import {
   InlineMessage,
@@ -24,7 +25,11 @@ import {
   VisitorPageShell,
 } from "@/components/visitor";
 
-export function VisitorEventsPage() {
+type Props = {
+  canSave: boolean;
+};
+
+export function VisitorEventsPage({ canSave }: Props) {
   const [search, setSearch] = useState("");
 
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -37,10 +42,6 @@ export function VisitorEventsPage() {
 
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  /*
-   * از همان API شهرهای Home استفاده می‌کنیم
-   * چون منبع اصلی شهرها Placeها هستند.
-   */
   const cities = trpc.visitor.home.getCities.useQuery();
 
   const events = trpc.visitor.events.list.useQuery({
@@ -56,6 +57,7 @@ export function VisitorEventsPage() {
   });
 
   const eventSave = useEventSave();
+
   const cityOptions = useMemo(() => {
     return (
       cities.data?.map((item) => ({
@@ -65,7 +67,12 @@ export function VisitorEventsPage() {
       })) ?? []
     );
   }, [cities.data]);
+
   async function handleSaveChange(eventId: string, nextSaved: boolean) {
+    if (!canSave) {
+      return;
+    }
+
     setSaveError(null);
 
     try {
@@ -80,6 +87,8 @@ export function VisitorEventsPage() {
       throw error;
     }
   }
+
+  const saveHandler = canSave ? handleSaveChange : undefined;
 
   return (
     <VisitorPageShell maxWidth="wide">
@@ -141,7 +150,7 @@ export function VisitorEventsPage() {
           </div>
         </section>
 
-        {saveError && (
+        {canSave && saveError && (
           <InlineMessage variant="error">{saveError}</InlineMessage>
         )}
 
@@ -159,11 +168,11 @@ export function VisitorEventsPage() {
           <section>
             <div
               className="
-                  flex
-                  items-end
-                  justify-between
-                  gap-4
-                "
+                flex
+                items-end
+                justify-between
+                gap-4
+              "
             >
               <div>
                 <Text as="h2" variant="heading-md">
@@ -179,18 +188,18 @@ export function VisitorEventsPage() {
 
             <div
               className="
-                  mt-5
-                  grid
-                  gap-4
-                  sm:grid-cols-2
-                  lg:grid-cols-3
-                "
+                mt-5
+                grid
+                gap-4
+                sm:grid-cols-2
+                lg:grid-cols-3
+              "
             >
               {events.data.items.map((event) => (
                 <EventCard
                   key={event.id}
                   event={event}
-                  onSaveChange={handleSaveChange}
+                  onSaveChange={saveHandler}
                 />
               ))}
             </div>
@@ -198,12 +207,12 @@ export function VisitorEventsPage() {
             {events.data.pagination.totalPages > 1 && (
               <div
                 className="
-                    mt-8
-                    rounded-3xl
-                    bg-white
-                    p-4
-                    shadow-sm
-                  "
+                  mt-8
+                  rounded-3xl
+                  bg-white
+                  p-4
+                  shadow-sm
+                "
               >
                 <Pagination
                   page={events.data.pagination.page}
@@ -351,47 +360,47 @@ function EventsLoading() {
           <div
             key={item}
             className="
-                overflow-hidden
-                rounded-[26px]
-                bg-white
-              "
+              overflow-hidden
+              rounded-[26px]
+              bg-white
+            "
           >
             <div
               className="
-                  aspect-[16/10]
-                  animate-pulse
-                  bg-gray-100
-                "
+                aspect-[16/10]
+                animate-pulse
+                bg-gray-100
+              "
             />
 
             <div className="space-y-3 p-5">
               <div
                 className="
-                    h-6
-                    w-2/3
-                    animate-pulse
-                    rounded
-                    bg-gray-100
-                  "
+                  h-6
+                  w-2/3
+                  animate-pulse
+                  rounded
+                  bg-gray-100
+                "
               />
 
               <div
                 className="
-                    h-4
-                    w-1/2
-                    animate-pulse
-                    rounded
-                    bg-gray-100
-                  "
+                  h-4
+                  w-1/2
+                  animate-pulse
+                  rounded
+                  bg-gray-100
+                "
               />
 
               <div
                 className="
-                    h-12
-                    animate-pulse
-                    rounded-xl
-                    bg-gray-100
-                  "
+                  h-12
+                  animate-pulse
+                  rounded-xl
+                  bg-gray-100
+                "
               />
             </div>
           </div>

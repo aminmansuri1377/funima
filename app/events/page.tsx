@@ -1,23 +1,23 @@
-import { auth } from "@/auth";
-
 import { redirect } from "next/navigation";
+
+import { auth } from "@/auth";
 
 import { VisitorEventsPage } from "@/components/visitor";
 
 export default async function EventsPage() {
   const session = await auth();
 
-  if (!session?.user?.id || !session.user.activeRole) {
-    redirect("/auth");
-  }
+  const activeRole = session?.user?.activeRole;
 
-  if (session.user.activeRole === "HOST") {
+  if (activeRole === "HOST") {
     redirect("/host");
   }
 
-  if (session.user.activeRole === "ADMIN") {
+  if (activeRole === "ADMIN") {
     redirect("/panel");
   }
 
-  return <VisitorEventsPage />;
+  const canSave = Boolean(session?.user?.id) && activeRole === "VISITOR";
+
+  return <VisitorEventsPage canSave={canSave} />;
 }

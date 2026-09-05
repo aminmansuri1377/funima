@@ -6,8 +6,10 @@ import { useMemo, useState } from "react";
 
 import { FiMapPin, FiSearch } from "react-icons/fi";
 import type { inferRouterOutputs } from "@trpc/server";
+
 import { usePlaceSave } from "@/hooks/visitor/use-place-save";
 import type { AppRouter } from "@/server/trpc/root";
+
 import {
   InlineMessage,
   SearchInput,
@@ -23,18 +25,21 @@ import {
 import { trpc } from "@/trpc/client";
 
 import { PlaceCard } from "./place-card";
-
 import { PlaceCardSlider } from "./place-card-slider";
-
 import { VisitorFooter } from "./visitor-footer";
-
 import { VisitorPageShell } from "./visitor-page-shell";
+
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 
 type HomeSectionsData = RouterOutputs["visitor"]["home"]["getSections"];
 
 type SearchResultsData = RouterOutputs["visitor"]["places"]["list"];
-export function VisitorHomePage() {
+
+type Props = {
+  canSave: boolean;
+};
+
+export function VisitorHomePage({ canSave }: Props) {
   const [search, setSearch] = useState("");
 
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -45,21 +50,10 @@ export function VisitorHomePage() {
 
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  /*
-   * صفحه عادی Home:
-   * Sectionهایی که Admin ساخته.
-   */
   const sections = trpc.visitor.home.getSections.useQuery();
 
-  /*
-   * فقط شهرهایی که واقعاً Place دارند.
-   */
   const cities = trpc.visitor.home.getCities.useQuery();
 
-  /*
-   * وقتی Search / City / Type فعال باشد
-   * از Search backend استفاده می‌کنیم.
-   */
   const hasActiveSearch = Boolean(debouncedSearch.trim() || city || placeType);
 
   const searchResults = trpc.visitor.places.list.useQuery(
@@ -80,6 +74,7 @@ export function VisitorHomePage() {
   );
 
   const placeSave = usePlaceSave();
+
   const cityOptions = useMemo(() => {
     const data = cities.data ?? [];
 
@@ -91,6 +86,10 @@ export function VisitorHomePage() {
   }, [cities.data]);
 
   async function handleSaveChange(placeId: string, nextSaved: boolean) {
+    if (!canSave) {
+      return;
+    }
+
     setSaveError(null);
 
     try {
@@ -103,6 +102,8 @@ export function VisitorHomePage() {
       throw error;
     }
   }
+
+  const saveHandler = canSave ? handleSaveChange : undefined;
 
   return (
     <VisitorPageShell maxWidth="wide">
@@ -152,7 +153,7 @@ export function VisitorHomePage() {
           <PlaceTypeFilters value={placeType} onChange={setPlaceType} />
         </section>
 
-        {saveError && (
+        {canSave && saveError && (
           <InlineMessage variant="error">{saveError}</InlineMessage>
         )}
 
@@ -164,14 +165,14 @@ export function VisitorHomePage() {
             data={searchResults.data}
             pending={searchResults.isPending}
             error={Boolean(searchResults.error)}
-            onSaveChange={handleSaveChange}
+            onSaveChange={saveHandler}
           />
         ) : (
           <HomeSections
             data={sections.data}
             pending={sections.isPending}
             error={Boolean(sections.error)}
-            onSaveChange={handleSaveChange}
+            onSaveChange={saveHandler}
           />
         )}
 
@@ -322,10 +323,9 @@ function HomeSections({
 
   error: boolean;
 
-  onSaveChange: (
-    placeId: string,
-    nextSaved: boolean,
-  ) => void | Promise<unknown>;
+  onSaveChange?:
+    | ((placeId: string, nextSaved: boolean) => void | Promise<unknown>)
+    | undefined;
 }) {
   if (pending) {
     return <HomeSectionsLoading />;
@@ -595,6 +595,7 @@ function buildSearchDescription({
 
   return `${total.toLocaleString("fa-IR")} مکان پیدا شد${suffix}`;
 }
+
 function SearchResults({
   query,
   city,
@@ -616,10 +617,9 @@ function SearchResults({
 
   error: boolean;
 
-  onSaveChange: (
-    placeId: string,
-    nextSaved: boolean,
-  ) => void | Promise<unknown>;
+  onSaveChange?:
+    | ((placeId: string, nextSaved: boolean) => void | Promise<unknown>)
+    | undefined;
 }) {
   if (pending) {
     return <SearchLoading />;

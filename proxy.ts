@@ -10,9 +10,11 @@ import {
 
 export default auth((req) => {
   const pathname = req.nextUrl.pathname;
+
   if (pathname === "/panel/login") {
     return NextResponse.next();
   }
+
   const session = req.auth;
 
   const activeRole = session?.user?.activeRole;
@@ -21,38 +23,35 @@ export default auth((req) => {
 
   const isHostRoute = pathname === "/host" || pathname.startsWith("/host/");
 
-  const isVisitorRoute =
-    pathname === "/profile" || pathname.startsWith("/profile/");
-
-  const isProtectedRoute = isPanelRoute || isHostRoute || isVisitorRoute;
+  const isProtectedRoute = isPanelRoute || isHostRoute;
 
   /*
-   * Public route.
+   * Visitor browsing routes مثل:
+   *
+   * /
+   * /events
+   * /places/[placeId]
+   * /events/[eventId]
+   * /profile
+   *
+   * عمومی هستند.
+   *
+   * خود صفحه /profile تصمیم می‌گیرد
+   * Guest باید First Arrive ببیند
+   * یا Visitor پروفایل واقعی را.
    */
   if (!isProtectedRoute) {
     return NextResponse.next();
   }
 
-  /*
-   * Protected route but user
-   * has no valid session.
-   */
   if (!activeRole) {
     if (isPanelRoute) {
       return NextResponse.redirect(new URL(getAuthRoute("ADMIN"), req.url));
     }
 
-    if (isHostRoute) {
-      return NextResponse.redirect(new URL(getAuthRoute("HOST"), req.url));
-    }
-
-    return NextResponse.redirect(new URL(getAuthRoute("VISITOR"), req.url));
+    return NextResponse.redirect(new URL(getAuthRoute("HOST"), req.url));
   }
 
-  /*
-   * Logged-in user trying to access
-   * another role's protected area.
-   */
   if (!isRoleAllowedPath(activeRole, pathname)) {
     return NextResponse.redirect(new URL(getRoleHome(activeRole), req.url));
   }
@@ -61,5 +60,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/panel/:path*", "/host/:path*", "/profile/:path*"],
+  matcher: ["/panel/:path*", "/host/:path*"],
 };

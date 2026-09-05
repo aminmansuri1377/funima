@@ -38,9 +38,13 @@ type EventData = RouterOutputs["visitor"]["events"]["getById"];
 
 type Props = {
   eventId: string;
+
+  canSave: boolean;
+
+  canComment: boolean;
 };
 
-export function VisitorEventPage({ eventId }: Props) {
+export function VisitorEventPage({ eventId, canSave, canComment }: Props) {
   const router = useRouter();
 
   const event = trpc.visitor.events.getById.useQuery({
@@ -89,11 +93,13 @@ export function VisitorEventPage({ eventId }: Props) {
         >
           <BackButton onClick={() => router.push("/events")} />
 
-          <FavoriteButton
-            saved={data.isSaved}
-            loading={eventSave.isPending}
-            onToggle={handleSaveChange}
-          />
+          {canSave && (
+            <FavoriteButton
+              saved={data.isSaved}
+              loading={eventSave.isPending}
+              onToggle={handleSaveChange}
+            />
+          )}
         </div>
 
         <EventHero event={data} />
@@ -127,13 +133,18 @@ export function VisitorEventPage({ eventId }: Props) {
         )}
 
         <EventLocation event={data} />
-        <VisitorEventComments
-          eventId={data.id}
-          onEventChanged={() => event.refetch()}
-        />
+
+        {canComment && (
+          <VisitorEventComments
+            eventId={data.id}
+            onEventChanged={() => event.refetch()}
+          />
+        )}
+
         {data.similarEvents.length > 0 && (
           <SimilarEvents
             events={data.similarEvents}
+            canSave={canSave}
             onChanged={() => event.refetch()}
           />
         )}
@@ -536,9 +547,12 @@ function EventLocation({ event }: { event: EventData }) {
 
 function SimilarEvents({
   events,
+  canSave,
   onChanged,
 }: {
   events: EventData["similarEvents"];
+
+  canSave: boolean;
 
   onChanged: () => void | Promise<unknown>;
 }) {
@@ -584,7 +598,7 @@ function SimilarEvents({
           <EventCard
             key={event.id}
             event={event}
-            onSaveChange={handleSaveChange}
+            onSaveChange={canSave ? handleSaveChange : undefined}
           />
         ))}
       </div>

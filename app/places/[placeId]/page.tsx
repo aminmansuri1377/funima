@@ -13,19 +13,25 @@ type Props = {
 export default async function PlaceSinglePage({ params }: Props) {
   const session = await auth();
 
-  if (!session?.user?.id || !session.user.activeRole) {
-    redirect("/auth");
-  }
+  const activeRole = session?.user?.activeRole;
 
-  if (session.user.activeRole === "HOST") {
+  if (activeRole === "HOST") {
     redirect("/host");
   }
 
-  if (session.user.activeRole === "ADMIN") {
+  if (activeRole === "ADMIN") {
     redirect("/panel");
   }
 
   const { placeId } = await params;
 
-  return <VisitorPlacePage placeId={placeId} />;
+  const isVisitor = Boolean(session?.user?.id) && activeRole === "VISITOR";
+
+  return (
+    <VisitorPlacePage
+      placeId={placeId}
+      canSave={isVisitor}
+      canComment={isVisitor}
+    />
+  );
 }

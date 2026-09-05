@@ -45,9 +45,13 @@ type PlaceData = RouterOutputs["visitor"]["places"]["getById"];
 
 type Props = {
   placeId: string;
+
+  canSave: boolean;
+
+  canComment: boolean;
 };
 
-export function VisitorPlacePage({ placeId }: Props) {
+export function VisitorPlacePage({ placeId, canSave, canComment }: Props) {
   const router = useRouter();
 
   const place = trpc.visitor.places.getById.useQuery({
@@ -103,11 +107,13 @@ export function VisitorPlacePage({ placeId }: Props) {
         >
           <BackButton onClick={() => router.push("/")} />
 
-          <FavoriteButton
-            saved={data.isSaved}
-            loading={placeSave.isPending}
-            onToggle={handlePlaceSave}
-          />
+          {canSave && (
+            <FavoriteButton
+              saved={data.isSaved}
+              loading={placeSave.isPending}
+              onToggle={handlePlaceSave}
+            />
+          )}
         </div>
 
         <PlaceHero place={data} />
@@ -123,13 +129,18 @@ export function VisitorPlacePage({ placeId }: Props) {
         <PlaceLocation place={data} />
 
         {data.events.length > 0 && (
-          <PlaceEvents place={data} onSaveChange={handleEventSave} />
+          <PlaceEvents
+            place={data}
+            onSaveChange={canSave ? handleEventSave : undefined}
+          />
         )}
 
-        <VisitorPlaceComments
-          placeId={data.id}
-          onPlaceChanged={() => place.refetch()}
-        />
+        {canComment && (
+          <VisitorPlaceComments
+            placeId={data.id}
+            onPlaceChanged={() => place.refetch()}
+          />
+        )}
 
         <VisitorFooter />
       </div>
@@ -624,10 +635,9 @@ function PlaceEvents({
 }: {
   place: PlaceData;
 
-  onSaveChange: (
-    eventId: string,
-    nextSaved: boolean,
-  ) => void | Promise<unknown>;
+  onSaveChange?:
+    | ((eventId: string, nextSaved: boolean) => void | Promise<unknown>)
+    | undefined;
 }) {
   const events = place.events.map((event) => ({
     ...event,

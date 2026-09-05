@@ -1,8 +1,17 @@
-import { router, visitorProcedure } from "../../trpc";
+import { UserRole } from "@/generated/prisma/client";
+
+import { publicProcedure, router } from "../../trpc";
+
+const GUEST_USER_ID = "__guest__";
 
 export const visitorHomeRouter = router({
-  getSections: visitorProcedure.query(async ({ ctx }) => {
-    const userId = ctx.session.user.id;
+  getSections: publicProcedure.query(async ({ ctx }) => {
+    const userId =
+      ctx.session?.user?.activeRole === UserRole.VISITOR
+        ? ctx.session.user.id
+        : null;
+
+    const savedUserId = userId ?? GUEST_USER_ID;
 
     const sections = await ctx.prisma.showOnPage.findMany({
       where: {
@@ -56,7 +65,7 @@ export const visitorHomeRouter = router({
 
                 savedBy: {
                   where: {
-                    userId,
+                    userId: savedUserId,
                   },
 
                   select: {
@@ -108,7 +117,7 @@ export const visitorHomeRouter = router({
       places: section.places.map((item) => ({
         ...item.place,
 
-        isSaved: item.place.savedBy.length > 0,
+        isSaved: userId ? item.place.savedBy.length > 0 : false,
 
         savedBy: undefined,
 
@@ -117,7 +126,7 @@ export const visitorHomeRouter = router({
     }));
   }),
 
-  getFilters: visitorProcedure.query(async ({ ctx }) => {
+  getFilters: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.filter.findMany({
       orderBy: {
         createdAt: "asc",
@@ -141,7 +150,7 @@ export const visitorHomeRouter = router({
     });
   }),
 
-  getCities: visitorProcedure.query(async ({ ctx }) => {
+  getCities: publicProcedure.query(async ({ ctx }) => {
     const places = await ctx.prisma.place.findMany({
       where: {
         placeCity: {
