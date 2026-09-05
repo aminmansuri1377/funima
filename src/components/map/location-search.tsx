@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import { FiMapPin, FiSearch, FiX } from "react-icons/fi";
 
 import type { MapSearchResult } from "@/lib/map/search-types";
-
 import type { LngLat } from "@/lib/map/types";
 
 type Props = {
@@ -173,12 +172,6 @@ export function LocationSearch({
         items: MapSearchResult[];
       };
 
-      /*
-       * Photon ممکن است یک مکان را
-       * چند بار برگرداند.
-       *
-       * قبل از render تکراری‌ها را حذف می‌کنیم.
-       */
       const uniqueResults = removeDuplicateResults(data.items);
 
       /*
@@ -256,9 +249,6 @@ export function LocationSearch({
     /*
      * LocationPicker / MapTest
      * موقعیت را دریافت می‌کند.
-     *
-     * MapCanvas هم با flyTo()
-     * به آن نقطه حرکت می‌کند.
      */
     onSelect(result);
   }
@@ -289,7 +279,8 @@ export function LocationSearch({
       ref={rootRef}
       className="
         relative
-        z-40
+        z-1500
+        isolate
       "
     >
       {/*
@@ -297,10 +288,16 @@ export function LocationSearch({
        * SEARCH INPUT
        * ========================================
        */}
-      <div className="relative">
+      <div
+        className="
+          relative
+          z-1501
+        "
+      >
         <FiSearch
           aria-hidden="true"
           className="
+            pointer-events-none
             absolute
             right-4
             top-1/2
@@ -317,21 +314,11 @@ export function LocationSearch({
           placeholder={placeholder}
           autoComplete="off"
           onFocus={() => {
-            /*
-             * فقط اگر واقعاً results قبلی داریم
-             * dropdown باز شود.
-             *
-             * بعد از Select نتایج خالی هستند،
-             * پس dropdown دوباره نمی‌پرد.
-             */
             if (results.length > 0 || error) {
               setOpen(true);
             }
           }}
           onChange={(event) => {
-            /*
-             * این تغییر واقعاً توسط کاربر است.
-             */
             skipNextSearchRef.current = false;
 
             setQuery(event.target.value);
@@ -339,6 +326,8 @@ export function LocationSearch({
             setOpen(true);
           }}
           className="
+            relative
+            z-1501
             h-14
             w-full
             rounded-full
@@ -364,9 +353,11 @@ export function LocationSearch({
           <span
             aria-label="در حال جستجو"
             className="
+              pointer-events-none
               absolute
               left-4
               top-1/2
+              z-1502
               h-5
               w-5
               -translate-y-1/2
@@ -385,20 +376,21 @@ export function LocationSearch({
             aria-label="پاک کردن جستجو"
             onClick={clearSearch}
             className="
-                absolute
-                left-3
-                top-1/2
-                flex
-                h-9
-                w-9
-                -translate-y-1/2
-                items-center
-                justify-center
-                rounded-full
-                text-(--color-text-secondary)
-                transition-colors
-                hover:bg-gray-100
-              "
+              absolute
+              left-3
+              top-1/2
+              z-1502
+              flex
+              h-9
+              w-9
+              -translate-y-1/2
+              items-center
+              justify-center
+              rounded-full
+              text-(--color-text-secondary)
+              transition-colors
+              hover:bg-gray-100
+            "
           >
             <FiX />
           </button>
@@ -413,103 +405,98 @@ export function LocationSearch({
       {open && query.trim().length >= 2 && (
         <div
           className="
-              absolute
-              left-0
-              right-0
-              top-full
-              z-50
-              mt-2
-              max-h-80
-              overflow-y-auto
-              rounded-[20px]
-              border
-              border-(--color-border)
-              bg-white
-              p-2
-              shadow-lg
-            "
+            absolute
+            left-0
+            right-0
+            top-[calc(100%+8px)]
+            z-2000
+            max-h-[min(320px,50vh)]
+            overflow-x-hidden
+            overflow-y-auto
+            overscroll-contain
+            rounded-[20px]
+            border
+            border-(--color-border)
+            bg-white
+            p-2
+            shadow-[0_18px_50px_rgba(0,0,0,0.18)]
+          "
         >
           {error ? (
             <div
               className="
-                  px-4
-                  py-6
-                  text-center
-                  text-sm
-                  text-red-600
-                "
+                px-4
+                py-6
+                text-center
+                text-sm
+                text-red-600
+              "
             >
               {error}
             </div>
           ) : results.length > 0 ? (
             results.map((result, index) => (
               <button
-                /*
-                 * حتی اگر provider دو نتیجه
-                 * کاملاً یکسان بدهد،
-                 * index آخر key را یکتا می‌کند.
-                 *
-                 * با این حال قبل از این مرحله
-                 * duplicateها را هم حذف کرده‌ایم.
-                 */
                 key={`${result.id}-${result.position[0]}-${result.position[1]}-${index}`}
                 type="button"
                 onClick={() => handleSelect(result)}
                 className="
-                      flex
-                      w-full
-                      items-start
-                      gap-3
-                      rounded-[14px]
-                      px-3
-                      py-3
-                      text-right
-                      transition-colors
-                      hover:bg-gray-50
-                    "
+                  flex
+                  w-full
+                  items-start
+                  gap-3
+                  rounded-[14px]
+                  px-3
+                  py-3
+                  text-right
+                  transition-colors
+                  hover:bg-gray-50
+                  focus:bg-gray-50
+                  focus:outline-none
+                "
               >
                 <span
                   className="
-                        mt-0.5
-                        flex
-                        h-9
-                        w-9
-                        shrink-0
-                        items-center
-                        justify-center
-                        rounded-full
-                        bg-(--color-brand-50)
-                        text-(--color-brand-600)
-                      "
+                    mt-0.5
+                    flex
+                    h-9
+                    w-9
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-(--color-brand-50)
+                    text-(--color-brand-600)
+                  "
                 >
                   <FiMapPin />
                 </span>
 
                 <span
                   className="
-                        min-w-0
-                        flex-1
-                      "
+                    min-w-0
+                    flex-1
+                  "
                 >
                   <span
                     className="
-                          block
-                          font-semibold
-                          text-(--color-text-primary)
-                        "
+                      block
+                      font-semibold
+                      text-(--color-text-primary)
+                    "
                   >
                     {result.name}
                   </span>
 
                   <span
                     className="
-                          mt-1
-                          block
-                          line-clamp-2
-                          text-xs
-                          leading-5
-                          text-(--color-text-secondary)
-                        "
+                      mt-1
+                      block
+                      line-clamp-2
+                      text-xs
+                      leading-5
+                      text-(--color-text-secondary)
+                    "
                   >
                     {result.label}
                   </span>
@@ -519,12 +506,12 @@ export function LocationSearch({
           ) : !loading ? (
             <div
               className="
-                  px-4
-                  py-6
-                  text-center
-                  text-sm
-                  text-(--color-text-secondary)
-                "
+                px-4
+                py-6
+                text-center
+                text-sm
+                text-(--color-text-secondary)
+              "
             >
               نتیجه‌ای پیدا نشد.
             </div>
@@ -539,15 +526,6 @@ export function LocationSearch({
  * ========================================
  * REMOVE DUPLICATE SEARCH RESULTS
  * ========================================
- *
- * Photon گاهی یک OSM object را
- * چند بار در پاسخ برمی‌گرداند.
- *
- * signature را از:
- *
- * id + longitude + latitude
- *
- * می‌سازیم.
  */
 function removeDuplicateResults(items: MapSearchResult[]) {
   const seen = new Set<string>();

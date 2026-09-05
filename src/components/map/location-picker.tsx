@@ -10,62 +10,32 @@ import { useUserLocation } from "@/hooks/map/use-user-location";
 
 import type { MapSearchResult } from "@/lib/map/search-types";
 
-import type { LngLat } from "@/lib/map/types";
+import type { LngLat, MapProviderName } from "@/lib/map/types";
 
 import { LocationSearch } from "./location-search";
 
 import { MapView } from "./map-view";
 
 type LocationPickerProps = {
-  /**
-   * موقعیت انتخاب‌شده:
-   *
-   * [longitude, latitude]
-   */
   value: LngLat | null;
 
-  /**
-   * هر بار Marker تغییر کند،
-   * موقعیت جدید را به parent می‌دهیم.
-   */
   onChange: (value: LngLat) => void;
 
-  /**
-   * غیرفعال کردن کل Picker.
-   */
   disabled?: boolean;
 
-  /**
-   * Search نمایش داده شود؟
-   */
   showSearch?: boolean;
 
-  /**
-   * دکمه موقعیت فعلی نمایش داده شود؟
-   */
   showCurrentLocation?: boolean;
 
-  /**
-   * Navigation Control روی Map.
-   */
   showNavigation?: boolean;
 
-  /**
-   * ارتفاع نقشه.
-   *
-   * default:
-   * mobile 280px
-   * sm 380px
-   * lg 440px
-   */
   mapHeightClassName?: string;
 
-  /**
-   * متن بالای Picker.
-   */
   title?: string;
 
   description?: string;
+
+  provider?: MapProviderName;
 };
 
 export function LocationPicker({
@@ -86,6 +56,8 @@ export function LocationPicker({
   title = "موقعیت دقیق روی نقشه",
 
   description = "مکان را جستجو کنید، روی نقشه بزنید یا نشانگر را جابه‌جا کنید.",
+
+  provider = "openstreetmap",
 }: LocationPickerProps) {
   const userLocation = useUserLocation();
 
@@ -110,16 +82,8 @@ export function LocationPicker({
       return;
     }
 
-    /*
-     * GPS location را به location اصلی
-     * Picker تبدیل می‌کنیم.
-     */
     onChange(result.position);
 
-    /*
-     * چون Location از Search نیامده،
-     * search result قبلی دیگر معتبر نیست.
-     */
     setSelectedResult(null);
   }
 
@@ -134,28 +98,13 @@ export function LocationPicker({
   function handleMapLocationChange(position: LngLat) {
     setError(null);
 
-    /*
-     * اگر کاربر Marker را drag کرد
-     * یا روی Map کلیک کرد،
-     * Search Result قبلی دیگر دقیقاً
-     * نشان‌دهنده نقطه انتخابی نیست.
-     */
     setSelectedResult(null);
 
     onChange(position);
   }
 
   return (
-    <div
-      className="
-        space-y-4
-      "
-    >
-      {/*
-       * ========================================
-       * HEADER
-       * ========================================
-       */}
+    <div className="space-y-4">
       <div
         className="
           flex
@@ -189,11 +138,6 @@ export function LocationPicker({
         )}
       </div>
 
-      {/*
-       * ========================================
-       * SEARCH
-       * ========================================
-       */}
       {showSearch && (
         <LocationSearch
           disabled={disabled}
@@ -202,18 +146,8 @@ export function LocationPicker({
         />
       )}
 
-      {/*
-       * ========================================
-       * ERRORS
-       * ========================================
-       */}
       {error && <InlineMessage variant="error">{error}</InlineMessage>}
 
-      {/*
-       * ========================================
-       * MAP
-       * ========================================
-       */}
       <div
         className={`
           relative
@@ -230,6 +164,7 @@ export function LocationPicker({
           interactive={!disabled}
           draggableMarker={!disabled}
           showNavigation={showNavigation}
+          provider={provider}
           onLocationChange={handleMapLocationChange}
         />
 
@@ -240,7 +175,7 @@ export function LocationPicker({
                 absolute
                 left-1/2
                 top-3
-                z-20
+                z-500
                 -translate-x-1/2
                 whitespace-nowrap
                 rounded-full
@@ -250,7 +185,6 @@ export function LocationPicker({
                 text-xs
                 font-medium
                 shadow-md
-                backdrop-blur
               "
           >
             روی نقشه نقطه را انتخاب کنید
@@ -258,11 +192,6 @@ export function LocationPicker({
         )}
       </div>
 
-      {/*
-       * ========================================
-       * SELECTED SEARCH RESULT
-       * ========================================
-       */}
       {selectedResult && (
         <div
           className="
@@ -311,11 +240,6 @@ export function LocationPicker({
         </div>
       )}
 
-      {/*
-       * ========================================
-       * CURRENT USER LOCATION INFO
-       * ========================================
-       */}
       {userLocation.position && userLocation.accuracy !== null && (
         <div
           className="
@@ -332,11 +256,6 @@ export function LocationPicker({
         </div>
       )}
 
-      {/*
-       * ========================================
-       * SELECTED COORDINATES
-       * ========================================
-       */}
       {value && (
         <div
           className="
@@ -401,13 +320,13 @@ function getLocationErrorMessage(
       return "مرورگر شما دریافت موقعیت مکانی را پشتیبانی نمی‌کند.";
 
     case "PERMISSION_DENIED":
-      return "اجازه دسترسی به موقعیت مکانی داده نشد. دسترسی Location را از تنظیمات مرورگر فعال کنید.";
+      return "اجازه دسترسی به موقعیت مکانی داده نشد.";
 
     case "POSITION_UNAVAILABLE":
-      return "موقعیت فعلی دستگاه قابل دریافت نیست. GPS یا Location دستگاه را بررسی کنید.";
+      return "موقعیت فعلی دستگاه قابل دریافت نیست.";
 
     case "TIMEOUT":
-      return "دریافت موقعیت بیش از حد طول کشید. دوباره امتحان کنید.";
+      return "دریافت موقعیت بیش از حد طول کشید.";
 
     default:
       return "دریافت موقعیت فعلی انجام نشد.";

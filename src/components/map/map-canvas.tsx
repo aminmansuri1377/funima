@@ -2,24 +2,20 @@
 
 import { useEffect, useRef } from "react";
 
-import {
-  AttributionControl,
-  Map,
-  Marker,
-  NavigationControl,
-  type MapRef,
-} from "@vis.gl/react-maplibre";
+import L from "leaflet";
 
-import { FiMapPin } from "react-icons/fi";
+import type { Map as LeafletMap, Marker as LeafletMarker } from "leaflet";
 
 import {
   DEFAULT_MAP_CENTER,
+  DEFAULT_MAP_PROVIDER,
   DEFAULT_MAP_ZOOM,
-  OPEN_FREE_MAP_STYLE,
   SELECTED_LOCATION_ZOOM,
 } from "@/lib/map/constants";
 
-import type { LngLat } from "@/lib/map/types";
+import { getMapProvider } from "@/lib/map/provider";
+
+import type { LngLat, MapProviderName } from "@/lib/map/types";
 
 export type FunimaMapCanvasProps = {
   position?: LngLat | null;
@@ -35,6 +31,8 @@ export type FunimaMapCanvasProps = {
   showNavigation?: boolean;
 
   className?: string;
+
+  provider?: MapProviderName;
 
   onLocationChange?: (value: LngLat) => void;
 };
@@ -54,35 +52,194 @@ export function MapCanvas({
 
   className = "",
 
+  provider = DEFAULT_MAP_PROVIDER,
+
   onLocationChange,
 }: FunimaMapCanvasProps) {
-  const mapRef = useRef<MapRef | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const center = position ?? initialCenter ?? DEFAULT_MAP_CENTER;
+  const mapRef = useRef<LeafletMap | null>(null);
 
-  const zoom =
-    initialZoom ?? (position ? SELECTED_LOCATION_ZOOM : DEFAULT_MAP_ZOOM);
+  const markerRef = useRef<LeafletMarker | null>(null);
+
+  const onLocationChangeRef = useRef(onLocationChange);
 
   /*
-   * مهم:
-   *
-   * هر وقت position از بیرون تغییر کرد
-   * مثلاً از Search یا GPS،
-   * camera نقشه هم به آن نقطه حرکت می‌کند.
+   * آخرین callback را بدون ساخت
+   * مجدد Map نگه می‌داریم.
    */
   useEffect(() => {
-    if (!position || !mapRef.current) {
+    onLocationChangeRef.current = onLocationChange;
+  }, [onLocationChange]);
+
+  /*
+   * ========================================
+   * CREATE MAP
+   * ========================================
+   */
+
+  useEffect(() => {
+    const container = containerRef.current;
+
+    if (!container || mapRef.current) {
       return;
     }
 
-    mapRef.current.flyTo({
-      center: [position[0], position[1]],
+    const center = position ?? initialCenter ?? DEFAULT_MAP_CENTER;
 
-      zoom: SELECTED_LOCATION_ZOOM,
+    const zoom =
+      initialZoom ?? (position ? SELECTED_LOCATION_ZOOM : DEFAULT_MAP_ZOOM);
 
-      duration: 900,
+    const tileProvider = getMapProvider(provider);
 
-      essential: true,
+    const map = L.map(container, {
+      center: [center[1], center[0]],
+
+      zoom,
+
+      zoomControl: showNavigation,
+
+      attributionControl: true,
+
+      dragging: interactive,
+
+      scrollWheelZoom: interactive,
+
+      doubleClickZoom: interactive,
+
+      touchZoom: interactive,
+
+      keyboard: interactive,
+
+      boxZoom: interactive,
+    });
+
+    mapRef.current = map;
+
+    /*
+     * مهم:
+     *
+     * undefined را مستقیم به
+     * subdomains نمی‌دهیم.
+     */
+    const tileOptions: L.TileLayerOptions = {
+      attribution: tileProvider.attribution,
+
+      maxZoom: tileProvider.maxZoom,
+    };
+
+    if (tileProvider.subdomains) {
+      tileOptions.subdomains = tileProvider.subdomains;
+    }
+
+    L.tileLayer(tileProvider.url, tileOptions).addTo(map);
+
+    /*
+     * انتخاب نقطه با کلیک
+     */
+    if (interactive) {
+      map.on("click", (event) => {
+        onLocationChangeRef.current?.([event.latlng.lng, event.latlng.lat]);
+      });
+    }
+
+    /*
+     * Leaflet داخل layoutهای responsive
+     * بعد از mount باید اندازه را دوباره
+     * محاسبه کند.
+     */
+    const resizeTimer = window.setTimeout(() => {
+      map.invalidateSize();
+    }, 100);
+
+    const resizeObserver = new ResizeObserver(() => {
+      map.invalidateSize();
+    });
+
+    resizeObserver.observe(container);
+
+    return () => {
+      window.clearTimeout(resizeTimer);
+
+      resizeObserver.disconnect();
+
+      markerRef.current?.remove();
+
+      markerRef.current = null;
+
+      map.remove();
+
+      mapRef.current = null;
+    };
+
+    /*
+     * Map فقط یک بار ساخته می‌شود.
+     */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /*
+   * ========================================
+   * MARKER
+   * ========================================
+   */
+
+  useEffect(() => {
+    const map = mapRef.current;
+
+    if (!map) {
+      return;
+    }
+
+    if (!position) {
+      markerRef.current?.remove();
+
+      markerRef.current = null;
+
+      return;
+    }
+
+    const latLng: L.LatLngExpression = [position[1], position[0]];
+
+    /*
+     * Marker قبلی فقط جابه‌جا شود.
+     */
+    if (markerRef.current) {
+      markerRef.current.setLatLng(latLng);
+
+      return;
+    }
+
+    const marker = L.marker(latLng, {
+      draggable: draggableMarker && interactive,
+
+      icon: createLocationIcon(),
+    }).addTo(map);
+
+    marker.on("dragend", () => {
+      const value = marker.getLatLng();
+
+      onLocationChangeRef.current?.([value.lng, value.lat]);
+    });
+
+    markerRef.current = marker;
+  }, [position, draggableMarker, interactive]);
+
+  /*
+   * ========================================
+   * FLY TO
+   * ========================================
+   */
+
+  useEffect(() => {
+    const map = mapRef.current;
+
+    if (!map || !position) {
+      return;
+    }
+
+    map.flyTo([position[1], position[0]], SELECTED_LOCATION_ZOOM, {
+      duration: 0.9,
     });
   }, [position]);
 
@@ -98,116 +255,53 @@ export function MapCanvas({
         ${className}
       `}
     >
-      <Map
-        ref={mapRef}
-        initialViewState={{
-          longitude: center[0],
-
-          latitude: center[1],
-
-          zoom,
-        }}
-        mapStyle={OPEN_FREE_MAP_STYLE}
-        minZoom={3}
-        maxZoom={19}
-        attributionControl={false}
-        dragPan={interactive}
-        scrollZoom={interactive}
-        doubleClickZoom={interactive}
-        touchZoomRotate={interactive}
-        keyboard={interactive}
-        onClick={(event) => {
-          if (!interactive || !onLocationChange) {
-            return;
-          }
-
-          onLocationChange([event.lngLat.lng, event.lngLat.lat]);
-        }}
-        style={{
-          width: "100%",
-          height: "100%",
-        }}
-      >
-        <AttributionControl
-          compact
-          position="bottom-left"
-          customAttribution={["OpenFreeMap", "© OpenStreetMap"]}
-        />
-
-        {showNavigation && interactive && (
-          <NavigationControl position="bottom-right" showCompass showZoom />
-        )}
-
-        {position && (
-          <Marker
-            longitude={position[0]}
-            latitude={position[1]}
-            anchor="bottom"
-            draggable={draggableMarker && interactive}
-            onDragEnd={(event) => {
-              if (!onLocationChange) {
-                return;
-              }
-
-              onLocationChange([event.lngLat.lng, event.lngLat.lat]);
-            }}
-          >
-            <LocationMarker draggable={draggableMarker && interactive} />
-          </Marker>
-        )}
-      </Map>
+      <div
+        ref={containerRef}
+        className="
+          h-full
+          w-full
+        "
+      />
     </div>
   );
 }
 
-function LocationMarker({ draggable }: { draggable: boolean }) {
-  return (
-    <div
-      aria-hidden="true"
-      className={`
-        relative
-        flex
-        h-11
-        w-11
-        items-center
-        justify-center
+function createLocationIcon() {
+  return L.divIcon({
+    className: "funima-leaflet-marker",
 
-        ${draggable ? "cursor-grab active:cursor-grabbing" : ""}
-      `}
-    >
-      <span
-        className="
-          absolute
-          bottom-0
-          left-1/2
-          h-2
-          w-6
-          -translate-x-1/2
-          rounded-full
-          bg-black/20
-          blur-[2px]
-        "
-      />
+    html: `
+      <div class="funima-map-pin">
+        <div class="funima-map-pin-shadow"></div>
 
-      <span
-        className="
-          relative
-          flex
-          h-10
-          w-10
-          -translate-y-1
-          items-center
-          justify-center
-          rounded-full
-          border-[3px]
-          border-white
-          bg-(--color-brand-500)
-          text-white
-          shadow-lg
-        "
-      >
-        <FiMapPin size={20} />
-      </span>
-    </div>
-  );
+        <div class="funima-map-pin-body">
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path
+              d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"
+            ></path>
+
+            <circle
+              cx="12"
+              cy="10"
+              r="3"
+            ></circle>
+          </svg>
+        </div>
+      </div>
+    `,
+
+    iconSize: [44, 52],
+
+    iconAnchor: [22, 52],
+  });
 }

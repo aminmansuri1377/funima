@@ -36,7 +36,7 @@ export default function MapTestPage() {
           </Text>
 
           <Text tone="secondary" className="mt-1">
-            نسخه reusable نقشه فونیما
+            نسخه Leaflet نقشه فونیما
           </Text>
         </div>
 
@@ -49,7 +49,11 @@ export default function MapTestPage() {
             sm:p-6
           "
         >
-          <LocationPicker value={position} onChange={setPosition} />
+          <LocationPicker
+            value={position}
+            onChange={setPosition}
+            provider="openstreetmap"
+          />
         </div>
 
         {position && (
@@ -60,7 +64,7 @@ export default function MapTestPage() {
               p-4
             "
           >
-            <Text variant="label-md">داده‌ای که فرم دریافت می‌کند:</Text>
+            <Text variant="label-md">داده فرم:</Text>
 
             <pre
               dir="ltr"

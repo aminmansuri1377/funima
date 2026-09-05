@@ -3,12 +3,11 @@ import Link from "next/link";
 import { FiArrowLeft, FiMapPin } from "react-icons/fi";
 
 import { AuthCard } from "@/components/auth/auth-card";
-
 import { AuthShell } from "@/components/auth/auth-shell";
 
 import { FunimaLogo } from "@/components/brand/funima-logo";
 
-import { Button, Divider, Text } from "@/components/ui";
+import { BackButton, Button, Divider, Text } from "@/components/ui";
 
 import { redirectAuthenticatedUser } from "@/server/auth/guards";
 
@@ -18,8 +17,27 @@ export default async function AuthPage() {
   return (
     <AuthShell>
       <div className="flex flex-col gap-6">
-        <div className="flex justify-center">
-          <FunimaLogo priority />{" "}
+        <div
+          className="
+            relative
+            flex
+            min-h-12
+            items-center
+            justify-center
+          "
+        >
+          <div
+            className="
+              absolute
+              right-0
+              top-1/2
+              -translate-y-1/2
+            "
+          >
+            <BackButton />
+          </div>
+
+          <FunimaLogo priority />
         </div>
 
         <AuthCard>

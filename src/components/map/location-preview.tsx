@@ -1,21 +1,31 @@
 "use client";
 
+import type { MapProviderName } from "@/lib/map/types";
+
 import { MapView } from "./map-view";
 
 type LocationPreviewProps = {
   latitude: number;
+
   longitude: number;
 
   className?: string;
 
   showNavigation?: boolean;
+
+  provider?: MapProviderName;
 };
 
 export function LocationPreview({
   latitude,
+
   longitude,
+
   className = "h-[240px] sm:h-[320px]",
+
   showNavigation = true,
+
+  provider = "openstreetmap",
 }: LocationPreviewProps) {
   return (
     <div
@@ -33,6 +43,7 @@ export function LocationPreview({
         interactive
         draggableMarker={false}
         showNavigation={showNavigation}
+        provider={provider}
       />
     </div>
   );

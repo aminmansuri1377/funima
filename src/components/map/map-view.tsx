@@ -2,119 +2,53 @@
 
 import dynamic from "next/dynamic";
 
-import { useEffect } from "react";
+import type { LngLat, MapProviderName } from "@/lib/map/types";
 
-import {
-  getRTLTextPluginStatus,
-  setRTLTextPlugin,
-  setWorkerUrl,
-} from "maplibre-gl";
+export type FunimaMapViewProps = {
+  position?: LngLat | null;
 
-import type { FunimaMapCanvasProps } from "./map-canvas";
+  initialCenter?: LngLat;
 
-/*
- * ========================================
- * MAPLIBRE WORKER
- * ========================================
- *
- * برای Next.js + Turbopack ضروری است.
- *
- * فایل‌های زیر باید وجود داشته باشند:
- *
- * public/maplibre/maplibre-gl-worker.mjs
- * public/maplibre/maplibre-gl-shared.mjs
- */
-setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
+  initialZoom?: number;
 
-/*
- * ========================================
- * MAP CANVAS
- * ========================================
- */
+  interactive?: boolean;
+
+  draggableMarker?: boolean;
+
+  showNavigation?: boolean;
+
+  className?: string;
+
+  provider?: MapProviderName;
+
+  onLocationChange?: (value: LngLat) => void;
+};
 
 const DynamicMapCanvas = dynamic(
   () => import("./map-canvas").then((module) => module.MapCanvas),
   {
     ssr: false,
 
-    loading: () => <MapLoading />,
+    loading: () => (
+      <div
+        className="
+            flex
+            h-full
+            w-full
+            items-center
+            justify-center
+            bg-gray-100
+            text-sm
+            text-(--color-text-secondary)
+          "
+      >
+        در حال بارگذاری نقشه...
+      </div>
+    ),
   },
 );
 
-/*
- * ========================================
- * RTL PLUGIN
- * ========================================
- */
-
-let rtlInitializationStarted = false;
-
-function initializeRTL() {
-  /*
-   * StrictMode / Fast Refresh
-   * نباید دوباره plugin را register کند.
-   */
-  if (rtlInitializationStarted) {
-    return;
-  }
-
-  const status = getRTLTextPluginStatus();
-
-  /*
-   * اگر آماده است یا instance دیگری
-   * در حال load کردن آن است،
-   * هیچ کاری نکن.
-   */
-  if (status === "loaded" || status === "loading") {
-    rtlInitializationStarted = true;
-
-    return;
-  }
-
-  /*
-   * اگر هنوز register نشده.
-   */
-  if (status === "unavailable") {
-    rtlInitializationStarted = true;
-
-    void setRTLTextPlugin("/mapbox-gl-rtl-text.js", true).catch((error) => {
-      /*
-       * مشکل RTL نباید کل Map
-       * را از کار بیندازد.
-       */
-      console.warn("[Funima Map RTL] Plugin load failed:", error);
-    });
-
-    return;
-  }
-
-  /*
-   * status === error
-   *
-   * Map را همچنان render می‌کنیم.
-   */
-  if (status === "error") {
-    console.warn("[Funima Map RTL] Plugin is in error state.");
-  }
-}
-
-/*
- * ========================================
- * MAP VIEW
- * ========================================
- */
-
-export function MapView(props: FunimaMapCanvasProps) {
-  useEffect(() => {
-    initializeRTL();
-  }, []);
-
-  /*
-   * Map دیگر منتظر RTL نمی‌ماند.
-   *
-   * Worker از بالا با setWorkerUrl
-   * به آدرس صحیح وصل شده است.
-   */
+export function MapView(props: FunimaMapViewProps) {
   return (
     <div
       className="
@@ -124,31 +58,6 @@ export function MapView(props: FunimaMapCanvasProps) {
       "
     >
       <DynamicMapCanvas {...props} />
-    </div>
-  );
-}
-
-/*
- * ========================================
- * LOADING
- * ========================================
- */
-
-function MapLoading() {
-  return (
-    <div
-      className="
-        flex
-        h-full
-        w-full
-        items-center
-        justify-center
-        bg-gray-100
-        text-sm
-        text-(--color-text-secondary)
-      "
-    >
-      در حال بارگذاری نقشه...
     </div>
   );
 }

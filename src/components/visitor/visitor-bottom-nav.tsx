@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { FiHome, FiUser } from "react-icons/fi";
 
 import { FaFire } from "react-icons/fa";
+import { RiFireLine } from "react-icons/ri";
 
 type VisitorNavKey = "profile" | "home" | "events";
 
@@ -46,7 +47,7 @@ const NAV_ITEMS: VisitorNavItem[] = [
 
     href: "/events",
 
-    icon: <FaFire />,
+    icon: <RiFireLine />,
   },
 ];
 
@@ -114,7 +115,7 @@ export function VisitorBottomNav() {
             >
               <span
                 className={`
-                  text-[21px]
+                  text-3xl
                   transition-colors
                   duration-200
 
@@ -128,7 +129,7 @@ export function VisitorBottomNav() {
                 {item.icon}
               </span>
 
-              <span
+              {/* <span
                 className={`
                   transition-colors
                   duration-200
@@ -141,7 +142,7 @@ export function VisitorBottomNav() {
                 `}
               >
                 {item.label}
-              </span>
+              </span> */}
             </button>
           );
         })}

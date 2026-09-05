@@ -2,57 +2,55 @@ import { NextRequest, NextResponse } from "next/server";
 
 import type { MapSearchResult } from "@/lib/map/search-types";
 
-type PhotonFeature = {
-  type: "Feature";
+type NominatimItem = {
+  place_id: number | string;
 
-  geometry?: {
-    type?: string;
+  osm_type?: string;
 
-    coordinates?: unknown;
-  };
+  osm_id?: number | string;
 
-  properties?: {
-    osm_type?: string;
+  lat?: string;
 
-    osm_id?: number | string;
+  lon?: string;
 
-    name?: string;
+  display_name?: string;
 
-    street?: string;
+  name?: string;
 
-    housenumber?: string;
+  address?: {
+    road?: string;
 
-    district?: string;
+    pedestrian?: string;
+
+    neighbourhood?: string;
+
+    suburb?: string;
+
+    city_district?: string;
 
     city?: string;
+
+    town?: string;
+
+    village?: string;
 
     county?: string;
 
     state?: string;
 
-    country?: string;
-
     postcode?: string;
+
+    country?: string;
   };
 };
 
-type PhotonResponse = {
-  type?: string;
-
-  features?: PhotonFeature[];
-};
-
-const PHOTON_API = "https://photon.komoot.io/api";
+const NOMINATIM_API = "https://nominatim.openstreetmap.org/search";
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
 
   const query = searchParams.get("q")?.trim() ?? "";
 
-  /*
-   * Queryهای خیلی کوتاه
-   * ارسال نمی‌شوند.
-   */
   if (query.length < 2) {
     return NextResponse.json({
       items: [],
@@ -63,45 +61,56 @@ export async function GET(request: NextRequest) {
 
   const longitude = parseOptionalNumber(searchParams.get("lon"));
 
-  const params = new URLSearchParams();
+  const params = new URLSearchParams({
+    q: query,
 
-  params.set("q", query);
+    format: "jsonv2",
 
-  params.set("limit", "6");
+    addressdetails: "1",
+
+    limit: "8",
+
+    countrycodes: "ir",
+
+    "accept-language": "fa,en",
+  });
 
   /*
-   * فقط ایران
-   */
-  params.set("countrycode", "IR");
-
-  /*
-   * نکته مهم:
+   * اگر موقعیت کاربر را داریم،
+   * viewbox کوچکی اطرافش می‌دهیم
+   * تا نتایج نزدیک‌تر اولویت بگیرند.
    *
-   * عمداً lang=fa نمی‌فرستیم.
-   *
-   * Photon در این حالت می‌تواند
-   * نام local ذخیره‌شده در OSM
-   * را برگرداند.
+   * bounded=0 یعنی خارج از این محدوده
+   * هم همچنان نتیجه مجاز است.
    */
-
   if (latitude !== null && longitude !== null) {
-    params.set("lat", String(latitude));
+    const delta = 0.35;
 
-    params.set("lon", String(longitude));
+    const left = longitude - delta;
 
-    /*
-     * نتیجه‌های اطراف موقعیت فعلی
-     * کمی اولویت بیشتری بگیرند.
-     */
-    params.set("zoom", "12");
+    const right = longitude + delta;
+
+    const top = latitude + delta;
+
+    const bottom = latitude - delta;
+
+    params.set("viewbox", `${left},${top},${right},${bottom}`);
+
+    params.set("bounded", "0");
   }
 
-  const url = `${PHOTON_API}?${params.toString()}`;
+  const url = `${NOMINATIM_API}?${params.toString()}`;
 
   try {
     const response = await fetch(url, {
       headers: {
         Accept: "application/json",
+
+        /*
+         * Nominatim Public API
+         * بهتر است User-Agent مشخص داشته باشد.
+         */
+        "User-Agent": "Funima/1.0",
       },
 
       cache: "no-store",
@@ -109,15 +118,10 @@ export async function GET(request: NextRequest) {
       signal: AbortSignal.timeout(10_000),
     });
 
-    /*
-     * اگر Photon خطا داد،
-     * body واقعی را هم در Terminal
-     * چاپ می‌کنیم تا debugging راحت باشد.
-     */
     if (!response.ok) {
       const responseText = await response.text();
 
-      console.error("[Map Search] Photon error", {
+      console.error("[Map Search] Nominatim error", {
         status: response.status,
 
         statusText: response.statusText,
@@ -137,19 +141,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const data = (await response.json()) as PhotonResponse;
+    const data = (await response.json()) as NominatimItem[];
 
-    const items = normalizeFeatures(data.features ?? []);
+    const items = normalizeItems(data);
 
     return NextResponse.json({
       items,
     });
   } catch (error) {
-    /*
-     * AbortSignal.timeout()
-     */
     if (error instanceof DOMException && error.name === "TimeoutError") {
-      console.error("[Map Search] Photon timeout", {
+      console.error("[Map Search] Nominatim timeout", {
         url,
       });
 
@@ -176,100 +177,130 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function normalizeFeatures(features: PhotonFeature[]): MapSearchResult[] {
+function normalizeItems(items: NominatimItem[]): MapSearchResult[] {
   const result: MapSearchResult[] = [];
 
-  for (const feature of features) {
-    const coordinates = feature.geometry?.coordinates;
+  const seen = new Set<string>();
 
-    if (!Array.isArray(coordinates) || coordinates.length < 2) {
-      continue;
-    }
+  for (const item of items) {
+    const longitude = Number(item.lon);
 
-    const longitude = Number(coordinates[0]);
-
-    const latitude = Number(coordinates[1]);
+    const latitude = Number(item.lat);
 
     if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) {
       continue;
     }
 
-    const properties = feature.properties ?? {};
+    const address = item.address ?? {};
+
+    const city =
+      cleanString(address.city) ??
+      cleanString(address.town) ??
+      cleanString(address.village) ??
+      cleanString(address.county);
+
+    const street = cleanString(address.road) ?? cleanString(address.pedestrian);
 
     const name =
-      cleanString(properties.name) ??
-      cleanString(properties.street) ??
-      cleanString(properties.city) ??
+      cleanString(item.name) ??
+      street ??
+      city ??
+      firstDisplayNamePart(item.display_name) ??
       "مکان بدون نام";
 
-    const id = [
-      properties.osm_type ?? "place",
+    const id = [item.osm_type ?? "place", item.osm_id ?? item.place_id].join(
+      "-",
+    );
 
-      properties.osm_id ?? `${longitude}-${latitude}`,
-    ].join("-");
+    const signature = [id, longitude.toFixed(6), latitude.toFixed(6)].join(":");
+
+    if (seen.has(signature)) {
+      continue;
+    }
+
+    seen.add(signature);
 
     result.push({
       id,
 
       name,
 
-      label: buildLabel(properties, name),
+      label:
+        cleanString(item.display_name) ??
+        buildLabel({
+          name,
+
+          street,
+
+          city,
+
+          state: cleanString(address.state),
+
+          country: cleanString(address.country),
+        }),
 
       position: [longitude, latitude],
 
-      city: cleanString(properties.city),
+      city,
 
-      state: cleanString(properties.state),
+      state: cleanString(address.state),
 
-      country: cleanString(properties.country),
+      country: cleanString(address.country),
 
-      street: cleanString(properties.street),
+      street,
 
-      postcode: cleanString(properties.postcode),
+      postcode: cleanString(address.postcode),
     });
   }
 
   return result;
 }
 
-function buildLabel(
-  properties: NonNullable<PhotonFeature["properties"]>,
-  fallbackName: string,
-) {
-  const candidates = [
-    fallbackName,
+function buildLabel({
+  name,
+  street,
+  city,
+  state,
+  country,
+}: {
+  name: string;
 
-    properties.housenumber && properties.street
-      ? `${properties.street} ${properties.housenumber}`
-      : properties.street,
+  street: string | null;
 
-    properties.district,
+  city: string | null;
 
-    properties.city,
+  state: string | null;
 
-    properties.county,
-
-    properties.state,
-  ];
+  country: string | null;
+}) {
+  const values = [name, street, city, state, country];
 
   const parts: string[] = [];
 
-  for (const candidate of candidates) {
-    const value = cleanString(candidate);
+  for (const value of values) {
+    const normalized = cleanString(value);
 
-    if (!value) {
+    if (!normalized || parts.includes(normalized)) {
       continue;
     }
 
-    if (!parts.includes(value)) {
-      parts.push(value);
-    }
+    parts.push(normalized);
   }
 
   return parts.join("، ");
 }
 
-function cleanString(value: string | undefined) {
+function firstDisplayNamePart(value: string | undefined) {
+  const normalized = cleanString(value);
+
+  if (!normalized) {
+    return null;
+  }
+
+  return normalized.split(",")[0]?.trim() || null;
+}
+
+function cleanString(value: string | null | undefined) {
   const normalized = value?.trim();
 
   return normalized ? normalized : null;

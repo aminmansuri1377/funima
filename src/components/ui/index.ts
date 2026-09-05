@@ -16,3 +16,4 @@ export {
   type EventImageItem,
 } from "./uploader/event-image-uploader";
 export { ImageSlider } from "./image-slider";
+export { BackButton } from "./back-button";
