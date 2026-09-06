@@ -598,7 +598,7 @@ function HomeSections({
   if (error) {
     return (
       <InlineMessage variant="error">
-        دریافت پیشنهادهای فونیما انجام نشد.
+        دریافت پیشنهادهای فانیما انجام نشد.
       </InlineMessage>
     );
   }

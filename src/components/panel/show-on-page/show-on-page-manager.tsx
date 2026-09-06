@@ -105,7 +105,7 @@ export function ShowOnPageManager() {
             <Input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              placeholder="مثلاً پیشنهاد فونیما"
+              placeholder="مثلاً پیشنهاد فانیما"
             />
           </FormField>
 

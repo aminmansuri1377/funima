@@ -75,7 +75,7 @@ export function PlacesManager() {
           </Text>
 
           <Text tone="secondary" className="mt-1">
-            مدیریت مکان‌های فونیما
+            مدیریت مکان‌های فانیما
           </Text>
         </div>
 

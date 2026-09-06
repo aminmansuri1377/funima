@@ -24,6 +24,23 @@ export const eventStorageBucket = getRequiredEnv(
   "SUPABASE_EVENT_STORAGE_BUCKET",
 );
 
+/*
+ * ========================================
+ * PROFILE IMAGES
+ * ========================================
+ *
+ * Bucket اصلی عکس پروفایل.
+ *
+ * اگر env تعریف نشده باشد،
+ * به صورت پیش‌فرض از bucket:
+ *
+ * profile
+ *
+ * استفاده می‌کنیم.
+ */
+export const profileStorageBucket =
+  process.env.SUPABASE_PROFILE_STORAGE_BUCKET?.trim() || "profile";
+
 export const supabaseAdmin = createClient(supabaseUrl, supabaseSecretKey, {
   auth: {
     persistSession: false,

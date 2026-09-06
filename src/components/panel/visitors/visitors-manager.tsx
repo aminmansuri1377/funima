@@ -68,7 +68,7 @@ export function VisitorsManager() {
         </Text>
 
         <Text tone="secondary" className="mt-1">
-          مدیریت کاربران بازدیدکننده فونیما
+          مدیریت کاربران بازدیدکننده فانیما
         </Text>
       </div>
 

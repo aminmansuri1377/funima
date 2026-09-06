@@ -36,7 +36,7 @@ export function VisitorFooter() {
           >
             <Image
               src="/images/logo.png"
-              alt="فونیما"
+              alt="فانیما"
               fill
               sizes="40px"
               className="object-contain"
@@ -44,7 +44,7 @@ export function VisitorFooter() {
           </div>
 
           <div>
-            <Text variant="label-lg">فونیما</Text>
+            <Text variant="label-lg">فانیما</Text>
 
             <Text variant="caption" tone="secondary">
               پیدا کردن تجربه‌های جذاب اطراف شما

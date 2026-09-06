@@ -70,7 +70,7 @@ export function CommentsManager() {
         </Text>
 
         <Text tone="secondary" className="mt-1">
-          مدیریت نظرات کاربران فونیما
+          مدیریت نظرات کاربران فانیما
         </Text>
       </div>
 

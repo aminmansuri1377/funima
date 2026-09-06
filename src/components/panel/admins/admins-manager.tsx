@@ -35,7 +35,7 @@ export function AdminsManager() {
           </Text>
 
           <Text tone="secondary" className="mt-1">
-            مدیریت دسترسی مدیران فونیما
+            مدیریت دسترسی مدیران فانیما
           </Text>
         </div>
 

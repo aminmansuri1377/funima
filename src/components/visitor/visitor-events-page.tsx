@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 
 import { FiSearch } from "react-icons/fi";
-import { FaFire } from "react-icons/fa";
 
 import { useEventSave } from "@/hooks/visitor/use-event-save";
 
@@ -22,10 +21,17 @@ import {
   VisitorPageShell,
 } from "@/components/visitor";
 
-export function VisitorEventsPage() {
+type Props = {
+  canSave: boolean;
+};
+
+export function VisitorEventsPage({ canSave }: Props) {
   const [search, setSearch] = useState("");
+
   const [debouncedSearch, setDebouncedSearch] = useState("");
+
   const [city, setCity] = useState("");
+
   const [saveError, setSaveError] = useState<string | null>(null);
 
   /*
@@ -36,9 +42,13 @@ export function VisitorEventsPage() {
 
   const events = trpc.visitor.events.list.useQuery({
     page: 1,
+
     pageSize: 24,
+
     search: debouncedSearch.trim() || undefined,
+
     city: city || undefined,
+
     upcomingOnly: true,
   });
 
@@ -48,12 +58,21 @@ export function VisitorEventsPage() {
     return (
       cities.data?.map((item) => ({
         value: item.city,
+
         label: item.province ? `${item.city}، ${item.province}` : item.city,
       })) ?? []
     );
   }, [cities.data]);
 
   async function handleSaveChange(eventId: string, nextSaved: boolean) {
+    /*
+     * Guest نباید بتواند
+     * mutation ذخیره را اجرا کند.
+     */
+    if (!canSave) {
+      return;
+    }
+
     setSaveError(null);
 
     try {
@@ -73,6 +92,12 @@ export function VisitorEventsPage() {
     <VisitorPageShell maxWidth="wide">
       <div className="pb-2">
         <EventsIntro />
+
+        {/*
+         * ========================================
+         * SEARCH
+         * ========================================
+         */}
 
         <section className="mt-8">
           <div
@@ -102,11 +127,13 @@ export function VisitorEventsPage() {
                 }}
                 onClear={() => {
                   setSearch("");
+
                   setDebouncedSearch("");
                 }}
                 placeholder="جستجو"
               />
             </div>
+
             <div
               className="
                 min-w-0
@@ -128,11 +155,17 @@ export function VisitorEventsPage() {
           </div>
         </section>
 
-        {saveError && (
+        {canSave && saveError && (
           <div className="mt-5">
             <InlineMessage variant="error">{saveError}</InlineMessage>
           </div>
         )}
+
+        {/*
+         * ========================================
+         * EVENTS
+         * ========================================
+         */}
 
         <div className="mt-12">
           {events.isPending && <EventsLoading />}
@@ -148,24 +181,24 @@ export function VisitorEventsPage() {
           {events.data && events.data.items.length > 0 && (
             <section
               className="
-                mx-auto
-                w-full
-                max-w-[760px]
-              "
+                  mx-auto
+                  w-full
+                  max-w-[760px]
+                "
             >
               <div className="mb-5">
                 <Text
                   as="h2"
                   variant="heading-md"
                   className="
-                    text-[22px]
-                    font-black
-                    leading-[1.4]
-                    tracking-[-0.25px]
-                    text-[#080d16]
+                      text-[22px]
+                      font-black
+                      leading-[1.4]
+                      tracking-[-0.25px]
+                      text-[#080d16]
 
-                    sm:text-[24px]
-                  "
+                      sm:text-[24px]
+                    "
                 >
                   ایونت‌ها
                 </Text>
@@ -178,16 +211,16 @@ export function VisitorEventsPage() {
 
               <div
                 className="
-                  flex
-                  flex-col
-                  gap-9
-                "
+                    flex
+                    flex-col
+                    gap-9
+                  "
               >
                 {events.data.items.map((event) => (
                   <EventCard
                     key={event.id}
                     event={event}
-                    onSaveChange={handleSaveChange}
+                    onSaveChange={canSave ? handleSaveChange : undefined}
                   />
                 ))}
               </div>
@@ -202,6 +235,10 @@ export function VisitorEventsPage() {
     </VisitorPageShell>
   );
 }
+
+/* =====================================================
+ * INTRO
+ * ===================================================== */
 
 function EventsIntro() {
   return (
@@ -238,6 +275,10 @@ function EventsIntro() {
     </div>
   );
 }
+
+/* =====================================================
+ * EMPTY
+ * ===================================================== */
 
 function EmptyEvents() {
   return (
@@ -278,6 +319,10 @@ function EmptyEvents() {
   );
 }
 
+/* =====================================================
+ * LOADING
+ * ===================================================== */
+
 function EventsLoading() {
   return (
     <div
@@ -292,43 +337,43 @@ function EventsLoading() {
         <div key={item}>
           <div
             className="
-              aspect-[1.68/1]
-              w-full
-              animate-pulse
-              rounded-[28px]
-              bg-gray-200
-            "
+                aspect-[1.68/1]
+                w-full
+                animate-pulse
+                rounded-[28px]
+                bg-gray-200
+              "
           />
 
           <div className="mt-4 space-y-3">
             <div
               className="
-                h-6
-                w-2/3
-                animate-pulse
-                rounded
-                bg-gray-200
-              "
+                  h-6
+                  w-2/3
+                  animate-pulse
+                  rounded
+                  bg-gray-200
+                "
             />
 
             <div
               className="
-                h-4
-                w-1/2
-                animate-pulse
-                rounded
-                bg-gray-200
-              "
+                  h-4
+                  w-1/2
+                  animate-pulse
+                  rounded
+                  bg-gray-200
+                "
             />
 
             <div
               className="
-                h-4
-                w-5/6
-                animate-pulse
-                rounded
-                bg-gray-200
-              "
+                  h-4
+                  w-5/6
+                  animate-pulse
+                  rounded
+                  bg-gray-200
+                "
             />
           </div>
         </div>

@@ -82,7 +82,7 @@ export function BlogsManager() {
           </Text>
 
           <Text tone="secondary" className="mt-1">
-            مدیریت مقالات فونیما
+            مدیریت مقالات فانیما
           </Text>
         </div>
 

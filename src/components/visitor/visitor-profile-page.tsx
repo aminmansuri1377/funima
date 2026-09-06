@@ -11,17 +11,17 @@ import type { inferRouterOutputs } from "@trpc/server";
 import {
   FiBookmark,
   FiCalendar,
-  FiCamera,
   FiCheck,
   FiEdit2,
   FiHeart,
   FiMessageCircle,
   FiTrash2,
-  FiUser,
   FiX,
 } from "react-icons/fi";
 
 import { LogoutButton } from "@/components/auth/logout-button";
+
+import { ProfileImageUploader } from "@/components/profile/profile-image-uploader";
 
 import { InlineMessage, Pagination, Text, Textarea } from "@/components/ui";
 
@@ -59,6 +59,10 @@ export function VisitorProfilePage() {
 
   const profile = trpc.visitor.profile.me.useQuery();
 
+  async function handleProfileImageChanged() {
+    await profile.refetch();
+  }
+
   if (profile.isPending) {
     return (
       <VisitorPageShell maxWidth="mobile">
@@ -86,7 +90,10 @@ export function VisitorProfilePage() {
          * ========================================
          */}
 
-        <ProfileHeader profile={profile.data} />
+        <ProfileHeader
+          profile={profile.data}
+          onProfileImageChanged={handleProfileImageChanged}
+        />
 
         {/*
          * ========================================
@@ -128,7 +135,14 @@ export function VisitorProfilePage() {
  * PROFILE HEADER
  * ===================================================== */
 
-function ProfileHeader({ profile }: { profile: ProfileData }) {
+function ProfileHeader({
+  profile,
+  onProfileImageChanged,
+}: {
+  profile: ProfileData;
+
+  onProfileImageChanged: () => void | Promise<void>;
+}) {
   return (
     <section
       className="
@@ -140,7 +154,15 @@ function ProfileHeader({ profile }: { profile: ProfileData }) {
         text-center
       "
     >
-      <ProfileAvatar name={profile.fullName} image={profile.profileImage} />
+      <ProfileImageUploader
+        name={profile.fullName}
+        image={profile.profileImage}
+        size="visitor"
+        fallback="user"
+        buttonSide="right"
+        priority
+        onUploaded={onProfileImageChanged}
+      />
 
       <Text
         as="h1"
@@ -159,11 +181,6 @@ function ProfileHeader({ profile }: { profile: ProfileData }) {
         {profile.fullName}
       </Text>
 
-      {/*
-       * شماره تلفن را کوچک نگه می‌داریم
-       * تا طراحی اصلی به هم نخورد.
-       */}
-
       <Text
         dir="ltr"
         tone="secondary"
@@ -177,7 +194,7 @@ function ProfileHeader({ profile }: { profile: ProfileData }) {
       </Text>
 
       {/*
-       * Logout functionality حفظ شده.
+       * Logout کاملاً حفظ شده.
        */}
 
       <div
@@ -199,94 +216,6 @@ function ProfileHeader({ profile }: { profile: ProfileData }) {
         <LogoutButton />
       </div>
     </section>
-  );
-}
-
-/* =====================================================
- * PROFILE AVATAR
- * ===================================================== */
-
-function ProfileAvatar({
-  name,
-  image,
-}: {
-  name: string;
-
-  image: string | null;
-}) {
-  return (
-    <div
-      className="
-        relative
-        h-[92px]
-        w-[92px]
-      "
-    >
-      <div
-        className="
-          relative
-          h-full
-          w-full
-          overflow-hidden
-          rounded-full
-          bg-white
-        "
-      >
-        {image ? (
-          <Image
-            src={image}
-            alt={name}
-            fill
-            priority
-            sizes="92px"
-            className="object-cover"
-          />
-        ) : (
-          <div
-            className="
-              flex
-              h-full
-              w-full
-              items-center
-              justify-center
-              bg-white
-              text-[32px]
-              text-[#ff6437]
-            "
-          >
-            <FiUser />
-          </div>
-        )}
-      </div>
-
-      {/*
-       * فعلاً فقط UI مطابق Figma.
-       * چون update profileImage هنوز
-       * در Profile API نداریم.
-       */}
-
-      <span
-        aria-hidden="true"
-        className="
-          absolute
-          -bottom-1
-          right-0
-          flex
-          h-7
-          w-7
-          items-center
-          justify-center
-          rounded-full
-          border-2
-          border-[#EDEDED]
-          bg-white
-          text-[13px]
-          text-[#ff6437]
-        "
-      >
-        <FiCamera />
-      </span>
-    </div>
   );
 }
 
@@ -863,7 +792,9 @@ function SavedEventCard({
         >
           {[
             event.place.placeProvince,
+
             event.place.placeCity,
+
             event.place.placeName,
           ]
             .filter(Boolean)
@@ -1282,8 +1213,7 @@ function CommentCard({
           </Text>
 
           {/*
-           * دکمه‌های Edit/Delete
-           * عمداً حفظ شده‌اند.
+           * Edit/Delete عمداً حفظ شده‌اند.
            */}
 
           <div

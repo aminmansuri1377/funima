@@ -60,7 +60,7 @@ export function AuditLogsManager() {
         </Text>
 
         <Text tone="secondary" className="mt-1">
-          تاریخچه عملیات مدیران در پنل فونیما
+          تاریخچه عملیات مدیران در پنل فانیما
         </Text>
       </div>
       <SearchInput

@@ -1,12 +1,14 @@
 "use client";
 
-import Image from "next/image";
-
 import { useState } from "react";
 
 import { useRouter } from "next/navigation";
 
-import { FiCamera, FiMapPin, FiPlus } from "react-icons/fi";
+import { FiMapPin, FiPlus } from "react-icons/fi";
+
+import { LogoutButton } from "@/components/auth/logout-button";
+
+import { ProfileImageUploader } from "@/components/profile/profile-image-uploader";
 
 import { Button, InlineMessage, Text } from "@/components/ui";
 
@@ -14,7 +16,6 @@ import { trpc } from "@/trpc/client";
 
 import { HostAccountView } from "./host-account-view";
 import { HostLatestEvent } from "./host-latest-event";
-import { LogoutButton } from "../auth/logout-button";
 
 type HostTab = "account" | "event";
 
@@ -23,9 +24,36 @@ export function HostDashboard() {
 
   const [tab, setTab] = useState<HostTab>("account");
 
+  /*
+   * getMine:
+   * اطلاعات کامل Place
+   */
   const place = trpc.host.place.getMine.useQuery();
 
-  if (place.isPending) {
+  /*
+   * overview:
+   * اطلاعات Host حتی اگر هنوز Place
+   * نداشته باشد.
+   */
+  const overview = trpc.host.place.overview.useQuery();
+
+  /*
+   * ========================================
+   * PROFILE IMAGE REFRESH
+   * ========================================
+   */
+
+  async function handleProfileImageChanged() {
+    await Promise.all([overview.refetch(), place.refetch()]);
+  }
+
+  /*
+   * ========================================
+   * LOADING
+   * ========================================
+   */
+
+  if (place.isPending || overview.isPending) {
     return (
       <HostShell>
         <HostLoading />
@@ -33,7 +61,13 @@ export function HostDashboard() {
     );
   }
 
-  if (place.error) {
+  /*
+   * ========================================
+   * ERROR
+   * ========================================
+   */
+
+  if (place.error || overview.error || !overview.data) {
     return (
       <HostShell>
         <div
@@ -51,6 +85,8 @@ export function HostDashboard() {
     );
   }
 
+  const hostUser = overview.data.host.user;
+
   /*
    * ========================================
    * HOST WITHOUT PLACE
@@ -61,7 +97,11 @@ export function HostDashboard() {
     return (
       <HostShell>
         <div className="space-y-8">
-          <HostProfileHeader fullName="میزبان فانیما" profileImage={null} />
+          <HostProfileHeader
+            fullName={hostUser.fullName}
+            profileImage={hostUser.profileImage}
+            onProfileImageChanged={handleProfileImageChanged}
+          />
 
           <WelcomeHost />
 
@@ -85,8 +125,9 @@ export function HostDashboard() {
       <HostShell>
         <div className="space-y-8">
           <HostProfileHeader
-            fullName={place.data.host.user.fullName}
-            profileImage={place.data.host.user.profileImage}
+            fullName={hostUser.fullName}
+            profileImage={hostUser.profileImage}
+            onProfileImageChanged={handleProfileImageChanged}
           />
 
           <IncompletePlaceDashboard
@@ -110,9 +151,11 @@ export function HostDashboard() {
     <HostShell>
       <div>
         <HostProfileHeader
-          fullName={place.data.host.user.fullName}
-          profileImage={place.data.host.user.profileImage}
+          fullName={hostUser.fullName}
+          profileImage={hostUser.profileImage}
+          onProfileImageChanged={handleProfileImageChanged}
         />
+
         <HostNavigation tab={tab} onChange={setTab} />
 
         <div className="mt-7">
@@ -137,10 +180,13 @@ export function HostDashboard() {
 function HostProfileHeader({
   fullName,
   profileImage,
+  onProfileImageChanged,
 }: {
   fullName: string;
 
   profileImage: string | null;
+
+  onProfileImageChanged: () => void | Promise<void>;
 }) {
   return (
     <section
@@ -153,72 +199,15 @@ function HostProfileHeader({
         text-center
       "
     >
-      <div
-        className="
-          relative
-          h-[76px]
-          w-[76px]
-        "
-      >
-        <div
-          className="
-            relative
-            h-full
-            w-full
-            overflow-hidden
-            rounded-full
-            bg-white
-          "
-        >
-          {profileImage ? (
-            <Image
-              src={profileImage}
-              alt={fullName}
-              fill
-              sizes="76px"
-              className="object-cover"
-            />
-          ) : (
-            <div
-              className="
-                flex
-                h-full
-                w-full
-                items-center
-                justify-center
-                bg-white
-                text-[26px]
-                font-black
-                text-[#ff6437]
-              "
-            >
-              {fullName.trim().charAt(0) || "ف"}
-            </div>
-          )}
-        </div>
-
-        <span
-          aria-hidden="true"
-          className="
-            absolute
-            -bottom-1
-            -left-1
-            flex
-            h-7
-            w-7
-            items-center
-            justify-center
-            rounded-full
-            border-2
-            border-[#EDEDED]
-            bg-white
-            text-[14px]
-            text-[#ff6437]
-          "
-        >
-          <FiCamera />
-        </span>
-      </div>
+      <ProfileImageUploader
+        name={fullName}
+        image={profileImage}
+        size="host"
+        fallback="initial"
+        buttonSide="left"
+        priority
+        onUploaded={onProfileImageChanged}
+      />
 
       <Text
         as="h1"
@@ -234,7 +223,20 @@ function HostProfileHeader({
       >
         {fullName}
       </Text>
-      <LogoutButton />
+
+      <div
+        className="
+          mt-2
+          text-[#9b9b9b]
+
+          [&>button]:text-[12px]
+          [&>button]:transition-colors
+
+          hover:[&>button]:text-red-500
+        "
+      >
+        <LogoutButton />
+      </div>
     </section>
   );
 }
@@ -346,6 +348,7 @@ function WelcomeHost() {
         px-5
         py-7
         text-center
+
         sm:px-8
         sm:py-9
       "
@@ -383,6 +386,7 @@ function NoPlaceDashboard({ onCreate }: { onCreate: () => void }) {
         px-5
         py-12
         text-center
+
         sm:px-8
       "
     >
@@ -456,6 +460,7 @@ function IncompletePlaceDashboard({
         rounded-[28px]
         bg-white
         p-5
+
         sm:p-7
       "
     >

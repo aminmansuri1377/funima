@@ -56,7 +56,7 @@ export function HostsManager() {
           </Text>
 
           <Text tone="secondary" className="mt-1">
-            مدیریت میزبان‌های فونیما
+            مدیریت میزبان‌های فانیما
           </Text>
         </div>
 

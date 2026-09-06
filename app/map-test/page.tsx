@@ -36,7 +36,7 @@ export default function MapTestPage() {
           </Text>
 
           <Text tone="secondary" className="mt-1">
-            نسخه Leaflet نقشه فونیما
+            نسخه Leaflet نقشه فانیما
           </Text>
         </div>
 

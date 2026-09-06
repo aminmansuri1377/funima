@@ -21,7 +21,7 @@ export function CreateBlogManager() {
         </Text>
 
         <Text tone="secondary" className="mt-1">
-          نوشتن و انتشار مقاله جدید در فونیما
+          نوشتن و انتشار مقاله جدید در فانیما
         </Text>
       </div>
 

@@ -12,7 +12,6 @@ import {
   FiCalendar,
   FiClock,
   FiExternalLink,
-  FiInfo,
   FiMapPin,
   FiMessageCircle,
   FiNavigation,
@@ -39,9 +38,13 @@ type EventData = RouterOutputs["visitor"]["events"]["getById"];
 
 type Props = {
   eventId: string;
+
+  canSave: boolean;
+
+  canComment: boolean;
 };
 
-export function VisitorEventPage({ eventId }: Props) {
+export function VisitorEventPage({ eventId, canSave, canComment }: Props) {
   const router = useRouter();
 
   const event = trpc.visitor.events.getById.useQuery({
@@ -51,6 +54,10 @@ export function VisitorEventPage({ eventId }: Props) {
   const eventSave = useEventSave();
 
   async function handleSaveChange(nextSaved: boolean) {
+    if (!canSave) {
+      return;
+    }
+
     await eventSave.toggle(eventId, nextSaved);
   }
 
@@ -81,26 +88,57 @@ export function VisitorEventPage({ eventId }: Props) {
   return (
     <VisitorPageShell maxWidth="content">
       <div>
+        {/*
+         * ========================================
+         * HERO
+         * ========================================
+         */}
+
         <EventHero
           event={data}
           saved={data.isSaved}
           saving={eventSave.isPending}
+          canSave={canSave}
           onSaveChange={handleSaveChange}
           onBack={() => router.back()}
           onFallbackBack={() => router.push("/events")}
         />
 
+        {/*
+         * ========================================
+         * SUMMARY
+         * ========================================
+         */}
+
         <div className="mt-7">
           <EventSummary event={data} />
         </div>
+
+        {/*
+         * ========================================
+         * PRICE
+         * ========================================
+         */}
 
         <div className="mt-7">
           <PricePill event={data} />
         </div>
 
+        {/*
+         * ========================================
+         * INFO
+         * ========================================
+         */}
+
         <div className="mt-9">
           <EventInfoSection event={data} />
         </div>
+
+        {/*
+         * ========================================
+         * DESCRIPTION
+         * ========================================
+         */}
 
         {data.description && (
           <div className="mt-9">
@@ -110,6 +148,12 @@ export function VisitorEventPage({ eventId }: Props) {
             />
           </div>
         )}
+
+        {/*
+         * ========================================
+         * SUITABLE
+         * ========================================
+         */}
 
         {data.suitable && (
           <div className="mt-9">
@@ -121,11 +165,23 @@ export function VisitorEventPage({ eventId }: Props) {
           </div>
         )}
 
+        {/*
+         * ========================================
+         * PLANS
+         * ========================================
+         */}
+
         {data.plans.length > 0 && (
           <div className="mt-9">
             <EventPlans plans={data.plans} />
           </div>
         )}
+
+        {/*
+         * ========================================
+         * RULES
+         * ========================================
+         */}
 
         {data.rule && (
           <div className="mt-9">
@@ -137,27 +193,51 @@ export function VisitorEventPage({ eventId }: Props) {
           </div>
         )}
 
+        {/*
+         * ========================================
+         * EXTRA INFO
+         * ========================================
+         */}
+
         {data.info && (
           <div className="mt-9">
             <TextBlockSection title="اطلاعات تکمیلی :" content={data.info} />
           </div>
         )}
 
+        {/*
+         * ========================================
+         * SIMILAR EVENTS
+         * ========================================
+         */}
+
         {data.similarEvents.length > 0 && (
           <div className="mt-10">
             <SimilarEvents
               events={data.similarEvents}
+              canSave={canSave}
               onChanged={() => event.refetch()}
             />
           </div>
         )}
 
-        <div className="mt-12">
-          <VisitorEventComments
-            eventId={data.id}
-            onEventChanged={() => event.refetch()}
-          />
-        </div>
+        {/*
+         * ========================================
+         * COMMENTS
+         *
+         * Guest نباید query محافظت‌شده
+         * Comment را اجرا کند.
+         * ========================================
+         */}
+
+        {canComment && (
+          <div className="mt-12">
+            <VisitorEventComments
+              eventId={data.id}
+              onEventChanged={() => event.refetch()}
+            />
+          </div>
+        )}
 
         <div className="mt-20">
           <VisitorFooter />
@@ -167,19 +247,31 @@ export function VisitorEventPage({ eventId }: Props) {
   );
 }
 
+/* =====================================================
+ * HERO
+ * ===================================================== */
+
 function EventHero({
   event,
   saved,
   saving,
+  canSave,
   onSaveChange,
   onBack,
   onFallbackBack,
 }: {
   event: EventData;
+
   saved: boolean;
+
   saving: boolean;
+
+  canSave: boolean;
+
   onSaveChange: (nextSaved: boolean) => void | Promise<unknown>;
+
   onBack: () => void;
+
   onFallbackBack: () => void;
 }) {
   return (
@@ -193,7 +285,9 @@ function EventHero({
       <ImageSlider
         images={event.images.map((image) => ({
           id: image.id,
+
           url: image.url,
+
           alt: event.eventName,
         }))}
         alt={event.eventName}
@@ -224,23 +318,33 @@ function EventHero({
         />
       </div>
 
-      <div
-        className="
-          absolute
-          right-3
-          top-3
-          z-20
-        "
-      >
-        <FavoriteButton
-          saved={saved}
-          loading={saving}
-          onToggle={onSaveChange}
-        />
-      </div>
+      {/*
+       * Guest نباید Favorite ببیند.
+       */}
+
+      {canSave && (
+        <div
+          className="
+            absolute
+            right-3
+            top-3
+            z-20
+          "
+        >
+          <FavoriteButton
+            saved={saved}
+            loading={saving}
+            onToggle={onSaveChange}
+          />
+        </div>
+      )}
     </section>
   );
 }
+
+/* =====================================================
+ * SUMMARY
+ * ===================================================== */
 
 function EventSummary({ event }: { event: EventData }) {
   return (
@@ -252,6 +356,7 @@ function EventSummary({ event }: { event: EventData }) {
           font-black
           leading-[1.7]
           text-[#07111f]
+
           sm:text-[30px]
         "
       >
@@ -263,6 +368,7 @@ function EventSummary({ event }: { event: EventData }) {
           mt-2
           text-[14px]
           text-[#5f6670]
+
           sm:text-[15px]
         "
       >
@@ -296,6 +402,10 @@ function EventSummary({ event }: { event: EventData }) {
   );
 }
 
+/* =====================================================
+ * PRICE
+ * ===================================================== */
+
 function PricePill({ event }: { event: EventData }) {
   return (
     <div
@@ -318,6 +428,7 @@ function PricePill({ event }: { event: EventData }) {
           text-[15px]
           font-bold
           text-[#1d2430]
+
           sm:text-[16px]
         "
       >
@@ -329,6 +440,10 @@ function PricePill({ event }: { event: EventData }) {
     </div>
   );
 }
+
+/* =====================================================
+ * EVENT INFO
+ * ===================================================== */
 
 function EventInfoSection({ event }: { event: EventData }) {
   const address =
@@ -387,11 +502,14 @@ function EventInfoSection({ event }: { event: EventData }) {
             font-medium
             text-[#1d2430]
             transition-colors
+
             hover:bg-[#f8f8f8]
           "
         >
           <FiNavigation className="text-[#ff6a3d]" />
+
           <span>باز کردن در Google Maps</span>
+
           <FiExternalLink className="text-[#9aa1ab]" />
         </a>
       )}
@@ -399,11 +517,16 @@ function EventInfoSection({ event }: { event: EventData }) {
   );
 }
 
+/* =====================================================
+ * TEXT SECTION
+ * ===================================================== */
+
 function TextBlockSection({
   title,
   content,
 }: {
   title: string;
+
   content: string;
 }) {
   return (
@@ -434,13 +557,19 @@ function TextBlockSection({
   );
 }
 
+/* =====================================================
+ * BULLETS
+ * ===================================================== */
+
 function BulletSection({
   title,
   icon,
   items,
 }: {
   title: string;
+
   icon: React.ReactNode;
+
   items: string[];
 }) {
   if (items.length === 0) {
@@ -456,33 +585,33 @@ function BulletSection({
           <div
             key={`${item}-${index}`}
             className="
-              flex
-              items-start
-              gap-3
-            "
+                flex
+                items-start
+                gap-3
+              "
           >
             <div
               className="
-                mt-1
-                flex
-                h-6
-                w-6
-                shrink-0
-                items-center
-                justify-center
-                text-[16px]
-                text-[#ff6a3d]
-              "
+                  mt-1
+                  flex
+                  h-6
+                  w-6
+                  shrink-0
+                  items-center
+                  justify-center
+                  text-[16px]
+                  text-[#ff6a3d]
+                "
             >
               {icon}
             </div>
 
             <Text
               className="
-                text-[14px]
-                leading-8
-                text-[#3f4650]
-              "
+                  text-[14px]
+                  leading-8
+                  text-[#3f4650]
+                "
             >
               {item}
             </Text>
@@ -492,6 +621,10 @@ function BulletSection({
     </section>
   );
 }
+
+/* =====================================================
+ * PLANS
+ * ===================================================== */
 
 function EventPlans({ plans }: { plans: EventData["plans"] }) {
   return (
@@ -503,37 +636,37 @@ function EventPlans({ plans }: { plans: EventData["plans"] }) {
           <div
             key={plan.id}
             className="
-              flex
-              items-center
-              justify-between
-              gap-3
-              rounded-full
-              bg-white
-              px-5
-              py-3
-            "
+                flex
+                items-center
+                justify-between
+                gap-3
+                rounded-full
+                bg-white
+                px-5
+                py-3
+              "
           >
             <Text
               className="
-                text-[14px]
-                font-medium
-                text-[#202734]
-              "
+                  text-[14px]
+                  font-medium
+                  text-[#202734]
+                "
             >
               {plan.plan}
             </Text>
 
             <span
               className="
-                shrink-0
-                rounded-full
-                bg-[#f6f6f6]
-                px-3
-                py-1
-                text-[13px]
-                font-bold
-                text-[#2a3140]
-              "
+                  shrink-0
+                  rounded-full
+                  bg-[#f6f6f6]
+                  px-3
+                  py-1
+                  text-[13px]
+                  font-bold
+                  text-[#2a3140]
+                "
             >
               {plan.hour || "--:--"}
             </span>
@@ -544,21 +677,38 @@ function EventPlans({ plans }: { plans: EventData["plans"] }) {
   );
 }
 
+/* =====================================================
+ * SIMILAR EVENTS
+ * ===================================================== */
+
 function SimilarEvents({
   events,
+  canSave,
   onChanged,
 }: {
   events: EventData["similarEvents"];
+
+  canSave: boolean;
+
   onChanged: () => void | Promise<unknown>;
 }) {
   const save = trpc.visitor.events.save.useMutation();
+
   const unsave = trpc.visitor.events.unsave.useMutation();
 
   async function handleSaveChange(eventId: string, nextSaved: boolean) {
+    if (!canSave) {
+      return;
+    }
+
     if (nextSaved) {
-      await save.mutateAsync({ eventId });
+      await save.mutateAsync({
+        eventId,
+      });
     } else {
-      await unsave.mutateAsync({ eventId });
+      await unsave.mutateAsync({
+        eventId,
+      });
     }
 
     await onChanged();
@@ -580,7 +730,7 @@ function SimilarEvents({
           <SimilarEventCard
             key={event.id}
             event={event}
-            onSaveChange={handleSaveChange}
+            onSaveChange={canSave ? handleSaveChange : undefined}
           />
         ))}
       </div>
@@ -588,15 +738,19 @@ function SimilarEvents({
   );
 }
 
+/* =====================================================
+ * SIMILAR EVENT CARD
+ * ===================================================== */
+
 function SimilarEventCard({
   event,
   onSaveChange,
 }: {
   event: EventData["similarEvents"][number];
-  onSaveChange: (
-    eventId: string,
-    nextSaved: boolean,
-  ) => void | Promise<unknown>;
+
+  onSaveChange?:
+    | ((eventId: string, nextSaved: boolean) => void | Promise<unknown>)
+    | undefined;
 }) {
   const router = useRouter();
 
@@ -611,6 +765,7 @@ function SimilarEventCard({
         onKeyDown={(keyboardEvent) => {
           if (keyboardEvent.key === "Enter" || keyboardEvent.key === " ") {
             keyboardEvent.preventDefault();
+
             router.push(`/events/${event.id}`);
           }
         }}
@@ -651,19 +806,21 @@ function SimilarEventCard({
             </div>
           )}
 
-          <div
-            className="
-              absolute
-              right-3
-              top-3
-            "
-          >
-            <FavoriteButton
-              saved={event.isSaved}
-              size="sm"
-              onToggle={(nextSaved) => onSaveChange(event.id, nextSaved)}
-            />
-          </div>
+          {onSaveChange && (
+            <div
+              className="
+                absolute
+                right-3
+                top-3
+              "
+            >
+              <FavoriteButton
+                saved={event.isSaved}
+                size="sm"
+                onToggle={(nextSaved) => onSaveChange(event.id, nextSaved)}
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -696,7 +853,18 @@ function SimilarEventCard({
   );
 }
 
-function InfoRow({ icon, value }: { icon: React.ReactNode; value: string }) {
+/* =====================================================
+ * INFO ROW
+ * ===================================================== */
+
+function InfoRow({
+  icon,
+  value,
+}: {
+  icon: React.ReactNode;
+
+  value: string;
+}) {
   return (
     <div
       className="
@@ -734,13 +902,19 @@ function InfoRow({ icon, value }: { icon: React.ReactNode; value: string }) {
   );
 }
 
+/* =====================================================
+ * STAT
+ * ===================================================== */
+
 function StatItem({
   icon,
   value,
   label,
 }: {
   icon: React.ReactNode;
+
   value: string;
+
   label: string;
 }) {
   return (
@@ -760,6 +934,10 @@ function StatItem({
   );
 }
 
+/* =====================================================
+ * SECTION TITLE
+ * ===================================================== */
+
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <Text
@@ -775,6 +953,10 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
     </Text>
   );
 }
+
+/* =====================================================
+ * BACK
+ * ===================================================== */
 
 function BackActionButton({ onClick }: { onClick: () => void }) {
   return (
@@ -795,6 +977,7 @@ function BackActionButton({ onClick }: { onClick: () => void }) {
         shadow-sm
         backdrop-blur-sm
         transition-colors
+
         hover:bg-white
       "
     >
@@ -802,6 +985,10 @@ function BackActionButton({ onClick }: { onClick: () => void }) {
     </button>
   );
 }
+
+/* =====================================================
+ * LOADING
+ * ===================================================== */
 
 function EventPageLoading() {
   return (
@@ -812,6 +999,7 @@ function EventPageLoading() {
           animate-pulse
           rounded-[28px]
           bg-gray-200
+
           sm:aspect-[16/8]
         "
       />
@@ -867,11 +1055,11 @@ function EventPageLoading() {
           <div
             key={item}
             className="
-              h-8
-              animate-pulse
-              rounded
-              bg-transparent
-            "
+                h-8
+                animate-pulse
+                rounded
+                bg-transparent
+              "
           >
             <div className="h-full w-full rounded-lg bg-gray-200" />
           </div>
@@ -891,10 +1079,16 @@ function EventPageLoading() {
   );
 }
 
+/* =====================================================
+ * HELPERS
+ * ===================================================== */
+
 function formatDate(value: Date | string) {
   return new Intl.DateTimeFormat("fa-IR", {
     weekday: "long",
+
     day: "numeric",
+
     month: "long",
   }).format(new Date(value));
 }

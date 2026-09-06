@@ -112,7 +112,7 @@ export function EventsManager() {
           </Text>
 
           <Text tone="secondary" className="mt-1">
-            مدیریت رویدادهای فونیما
+            مدیریت رویدادهای فانیما
           </Text>
         </div>
 
