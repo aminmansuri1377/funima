@@ -7,39 +7,32 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import type { inferRouterOutputs } from "@trpc/server";
-import { usePlaceSave } from "@/hooks/visitor/use-place-save";
 
-import { useEventSave } from "@/hooks/visitor/use-event-save";
 import {
   FiBookmark,
   FiCalendar,
+  FiCamera,
+  FiCheck,
   FiEdit2,
+  FiHeart,
   FiMessageCircle,
   FiTrash2,
   FiUser,
   FiX,
 } from "react-icons/fi";
 
-import {
-  Button,
-  InlineMessage,
-  Pagination,
-  Text,
-  Textarea,
-} from "@/components/ui";
-
 import { LogoutButton } from "@/components/auth/logout-button";
+
+import { InlineMessage, Pagination, Text, Textarea } from "@/components/ui";
+
+import { useEventSave } from "@/hooks/visitor/use-event-save";
+import { usePlaceSave } from "@/hooks/visitor/use-place-save";
 
 import type { AppRouter } from "@/server/trpc/root";
 
 import { trpc } from "@/trpc/client";
 
-import { EventCard } from "./event-card";
-
-import { PlaceCard } from "./place-card";
-
 import { VisitorFooter } from "./visitor-footer";
-
 import { VisitorPageShell } from "./visitor-page-shell";
 
 type RouterOutputs = inferRouterOutputs<AppRouter>;
@@ -57,6 +50,10 @@ type MyCommentData =
 
 type ProfileTab = "places" | "events" | "comments";
 
+/* =====================================================
+ * PROFILE PAGE
+ * ===================================================== */
+
 export function VisitorProfilePage() {
   const [tab, setTab] = useState<ProfileTab>("places");
 
@@ -64,7 +61,7 @@ export function VisitorProfilePage() {
 
   if (profile.isPending) {
     return (
-      <VisitorPageShell maxWidth="wide">
+      <VisitorPageShell maxWidth="mobile">
         <ProfileLoading />
       </VisitorPageShell>
     );
@@ -72,7 +69,7 @@ export function VisitorProfilePage() {
 
   if (profile.error || !profile.data) {
     return (
-      <VisitorPageShell maxWidth="wide">
+      <VisitorPageShell maxWidth="mobile">
         <InlineMessage variant="error">
           دریافت اطلاعات پروفایل انجام نشد.
         </InlineMessage>
@@ -81,91 +78,221 @@ export function VisitorProfilePage() {
   }
 
   return (
-    <VisitorPageShell maxWidth="wide">
-      <div className="space-y-6">
+    <VisitorPageShell maxWidth="mobile">
+      <div>
+        {/*
+         * ========================================
+         * PROFILE
+         * ========================================
+         */}
+
         <ProfileHeader profile={profile.data} />
+
+        {/*
+         * ========================================
+         * TABS
+         * ========================================
+         */}
 
         <ProfileTabs tab={tab} profile={profile.data} onChange={setTab} />
 
-        {tab === "places" && <SavedPlaces />}
+        {/*
+         * ========================================
+         * TAB CONTENT
+         * ========================================
+         */}
 
-        {tab === "events" && <SavedEvents />}
+        <div className="mt-7">
+          {tab === "places" && <SavedPlaces />}
 
-        {tab === "comments" && <MyComments />}
+          {tab === "events" && <SavedEvents />}
 
-        <VisitorFooter />
+          {tab === "comments" && <MyComments />}
+        </div>
+
+        {/*
+         * ========================================
+         * FOOTER
+         * ========================================
+         */}
+
+        <div className="mt-20">
+          <VisitorFooter />
+        </div>
       </div>
     </VisitorPageShell>
   );
 }
 
+/* =====================================================
+ * PROFILE HEADER
+ * ===================================================== */
+
 function ProfileHeader({ profile }: { profile: ProfileData }) {
   return (
     <section
       className="
-        p-5
-        sm:p-7
+        flex
+        flex-col
+        items-center
+        justify-center
+        pt-2
+        text-center
       "
     >
-      <div>
-        <div className="text-center mx-auto">
-          <ProfileAvatar name={profile.fullName} image={profile.profileImage} />
+      <ProfileAvatar name={profile.fullName} image={profile.profileImage} />
 
-          <div className="">
-            <Text as="h1" variant="heading-xl" className="truncate">
-              {profile.fullName}
-            </Text>
+      <Text
+        as="h1"
+        className="
+          mt-5
+          max-w-full
+          truncate
+          text-[25px]
+          font-black
+          leading-9
+          text-[#07111f]
 
-            <Text
-              dir="ltr"
-              tone="secondary"
-              className="
-                mt-1
-              "
-            >
-              {profile.phoneNumber}
-            </Text>
+          sm:text-[28px]
+        "
+      >
+        {profile.fullName}
+      </Text>
 
-            {/* <Text variant="caption" tone="secondary" className="mt-1">
-              عضو فونیما از {formatJoinDate(profile.createdAt)}
-            </Text> */}
+      {/*
+       * شماره تلفن را کوچک نگه می‌داریم
+       * تا طراحی اصلی به هم نخورد.
+       */}
 
-            <div className="shrink-0 text-red-500">
-              <LogoutButton />
-            </div>
-          </div>
-        </div>
-      </div>
+      <Text
+        dir="ltr"
+        tone="secondary"
+        className="
+          mt-1
+          text-[13px]
+          text-[#a0a0a0]
+        "
+      >
+        {profile.phoneNumber}
+      </Text>
+
+      {/*
+       * Logout functionality حفظ شده.
+       */}
 
       <div
         className="
-          mt-6
-          grid
-          grid-cols-3
-          gap-2
+          mt-3
+          text-center
+
+          [&>button]:rounded-full
+          [&>button]:px-4
+          [&>button]:py-1.5
+          [&>button]:text-[12px]
+          [&>button]:font-medium
+          [&>button]:text-[#9b9b9b]
+          [&>button]:transition-colors
+
+          hover:[&>button]:text-red-500
         "
       >
-        <ProfileCount
-          icon={<FiBookmark />}
-          value={profile._count.savedPlaces}
-          label="مکان"
-        />
-
-        <ProfileCount
-          icon={<FiCalendar />}
-          value={profile._count.savedEvents}
-          label="ایونت"
-        />
-
-        <ProfileCount
-          icon={<FiMessageCircle />}
-          value={profile._count.comments}
-          label="نظر"
-        />
+        <LogoutButton />
       </div>
     </section>
   );
 }
+
+/* =====================================================
+ * PROFILE AVATAR
+ * ===================================================== */
+
+function ProfileAvatar({
+  name,
+  image,
+}: {
+  name: string;
+
+  image: string | null;
+}) {
+  return (
+    <div
+      className="
+        relative
+        h-[92px]
+        w-[92px]
+      "
+    >
+      <div
+        className="
+          relative
+          h-full
+          w-full
+          overflow-hidden
+          rounded-full
+          bg-white
+        "
+      >
+        {image ? (
+          <Image
+            src={image}
+            alt={name}
+            fill
+            priority
+            sizes="92px"
+            className="object-cover"
+          />
+        ) : (
+          <div
+            className="
+              flex
+              h-full
+              w-full
+              items-center
+              justify-center
+              bg-white
+              text-[32px]
+              text-[#ff6437]
+            "
+          >
+            <FiUser />
+          </div>
+        )}
+      </div>
+
+      {/*
+       * فعلاً فقط UI مطابق Figma.
+       * چون update profileImage هنوز
+       * در Profile API نداریم.
+       */}
+
+      <span
+        aria-hidden="true"
+        className="
+          absolute
+          -bottom-1
+          right-0
+          flex
+          h-7
+          w-7
+          items-center
+          justify-center
+          rounded-full
+          border-2
+          border-[#EDEDED]
+          bg-white
+          text-[13px]
+          text-[#ff6437]
+        "
+      >
+        <FiCamera />
+      </span>
+    </div>
+  );
+}
+
+/* =====================================================
+ * PROFILE TABS
+ * ===================================================== */
 
 function ProfileTabs({
   tab,
@@ -180,67 +307,48 @@ function ProfileTabs({
 }) {
   return (
     <nav
+      aria-label="بخش‌های پروفایل"
       className="
-        sticky
-        top-3
-        z-30
-        rounded-3xl
-        border
-        border-black/5
-        bg-white/95
-        p-1.5
-        shadow-[0_8px_30px_rgba(0,0,0,0.05)]
-        backdrop-blur-xl
+        mt-8
+        grid
+        grid-cols-3
+        gap-1
       "
     >
-      <div
-        className="
-          grid
-          grid-cols-3
-          gap-1
-        "
+      <ProfileTabButton
+        active={tab === "places"}
+        count={profile._count.savedPlaces}
+        onClick={() => onChange("places")}
       >
-        <ProfileTabButton
-          active={tab === "places"}
-          icon={<FiBookmark />}
-          count={profile._count.savedPlaces}
-          onClick={() => onChange("places")}
-        >
-          مکان‌ها
-        </ProfileTabButton>
+        مکان های ذخیره شده
+      </ProfileTabButton>
 
-        <ProfileTabButton
-          active={tab === "events"}
-          icon={<FiCalendar />}
-          count={profile._count.savedEvents}
-          onClick={() => onChange("events")}
-        >
-          ایونت‌ها
-        </ProfileTabButton>
+      <ProfileTabButton
+        active={tab === "events"}
+        count={profile._count.savedEvents}
+        onClick={() => onChange("events")}
+      >
+        ایونت های من
+      </ProfileTabButton>
 
-        <ProfileTabButton
-          active={tab === "comments"}
-          icon={<FiMessageCircle />}
-          count={profile._count.comments}
-          onClick={() => onChange("comments")}
-        >
-          نظرات
-        </ProfileTabButton>
-      </div>
+      <ProfileTabButton
+        active={tab === "comments"}
+        count={profile._count.comments}
+        onClick={() => onChange("comments")}
+      >
+        نظرات من
+      </ProfileTabButton>
     </nav>
   );
 }
 
 function ProfileTabButton({
   active,
-  icon,
   count,
   children,
   onClick,
 }: {
   active: boolean;
-
-  icon: React.ReactNode;
 
   count: number;
 
@@ -252,51 +360,50 @@ function ProfileTabButton({
     <button
       type="button"
       aria-pressed={active}
+      aria-label={`${String(children)} - ${count.toLocaleString("fa-IR")}`}
       onClick={onClick}
       className={`
+        relative
         flex
-        min-h-14
+        min-h-[52px]
         items-center
         justify-center
-        gap-2
-        rounded-[19px]
-        px-2
-        text-xs
-        font-semibold
+        px-1
+        pb-3
+        text-center
+        text-[12px]
+        font-bold
+        leading-6
         transition-colors
-        sm:text-sm
+
+        sm:text-[14px]
 
         ${
           active
-            ? "bg-(--color-brand-500) text-white"
-            : "text-(--color-text-secondary) hover:bg-gray-50"
+            ? `
+              text-[#ff6437]
+            `
+            : `
+              text-[#9b9b9b]
+              hover:text-[#666]
+            `
         }
       `}
     >
-      {/* <span className="text-lg">{icon}</span> */}
+      {children}
 
-      <span>{children}</span>
-
-      {/* <span
-        className={`
-          flex
-          min-w-6
-          items-center
-          justify-center
-          rounded-full
-          px-1.5
-          py-0.5
-          text-[10px]
-
-          ${
-            active
-              ? "bg-white/20 text-white"
-              : "bg-gray-100 text-(--color-text-secondary)"
-          }
-        `}
-      >
-        {count.toLocaleString("fa-IR")}
-      </span> */}
+      {active && (
+        <span
+          className="
+            absolute
+            inset-x-2
+            bottom-0
+            h-[2px]
+            rounded-full
+            bg-[#ff6437]
+          "
+        />
+      )}
     </button>
   );
 }
@@ -306,6 +413,8 @@ function ProfileTabButton({
  * ===================================================== */
 
 function SavedPlaces() {
+  const router = useRouter();
+
   const [page, setPage] = useState(1);
 
   const [pageSize, setPageSize] = useState(10);
@@ -318,16 +427,13 @@ function SavedPlaces() {
   });
 
   const placeSave = usePlaceSave();
+
   async function handleSaveChange(placeId: string, nextSaved: boolean) {
     setError(null);
 
     try {
       await placeSave.toggle(placeId, nextSaved);
 
-      /*
-       * فقط برای edge case Pagination.
-       * خود cache قبلاً invalidate شده.
-       */
       if (
         !nextSaved &&
         saved.data &&
@@ -362,13 +468,12 @@ function SavedPlaces() {
   const items = saved.data?.items ?? [];
 
   return (
-    <section className="space-y-5">
-      <SectionHeader
-        title="مکان‌های ذخیره‌شده"
-        description="جاهایی که برای بعد ذخیره کرده‌ای"
-      />
-
-      {error && <InlineMessage variant="error">{error}</InlineMessage>}
+    <section>
+      {error && (
+        <div className="mb-5">
+          <InlineMessage variant="error">{error}</InlineMessage>
+        </div>
+      )}
 
       {items.length === 0 ? (
         <EmptySaved
@@ -380,17 +485,18 @@ function SavedPlaces() {
         <>
           <div
             className="
-              grid
-              gap-4
-              sm:grid-cols-2
-              lg:grid-cols-3
+              flex
+              flex-col
+              gap-9
             "
           >
             {items.map((place: SavedPlaceData) => (
-              <PlaceCard
+              <SavedPlaceCard
                 key={place.id}
                 place={place}
-                onSaveChange={handleSaveChange}
+                saving={placeSave.isPending}
+                onOpen={() => router.push(`/places/${place.id}`)}
+                onRemove={() => handleSaveChange(place.id, false)}
               />
             ))}
           </div>
@@ -419,10 +525,127 @@ function SavedPlaces() {
 }
 
 /* =====================================================
+ * SAVED PLACE CARD
+ * ===================================================== */
+
+function SavedPlaceCard({
+  place,
+  saving,
+  onOpen,
+  onRemove,
+}: {
+  place: SavedPlaceData;
+
+  saving: boolean;
+
+  onOpen: () => void;
+
+  onRemove: () => void | Promise<unknown>;
+}) {
+  const image = place.images[0]?.url ?? null;
+
+  return (
+    <article>
+      <div
+        role="link"
+        tabIndex={0}
+        onClick={onOpen}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+
+            onOpen();
+          }
+        }}
+        className="
+          group
+          relative
+          aspect-[2.15/1]
+          cursor-pointer
+          overflow-hidden
+          rounded-[24px]
+          bg-gray-200
+        "
+      >
+        {image ? (
+          <Image
+            src={image}
+            alt={place.placeName}
+            fill
+            sizes="(max-width: 600px) 100vw, 520px"
+            className="
+              object-cover
+              transition-transform
+              duration-300
+              group-hover:scale-[1.015]
+            "
+          />
+        ) : (
+          <div
+            className="
+              flex
+              h-full
+              w-full
+              items-center
+              justify-center
+              bg-white
+              text-3xl
+              text-[#ff6437]
+            "
+          >
+            <FiBookmark />
+          </div>
+        )}
+
+        <SavedHeartButton loading={saving} onRemove={onRemove} />
+      </div>
+
+      <button
+        type="button"
+        onClick={onOpen}
+        className="
+          mt-4
+          block
+          w-full
+          text-right
+        "
+      >
+        <Text
+          className="
+            line-clamp-1
+            text-[18px]
+            font-medium
+            leading-7
+            text-[#202020]
+          "
+        >
+          {place.placeName}
+        </Text>
+
+        {(place.placeProvince || place.placeCity) && (
+          <Text
+            className="
+              mt-1
+              line-clamp-1
+              text-[14px]
+              text-[#b0b0b0]
+            "
+          >
+            {[place.placeProvince, place.placeCity].filter(Boolean).join(" - ")}
+          </Text>
+        )}
+      </button>
+    </article>
+  );
+}
+
+/* =====================================================
  * SAVED EVENTS
  * ===================================================== */
 
 function SavedEvents() {
+  const router = useRouter();
+
   const [page, setPage] = useState(1);
 
   const [pageSize, setPageSize] = useState(10);
@@ -435,6 +658,7 @@ function SavedEvents() {
   });
 
   const eventSave = useEventSave();
+
   async function handleSaveChange(eventId: string, nextSaved: boolean) {
     setError(null);
 
@@ -475,13 +699,12 @@ function SavedEvents() {
   const items = saved.data?.items ?? [];
 
   return (
-    <section className="space-y-5">
-      <SectionHeader
-        title="ایونت‌های ذخیره‌شده"
-        description="ایونت‌هایی که نمی‌خوای از دست بدی"
-      />
-
-      {error && <InlineMessage variant="error">{error}</InlineMessage>}
+    <section>
+      {error && (
+        <div className="mb-5">
+          <InlineMessage variant="error">{error}</InlineMessage>
+        </div>
+      )}
 
       {items.length === 0 ? (
         <EmptySaved
@@ -493,17 +716,18 @@ function SavedEvents() {
         <>
           <div
             className="
-              grid
-              gap-4
-              sm:grid-cols-2
-              lg:grid-cols-3
+              flex
+              flex-col
+              gap-9
             "
           >
             {items.map((event: SavedEventData) => (
-              <EventCard
+              <SavedEventCard
                 key={event.id}
                 event={event}
-                onSaveChange={handleSaveChange}
+                saving={eventSave.isPending}
+                onOpen={() => router.push(`/events/${event.id}`)}
+                onRemove={() => handleSaveChange(event.id, false)}
               />
             ))}
           </div>
@@ -528,6 +752,180 @@ function SavedEvents() {
         </>
       )}
     </section>
+  );
+}
+
+/* =====================================================
+ * SAVED EVENT CARD
+ * ===================================================== */
+
+function SavedEventCard({
+  event,
+  saving,
+  onOpen,
+  onRemove,
+}: {
+  event: SavedEventData;
+
+  saving: boolean;
+
+  onOpen: () => void;
+
+  onRemove: () => void | Promise<unknown>;
+}) {
+  const image = event.images[0]?.url ?? null;
+
+  return (
+    <article>
+      <div
+        role="link"
+        tabIndex={0}
+        onClick={onOpen}
+        onKeyDown={(keyboardEvent) => {
+          if (keyboardEvent.key === "Enter" || keyboardEvent.key === " ") {
+            keyboardEvent.preventDefault();
+
+            onOpen();
+          }
+        }}
+        className="
+          group
+          relative
+          aspect-[2.15/1]
+          cursor-pointer
+          overflow-hidden
+          rounded-[24px]
+          bg-gray-200
+        "
+      >
+        {image ? (
+          <Image
+            src={image}
+            alt={event.eventName}
+            fill
+            sizes="(max-width: 600px) 100vw, 520px"
+            className="
+              object-cover
+              transition-transform
+              duration-300
+              group-hover:scale-[1.015]
+            "
+          />
+        ) : (
+          <div
+            className="
+              flex
+              h-full
+              w-full
+              items-center
+              justify-center
+              bg-white
+              text-3xl
+              text-[#ff6437]
+            "
+          >
+            <FiCalendar />
+          </div>
+        )}
+
+        <SavedHeartButton loading={saving} onRemove={onRemove} />
+      </div>
+
+      <button
+        type="button"
+        onClick={onOpen}
+        className="
+          mt-4
+          block
+          w-full
+          text-right
+        "
+      >
+        <Text
+          className="
+            line-clamp-1
+            text-[18px]
+            font-medium
+            leading-7
+            text-[#202020]
+          "
+        >
+          {event.eventName}
+        </Text>
+
+        <Text
+          className="
+            mt-1
+            line-clamp-1
+            text-[14px]
+            text-[#b0b0b0]
+          "
+        >
+          {[
+            event.place.placeProvince,
+            event.place.placeCity,
+            event.place.placeName,
+          ]
+            .filter(Boolean)
+            .join(" - ")}
+        </Text>
+      </button>
+    </article>
+  );
+}
+
+/* =====================================================
+ * SAVED HEART
+ * ===================================================== */
+
+function SavedHeartButton({
+  loading,
+  onRemove,
+}: {
+  loading: boolean;
+
+  onRemove: () => void | Promise<unknown>;
+}) {
+  async function handleClick(event: React.MouseEvent<HTMLButtonElement>) {
+    event.stopPropagation();
+
+    if (loading) {
+      return;
+    }
+
+    await onRemove();
+  }
+
+  return (
+    <button
+      type="button"
+      aria-label="حذف از ذخیره‌ها"
+      disabled={loading}
+      onClick={handleClick}
+      className="
+        absolute
+        right-4
+        top-4
+        flex
+        h-11
+        w-11
+        items-center
+        justify-center
+        rounded-full
+        bg-white
+        text-[23px]
+        text-[#ff6437]
+        shadow-sm
+        transition-transform
+
+        hover:scale-105
+
+        disabled:cursor-not-allowed
+        disabled:opacity-60
+      "
+    >
+      <FiHeart className="fill-current" />
+    </button>
   );
 }
 
@@ -625,6 +1023,10 @@ function MyComments() {
         commentId,
       });
 
+      if (editingId === commentId) {
+        cancelEditing();
+      }
+
       const result = await comments.refetch();
 
       if (page > 1 && result.data && result.data.items.length === 0) {
@@ -648,129 +1050,46 @@ function MyComments() {
   const items = comments.data?.items ?? [];
 
   return (
-    <section className="space-y-5">
-      <SectionHeader
-        title="نظرات من"
-        description="نظرهایی که برای مکان‌ها و ایونت‌ها ثبت کرده‌ای"
-      />
-
-      {error && <InlineMessage variant="error">{error}</InlineMessage>}
+    <section>
+      {error && (
+        <div className="mb-5">
+          <InlineMessage variant="error">{error}</InlineMessage>
+        </div>
+      )}
 
       {items.length === 0 ? (
         <EmptySaved
           icon={<FiMessageCircle />}
           title="هنوز نظری ثبت نکرده‌ای"
-          description="نظرهایی که در فونیما می‌نویسی اینجا نمایش داده می‌شوند."
+          description="نظرهایی که در فانیما می‌نویسی اینجا نمایش داده می‌شوند."
         />
       ) : (
         <>
-          <div className="space-y-3">
+          <div
+            className="
+              flex
+              flex-col
+              gap-4
+            "
+          >
             {items.map((comment: MyCommentData) => {
               const isEditing = editingId === comment.id;
 
               return (
-                <article
+                <CommentCard
                   key={comment.id}
-                  className="
-                      overflow-hidden
-                      rounded-[26px]
-                      bg-white
-                      shadow-[0_6px_24px_rgba(0,0,0,0.04)]
-                    "
-                >
-                  <CommentTargetHeader
-                    comment={comment}
-                    onOpen={() => openCommentTarget(comment)}
-                  />
-
-                  <div className="p-5">
-                    {isEditing ? (
-                      <div>
-                        <Textarea
-                          value={editingContent}
-                          onChange={(event) =>
-                            setEditingContent(event.target.value)
-                          }
-                          resize={false}
-                          disabled={update.isPending}
-                        />
-
-                        <div
-                          className="
-                              mt-3
-                              flex
-                              gap-2
-                            "
-                        >
-                          <Button
-                            type="button"
-                            size="sm"
-                            loading={update.isPending}
-                            onClick={() => handleUpdate(comment.id)}
-                          >
-                            ذخیره
-                          </Button>
-
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="tertiary"
-                            startIcon={<FiX />}
-                            onClick={cancelEditing}
-                            disabled={update.isPending}
-                          >
-                            انصراف
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <Text
-                          tone="secondary"
-                          className="
-                              whitespace-pre-wrap
-                              leading-8
-                            "
-                        >
-                          {comment.content}
-                        </Text>
-
-                        <div
-                          className="
-                              mt-5
-                              flex
-                              flex-wrap
-                              items-center
-                              justify-between
-                              gap-3
-                            "
-                        >
-                          <Text variant="caption" tone="secondary">
-                            {formatCommentDate(comment.createdAt)}
-                          </Text>
-
-                          <div className="flex gap-1">
-                            <CommentButton
-                              label="ویرایش"
-                              onClick={() => startEditing(comment)}
-                            >
-                              <FiEdit2 />
-                            </CommentButton>
-
-                            <CommentButton
-                              label="حذف"
-                              danger
-                              disabled={remove.isPending}
-                              onClick={() => handleDelete(comment.id)}
-                            >
-                              <FiTrash2 />
-                            </CommentButton>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </article>
+                  comment={comment}
+                  isEditing={isEditing}
+                  editingContent={editingContent}
+                  updatePending={update.isPending}
+                  deletePending={remove.isPending}
+                  onEditingContentChange={setEditingContent}
+                  onOpen={() => openCommentTarget(comment)}
+                  onEdit={() => startEditing(comment)}
+                  onCancel={cancelEditing}
+                  onSave={() => handleUpdate(comment.id)}
+                  onDelete={() => handleDelete(comment.id)}
+                />
               );
             })}
           </div>
@@ -798,265 +1117,263 @@ function MyComments() {
   );
 }
 
-function CommentTargetHeader({
+/* =====================================================
+ * COMMENT CARD
+ * ===================================================== */
+
+function CommentCard({
   comment,
+  isEditing,
+  editingContent,
+  updatePending,
+  deletePending,
+  onEditingContentChange,
   onOpen,
+  onEdit,
+  onCancel,
+  onSave,
+  onDelete,
 }: {
   comment: MyCommentData;
 
+  isEditing: boolean;
+
+  editingContent: string;
+
+  updatePending: boolean;
+
+  deletePending: boolean;
+
+  onEditingContentChange: (value: string) => void;
+
   onOpen: () => void;
+
+  onEdit: () => void;
+
+  onCancel: () => void;
+
+  onSave: () => void | Promise<unknown>;
+
+  onDelete: () => void | Promise<unknown>;
 }) {
-  const image =
-    comment.place?.images[0]?.url ?? comment.event?.images[0]?.url ?? null;
-
-  const title =
-    comment.place?.placeName ?? comment.event?.eventName ?? "مورد حذف‌شده";
-
-  const subtitle = comment.place
-    ? [comment.place.placeProvince, comment.place.placeCity]
-        .filter(Boolean)
-        .join("، ")
-    : comment.event
-      ? comment.event.place.placeName
-      : "";
+  const targetName = getCommentTargetName(comment);
 
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      disabled={!comment.place && !comment.event}
+    <article
       className="
-        flex
-        w-full
-        items-center
-        gap-3
-        border-b
-        border-(--color-border)
-        bg-[#fafafa]
-        p-4
-        text-right
-        transition-colors
-        hover:bg-gray-50
-        disabled:cursor-default
+        rounded-[24px]
+        bg-white
+        px-5
+        py-5
+
+        sm:px-6
+        sm:py-6
       "
     >
-      <CommentTargetImage image={image} title={title} />
-
-      <div className="min-w-0">
-        <div
+      <button
+        type="button"
+        onClick={onOpen}
+        className="
+          block
+          w-full
+          text-right
+        "
+      >
+        <Text
+          as="h2"
           className="
-            flex
-            items-center
-            gap-2
+            text-[16px]
+            font-black
+            leading-7
+            text-[#151515]
+
+            sm:text-[17px]
           "
         >
-          <span
+          نظر شما درباره {targetName}
+        </Text>
+      </button>
+
+      {isEditing ? (
+        <div className="mt-4">
+          <Textarea
+            value={editingContent}
+            onChange={(event) => onEditingContentChange(event.target.value)}
+            resize={false}
             className="
-              rounded-full
-              bg-(--color-brand-50)
-              px-2
-              py-1
-              text-[10px]
-              font-semibold
-              text-(--color-brand-700)
+              min-h-[120px]
+              bg-[#f8f8f8]
+            "
+          />
+
+          <div
+            className="
+              mt-4
+              flex
+              flex-wrap
+              items-center
+              gap-2
             "
           >
-            {comment.place ? "مکان" : comment.event ? "ایونت" : "حذف شده"}
-          </span>
+            <button
+              type="button"
+              disabled={updatePending}
+              onClick={onSave}
+              className="
+                inline-flex
+                min-h-9
+                items-center
+                justify-center
+                gap-1.5
+                rounded-full
+                bg-[#ff6437]
+                px-4
+                text-[12px]
+                font-semibold
+                text-white
 
-          <Text variant="label-md" className="truncate">
-            {title}
-          </Text>
+                disabled:cursor-not-allowed
+                disabled:opacity-60
+              "
+            >
+              <FiCheck />
+
+              {updatePending ? "در حال ذخیره..." : "ذخیره"}
+            </button>
+
+            <button
+              type="button"
+              disabled={updatePending}
+              onClick={onCancel}
+              className="
+                inline-flex
+                min-h-9
+                items-center
+                justify-center
+                gap-1.5
+                rounded-full
+                border
+                border-[#dedede]
+                px-4
+                text-[12px]
+                font-semibold
+                text-[#737373]
+              "
+            >
+              <FiX />
+              انصراف
+            </button>
+          </div>
         </div>
-
-        {subtitle && (
+      ) : (
+        <>
           <Text
-            variant="caption"
-            tone="secondary"
             className="
-              mt-1
-              truncate
+              mt-4
+              whitespace-pre-wrap
+              text-[14px]
+              leading-8
+              text-[#333b45]
+
+              sm:text-[15px]
             "
           >
-            {subtitle}
+            {comment.content}
           </Text>
-        )}
-      </div>
-    </button>
+
+          {/*
+           * دکمه‌های Edit/Delete
+           * عمداً حفظ شده‌اند.
+           */}
+
+          <div
+            className="
+              mt-5
+              flex
+              items-center
+              justify-end
+              gap-2
+              border-t
+              border-black/5
+              pt-3
+            "
+          >
+            <button
+              type="button"
+              onClick={onEdit}
+              className="
+                inline-flex
+                min-h-9
+                items-center
+                justify-center
+                gap-1.5
+                rounded-full
+                px-3
+                text-[12px]
+                font-semibold
+                text-[#ff6437]
+                transition-colors
+
+                hover:bg-[#fff4ef]
+              "
+            >
+              <FiEdit2 />
+              ویرایش
+            </button>
+
+            <button
+              type="button"
+              disabled={deletePending}
+              onClick={onDelete}
+              className="
+                inline-flex
+                min-h-9
+                items-center
+                justify-center
+                gap-1.5
+                rounded-full
+                px-3
+                text-[12px]
+                font-semibold
+                text-red-500
+                transition-colors
+
+                hover:bg-red-50
+
+                disabled:cursor-not-allowed
+                disabled:opacity-60
+              "
+            >
+              <FiTrash2 />
+
+              {deletePending ? "..." : "حذف"}
+            </button>
+          </div>
+        </>
+      )}
+    </article>
   );
 }
 
-function CommentTargetImage({
-  image,
-  title,
-}: {
-  image: string | null;
+/* =====================================================
+ * COMMENT TARGET
+ * ===================================================== */
 
-  title: string;
-}) {
-  if (image) {
-    return (
-      <div
-        className="
-          relative
-          h-14
-          w-14
-          shrink-0
-          overflow-hidden
-          rounded-3xl
-        "
-      >
-        <Image
-          src={image}
-          alt={title}
-          fill
-          sizes="56px"
-          className="object-cover"
-        />
-      </div>
-    );
+function getCommentTargetName(comment: MyCommentData) {
+  if (comment.place) {
+    return comment.place.placeName;
   }
 
-  return (
-    <div
-      className="
-        flex
-        h-14
-        w-14
-        shrink-0
-        items-center
-        justify-center
-        rounded-3xl
-        bg-(--color-brand-50)
-        text-(--color-brand-500)
-      "
-    >
-      <FiMessageCircle />
-    </div>
-  );
-}
-
-function ProfileAvatar({
-  name,
-  image,
-}: {
-  name: string;
-
-  image: string | null;
-}) {
-  if (image) {
-    return (
-      <div
-        className="
-          relative
-          h-20
-          w-20
-          shrink-0
-          overflow-hidden
-          rounded-full
-          border-4
-          border-white
-          shadow-md
-        "
-      >
-        <Image
-          src={image}
-          alt={name}
-          fill
-          sizes="80px"
-          priority
-          className="object-cover"
-        />
-      </div>
-    );
+  if (comment.event) {
+    return comment.event.eventName;
   }
 
-  return (
-    <div
-      className="
-        flex
-        h-20
-        w-20
-        shrink-0
-        items-center
-        justify-center
-        rounded-full
-        bg-(--color-brand-50)
-        text-2xl
-        font-bold
-        text-(--color-brand-600)
-      "
-    >
-      {name.trim().charAt(0) || "؟"}
-    </div>
-  );
+  return "فانیما";
 }
 
-function ProfileCount({
-  icon,
-  value,
-  label,
-}: {
-  icon: React.ReactNode;
-
-  value: number;
-
-  label: string;
-}) {
-  return (
-    <div
-      className="
-        flex
-        min-h-20
-        flex-col
-        items-center
-        justify-center
-        rounded-[20px]
-        bg-[#f8f8f8]
-        p-3
-        text-center
-      "
-    >
-      <span
-        className="
-          text-lg
-          text-(--color-brand-500)
-        "
-      >
-        {icon}
-      </span>
-
-      <Text variant="label-lg" className="mt-1">
-        {value.toLocaleString("fa-IR")}
-      </Text>
-
-      <Text variant="caption" tone="secondary">
-        {label}
-      </Text>
-    </div>
-  );
-}
-
-function SectionHeader({
-  title,
-  description,
-}: {
-  title: string;
-
-  description: string;
-}) {
-  return (
-    <div>
-      {/* <Text as="h2" variant="heading-xl">
-        {title}
-      </Text> */}
-
-      <Text tone="secondary" className="mt-1">
-        {description}
-      </Text>
-    </div>
-  );
-}
+/* =====================================================
+ * EMPTY STATE
+ * ===================================================== */
 
 function EmptySaved({
   icon,
@@ -1072,32 +1389,38 @@ function EmptySaved({
   return (
     <div
       className="
-        rounded-[30px]
+        rounded-[24px]
         bg-white
         px-5
-        py-14
+        py-12
         text-center
-        shadow-[0_8px_30px_rgba(0,0,0,0.03)]
       "
     >
       <div
         className="
           mx-auto
           flex
-          h-16
-          w-16
+          h-14
+          w-14
           items-center
           justify-center
-          rounded-[22px]
-          bg-(--color-brand-50)
-          text-2xl
-          text-(--color-brand-500)
+          rounded-full
+          bg-[#fff4ef]
+          text-[22px]
+          text-[#ff6437]
         "
       >
         {icon}
       </div>
 
-      <Text variant="heading-md" className="mt-5">
+      <Text
+        className="
+          mt-4
+          text-[16px]
+          font-black
+          text-[#111827]
+        "
+      >
         {title}
       </Text>
 
@@ -1106,7 +1429,9 @@ function EmptySaved({
         className="
           mx-auto
           mt-2
-          max-w-md
+          max-w-sm
+          text-[13px]
+          leading-7
         "
       >
         {description}
@@ -1115,14 +1440,18 @@ function EmptySaved({
   );
 }
 
+/* =====================================================
+ * PAGINATION
+ * ===================================================== */
+
 function PaginationBox({ children }: { children: React.ReactNode }) {
   return (
     <div
       className="
-        rounded-3xl
+        mt-8
+        rounded-[22px]
         bg-white
-        p-4
-        shadow-sm
+        p-3
       "
     >
       {children}
@@ -1130,102 +1459,123 @@ function PaginationBox({ children }: { children: React.ReactNode }) {
   );
 }
 
-function CommentButton({
-  label,
-  danger = false,
-  disabled = false,
-  children,
-  onClick,
-}: {
-  label: string;
-
-  danger?: boolean;
-
-  disabled?: boolean;
-
-  children: React.ReactNode;
-
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      disabled={disabled}
-      onClick={onClick}
-      className={`
-        flex
-        h-9
-        w-9
-        items-center
-        justify-center
-        rounded-full
-        transition-colors
-        disabled:opacity-50
-
-        ${
-          danger
-            ? "text-red-500 hover:bg-red-50"
-            : "text-(--color-text-secondary) hover:bg-gray-100"
-        }
-      `}
-    >
-      {children}
-    </button>
-  );
-}
+/* =====================================================
+ * CARDS LOADING
+ * ===================================================== */
 
 function CardsLoading() {
   return (
     <div
       className="
-        grid
+        flex
+        flex-col
+        gap-9
+      "
+    >
+      {[1, 2, 3].map((item) => (
+        <div key={item}>
+          <div
+            className="
+                aspect-[2.15/1]
+                animate-pulse
+                rounded-[24px]
+                bg-gray-200
+              "
+          />
+
+          <div
+            className="
+                mt-4
+                h-5
+                w-2/3
+                animate-pulse
+                rounded
+                bg-gray-200
+              "
+          />
+
+          <div
+            className="
+                mt-2
+                h-4
+                w-1/2
+                animate-pulse
+                rounded
+                bg-gray-200
+              "
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* =====================================================
+ * COMMENTS LOADING
+ * ===================================================== */
+
+function CommentsLoading() {
+  return (
+    <div
+      className="
+        flex
+        flex-col
         gap-4
-        sm:grid-cols-2
-        lg:grid-cols-3
       "
     >
       {[1, 2, 3].map((item) => (
         <div
           key={item}
           className="
-              overflow-hidden
-              rounded-3xl
+              rounded-[24px]
               bg-white
+              px-5
+              py-6
             "
         >
           <div
             className="
-                aspect-16/11
+                h-5
+                w-2/3
                 animate-pulse
-                bg-gray-100
+                rounded
+                bg-gray-200
               "
           />
 
           <div
             className="
-                space-y-3
-                p-4
+                mt-5
+                space-y-2
               "
           >
             <div
               className="
-                  h-6
-                  w-2/3
+                  h-4
+                  w-full
                   animate-pulse
                   rounded
-                  bg-gray-100
+                  bg-gray-200
                 "
             />
 
             <div
               className="
                   h-4
-                  w-1/2
+                  w-full
                   animate-pulse
                   rounded
-                  bg-gray-100
+                  bg-gray-200
+                "
+            />
+
+            <div
+              className="
+                  h-4
+                  w-3/4
+                  animate-pulse
+                  rounded
+                  bg-gray-200
                 "
             />
           </div>
@@ -1235,64 +1585,82 @@ function CardsLoading() {
   );
 }
 
-function CommentsLoading() {
-  return (
-    <div className="space-y-3">
-      {[1, 2, 3].map((item) => (
-        <div
-          key={item}
-          className="
-              h-40
-              animate-pulse
-              rounded-[26px]
-              bg-white
-            "
-        />
-      ))}
-    </div>
-  );
-}
+/* =====================================================
+ * PROFILE LOADING
+ * ===================================================== */
 
 function ProfileLoading() {
   return (
-    <div className="space-y-5">
+    <div
+      className="
+        flex
+        flex-col
+        items-center
+        pt-2
+      "
+    >
       <div
         className="
-          h-56
+          h-[92px]
+          w-[92px]
           animate-pulse
-          rounded-3xl
-          bg-white
+          rounded-full
+          bg-gray-200
         "
       />
 
       <div
         className="
-          h-16
+          mt-5
+          h-8
+          w-36
           animate-pulse
-          rounded-3xl
-          bg-white
+          rounded
+          bg-gray-200
         "
       />
 
-      <CardsLoading />
+      <div
+        className="
+          mt-3
+          h-4
+          w-28
+          animate-pulse
+          rounded
+          bg-gray-200
+        "
+      />
+
+      <div
+        className="
+          mt-8
+          grid
+          w-full
+          grid-cols-3
+          gap-4
+        "
+      >
+        {[1, 2, 3].map((item) => (
+          <div
+            key={item}
+            className="
+                h-12
+                animate-pulse
+                rounded
+                bg-gray-200
+              "
+          />
+        ))}
+      </div>
+
+      <div
+        className="
+          mt-8
+          w-full
+        "
+      >
+        <CardsLoading />
+      </div>
     </div>
   );
-}
-
-function formatJoinDate(value: Date | string) {
-  return new Intl.DateTimeFormat("fa-IR", {
-    year: "numeric",
-
-    month: "long",
-  }).format(new Date(value));
-}
-
-function formatCommentDate(value: Date | string) {
-  return new Intl.DateTimeFormat("fa-IR", {
-    year: "numeric",
-
-    month: "long",
-
-    day: "numeric",
-  }).format(new Date(value));
 }
