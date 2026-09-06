@@ -84,8 +84,6 @@ export function PlaceCard({
         cursor-pointer
         overflow-hidden
         rounded-3xl
-        bg-white
-        shadow-[0_6px_24px_rgba(0,0,0,0.04)]
         transition-transform
         duration-200
         hover:-translate-y-0.5
@@ -115,6 +113,7 @@ export function PlaceCard({
             className="
               object-cover
               transition-transform
+              rounded-3xl
               duration-300
               group-hover:scale-[1.02]
             "

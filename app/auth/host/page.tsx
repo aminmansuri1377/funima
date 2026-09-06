@@ -16,9 +16,9 @@ export default async function HostAuthPage() {
   return (
     <AuthShell>
       <div className="flex flex-col gap-6">
-        <div className="flex justify-center">
+        {/* <div className="flex justify-center">
           <FunimaLogo priority />
-        </div>
+        </div> */}
 
         <AuthCard>
           <div className="flex flex-col gap-8">

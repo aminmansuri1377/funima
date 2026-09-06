@@ -3,20 +3,24 @@
 import Image from "next/image";
 
 import { useRouter } from "next/navigation";
-import { VisitorEventComments } from "./visitor-event-comments";
+
+import type { inferRouterOutputs } from "@trpc/server";
+
 import {
   FiArrowRight,
   FiBookmark,
   FiCalendar,
   FiClock,
+  FiExternalLink,
   FiInfo,
   FiMapPin,
   FiMessageCircle,
+  FiNavigation,
   FiShield,
   FiUsers,
 } from "react-icons/fi";
+
 import { useEventSave } from "@/hooks/visitor/use-event-save";
-import type { inferRouterOutputs } from "@trpc/server";
 
 import { ImageSlider, InlineMessage, Text } from "@/components/ui";
 
@@ -24,12 +28,9 @@ import type { AppRouter } from "@/server/trpc/root";
 
 import { trpc } from "@/trpc/client";
 
-import { EventCard } from "./event-card";
-
 import { FavoriteButton } from "./favorite-button";
-
+import { VisitorEventComments } from "./visitor-event-comments";
 import { VisitorFooter } from "./visitor-footer";
-
 import { VisitorPageShell } from "./visitor-page-shell";
 
 type RouterOutputs = inferRouterOutputs<AppRouter>;
@@ -38,13 +39,9 @@ type EventData = RouterOutputs["visitor"]["events"]["getById"];
 
 type Props = {
   eventId: string;
-
-  canSave: boolean;
-
-  canComment: boolean;
 };
 
-export function VisitorEventPage({ eventId, canSave, canComment }: Props) {
+export function VisitorEventPage({ eventId }: Props) {
   const router = useRouter();
 
   const event = trpc.visitor.events.getById.useQuery({
@@ -52,6 +49,7 @@ export function VisitorEventPage({ eventId, canSave, canComment }: Props) {
   });
 
   const eventSave = useEventSave();
+
   async function handleSaveChange(nextSaved: boolean) {
     await eventSave.toggle(eventId, nextSaved);
   }
@@ -68,7 +66,7 @@ export function VisitorEventPage({ eventId, canSave, canComment }: Props) {
     return (
       <VisitorPageShell maxWidth="content">
         <div className="space-y-5">
-          <BackButton onClick={() => router.push("/events")} />
+          <BackActionButton onClick={() => router.push("/events")} />
 
           <InlineMessage variant="error">
             دریافت اطلاعات ایونت انجام نشد.
@@ -82,94 +80,126 @@ export function VisitorEventPage({ eventId, canSave, canComment }: Props) {
 
   return (
     <VisitorPageShell maxWidth="content">
-      <div className="space-y-5">
-        <div
-          className="
-            flex
-            items-center
-            justify-between
-            gap-3
-          "
-        >
-          <BackButton onClick={() => router.push("/events")} />
+      <div>
+        <EventHero
+          event={data}
+          saved={data.isSaved}
+          saving={eventSave.isPending}
+          onSaveChange={handleSaveChange}
+          onBack={() => router.back()}
+          onFallbackBack={() => router.push("/events")}
+        />
 
-          {canSave && (
-            <FavoriteButton
-              saved={data.isSaved}
-              loading={eventSave.isPending}
-              onToggle={handleSaveChange}
-            />
-          )}
+        <div className="mt-7">
+          <EventSummary event={data} />
         </div>
 
-        <EventHero event={data} />
+        <div className="mt-7">
+          <PricePill event={data} />
+        </div>
 
-        <EventSummary event={data} />
+        <div className="mt-9">
+          <EventInfoSection event={data} />
+        </div>
 
         {data.description && (
-          <ContentCard icon={<FiInfo />} title="درباره ایونت">
-            {data.description}
-          </ContentCard>
+          <div className="mt-9">
+            <TextBlockSection
+              title="درباره ایونت :"
+              content={data.description}
+            />
+          </div>
         )}
 
         {data.suitable && (
-          <ContentCard icon={<FiUsers />} title="این ایونت مناسب چه کسانی است؟">
-            {data.suitable}
-          </ContentCard>
+          <div className="mt-9">
+            <BulletSection
+              title="مناسب برای :"
+              icon={<FiUsers />}
+              items={toBulletItems(data.suitable)}
+            />
+          </div>
         )}
 
-        {data.plans.length > 0 && <EventPlans plans={data.plans} />}
+        {data.plans.length > 0 && (
+          <div className="mt-9">
+            <EventPlans plans={data.plans} />
+          </div>
+        )}
 
         {data.rule && (
-          <ContentCard icon={<FiShield />} title="قوانین ایونت">
-            {data.rule}
-          </ContentCard>
+          <div className="mt-9">
+            <BulletSection
+              title="قوانین :"
+              icon={<FiShield />}
+              items={toBulletItems(data.rule)}
+            />
+          </div>
         )}
 
         {data.info && (
-          <ContentCard icon={<FiInfo />} title="اطلاعات تکمیلی">
-            {data.info}
-          </ContentCard>
+          <div className="mt-9">
+            <TextBlockSection title="اطلاعات تکمیلی :" content={data.info} />
+          </div>
         )}
 
-        <EventLocation event={data} />
+        {data.similarEvents.length > 0 && (
+          <div className="mt-10">
+            <SimilarEvents
+              events={data.similarEvents}
+              onChanged={() => event.refetch()}
+            />
+          </div>
+        )}
 
-        {canComment && (
+        <div className="mt-12">
           <VisitorEventComments
             eventId={data.id}
             onEventChanged={() => event.refetch()}
           />
-        )}
+        </div>
 
-        {data.similarEvents.length > 0 && (
-          <SimilarEvents
-            events={data.similarEvents}
-            canSave={canSave}
-            onChanged={() => event.refetch()}
-          />
-        )}
-
-        <VisitorFooter />
+        <div className="mt-20">
+          <VisitorFooter />
+        </div>
       </div>
     </VisitorPageShell>
   );
 }
 
-function EventHero({ event }: { event: EventData }) {
+function EventHero({
+  event,
+  saved,
+  saving,
+  onSaveChange,
+  onBack,
+  onFallbackBack,
+}: {
+  event: EventData;
+  saved: boolean;
+  saving: boolean;
+  onSaveChange: (nextSaved: boolean) => void | Promise<unknown>;
+  onBack: () => void;
+  onFallbackBack: () => void;
+}) {
   return (
-    <section className="relative">
+    <section
+      className="
+        relative
+        overflow-hidden
+        rounded-[28px]
+      "
+    >
       <ImageSlider
         images={event.images.map((image) => ({
           id: image.id,
-
           url: image.url,
-
           alt: event.eventName,
         }))}
         alt={event.eventName}
         priority
         aspectClassName="
-          aspect-[4/3]
+          aspect-[1.08/1]
           sm:aspect-[16/8]
         "
         fallback={<FiCalendar size={52} />}
@@ -177,25 +207,36 @@ function EventHero({ event }: { event: EventData }) {
 
       <div
         className="
-          pointer-events-none
           absolute
-          right-4
-          top-4
+          left-3
+          top-3
           z-20
-          rounded-[18px]
-          bg-white/95
-          px-4
-          py-2.5
-          text-center
-          shadow-sm
-          backdrop-blur
         "
       >
-        <Text variant="heading-md">{formatDay(event.date)}</Text>
+        <BackActionButton
+          onClick={() => {
+            try {
+              onBack();
+            } catch {
+              onFallbackBack();
+            }
+          }}
+        />
+      </div>
 
-        <Text variant="caption" tone="secondary">
-          {formatMonth(event.date)}
-        </Text>
+      <div
+        className="
+          absolute
+          right-3
+          top-3
+          z-20
+        "
+      >
+        <FavoriteButton
+          saved={saved}
+          loading={saving}
+          onToggle={onSaveChange}
+        />
       </div>
     </section>
   );
@@ -203,132 +244,250 @@ function EventHero({ event }: { event: EventData }) {
 
 function EventSummary({ event }: { event: EventData }) {
   return (
-    <section
-      className="
-        rounded-[30px]
-        bg-white
-        p-5
-        shadow-[0_8px_30px_rgba(0,0,0,0.04)]
-        sm:p-7
-      "
-    >
-      <div>
-        <Text
-          as="h1"
-          variant="heading-xl"
-          className="
-            leading-10
-          "
-        >
-          {event.eventName}
-        </Text>
+    <section className="text-center">
+      <Text
+        as="h1"
+        className="
+          text-[26px]
+          font-black
+          leading-[1.7]
+          text-[#07111f]
+          sm:text-[30px]
+        "
+      >
+        {event.eventName}
+      </Text>
 
-        <div
-          className="
-            mt-3
-            flex
-            items-center
-            gap-3
-          "
-        >
-          <PlaceAvatar
-            image={event.place.host.user.profileImage}
-            name={event.place.host.user.fullName}
-          />
-
-          <div>
-            <Text variant="label-md">{event.place.placeName}</Text>
-
-            <Text variant="caption" tone="secondary" className="mt-0.5">
-              میزبان: {event.place.host.user.fullName}
-            </Text>
-          </div>
-        </div>
-      </div>
+      <Text
+        className="
+          mt-2
+          text-[14px]
+          text-[#5f6670]
+          sm:text-[15px]
+        "
+      >
+        برگزار کننده : {event.place.placeName}
+      </Text>
 
       <div
         className="
           mt-6
-          grid
-          gap-3
-          sm:grid-cols-3
+          flex
+          items-center
+          justify-center
+          gap-6
+          text-[13px]
+          text-[#6f7782]
         "
       >
-        <MetaCard
-          icon={<FiCalendar />}
-          label="تاریخ"
-          value={formatDate(event.date)}
+        <StatItem
+          icon={<FiBookmark />}
+          value={event._count.savedBy.toLocaleString("fa-IR")}
+          label="ذخیره"
         />
 
-        <MetaCard
+        <StatItem
+          icon={<FiMessageCircle />}
+          value={event._count.comments.toLocaleString("fa-IR")}
+          label="نظر"
+        />
+      </div>
+    </section>
+  );
+}
+
+function PricePill({ event }: { event: EventData }) {
+  return (
+    <div
+      className="
+        mx-auto
+        flex
+        min-h-[48px]
+        max-w-[340px]
+        items-center
+        justify-center
+        rounded-full
+        bg-white
+        px-6
+        text-center
+        shadow-[0_1px_0_rgba(0,0,0,0.03)]
+      "
+    >
+      <Text
+        className="
+          text-[15px]
+          font-bold
+          text-[#1d2430]
+          sm:text-[16px]
+        "
+      >
+        قیمت بلیط ها :{" "}
+        {event.price
+          ? `${Number(event.price).toLocaleString("fa-IR")} تومان`
+          : "رایگان"}
+      </Text>
+    </div>
+  );
+}
+
+function EventInfoSection({ event }: { event: EventData }) {
+  const address =
+    event.place.location?.address ||
+    event.place.location?.title ||
+    [event.place.placeProvince, event.place.placeCity, event.place.placeName]
+      .filter(Boolean)
+      .join(" - ");
+
+  const googleMapsHref = event.place.location
+    ? `https://www.google.com/maps/search/?api=1&query=${event.place.location.latitude},${event.place.location.longitude}`
+    : null;
+
+  return (
+    <section>
+      <SectionTitle>اطلاعات ایونت :</SectionTitle>
+
+      <div className="mt-4 space-y-3">
+        <InfoRow icon={<FiCalendar />} value={formatDate(event.date)} />
+
+        <InfoRow
           icon={<FiClock />}
-          label="ساعت"
-          value={event.hour ?? "ثبت نشده"}
+          value={event.hour ? `ساعت ${event.hour}` : "ساعت ثبت نشده"}
         />
 
-        <MetaCard
-          icon={<FiMapPin />}
-          label="مکان"
+        <InfoRow icon={<FiMapPin />} value={address || "آدرس ثبت نشده است."} />
+
+        <InfoRow
+          icon={<FiUsers />}
           value={
-            [event.place.placeProvince, event.place.placeCity]
-              .filter(Boolean)
-              .join("، ") || event.place.placeName
+            event.price
+              ? `قیمت بلیط : ${Number(event.price).toLocaleString(
+                  "fa-IR",
+                )} تومان`
+              : "شرکت در ایونت رایگان است."
           }
         />
       </div>
 
+      {googleMapsHref && (
+        <a
+          href={googleMapsHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="
+            mt-4
+            inline-flex
+            min-h-11
+            items-center
+            justify-center
+            gap-2
+            rounded-full
+            bg-white
+            px-5
+            text-[14px]
+            font-medium
+            text-[#1d2430]
+            transition-colors
+            hover:bg-[#f8f8f8]
+          "
+        >
+          <FiNavigation className="text-[#ff6a3d]" />
+          <span>باز کردن در Google Maps</span>
+          <FiExternalLink className="text-[#9aa1ab]" />
+        </a>
+      )}
+    </section>
+  );
+}
+
+function TextBlockSection({
+  title,
+  content,
+}: {
+  title: string;
+  content: string;
+}) {
+  return (
+    <section>
+      <SectionTitle>{title}</SectionTitle>
+
       <div
         className="
-          mt-5
-          grid
-          gap-3
-          sm:grid-cols-[1fr_auto]
+          mt-4
+          rounded-[22px]
+          bg-white
+          px-5
+          py-5
         "
       >
-        <div
+        <Text
           className="
-            rounded-[22px]
-            bg-(--color-brand-50)
-            p-4
+            whitespace-pre-wrap
+            text-[14px]
+            leading-8
+            text-[#3f4650]
           "
         >
-          <Text variant="caption" tone="secondary">
-            هزینه شرکت در ایونت
-          </Text>
+          {content}
+        </Text>
+      </div>
+    </section>
+  );
+}
 
-          <Text
-            variant="heading-md"
+function BulletSection({
+  title,
+  icon,
+  items,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  items: string[];
+}) {
+  if (items.length === 0) {
+    return null;
+  }
+
+  return (
+    <section>
+      <SectionTitle>{title}</SectionTitle>
+
+      <div className="mt-4 space-y-3">
+        {items.map((item, index) => (
+          <div
+            key={`${item}-${index}`}
             className="
-              mt-1
-              text-(--color-brand-700)
+              flex
+              items-start
+              gap-3
             "
           >
-            {event.price
-              ? `${Number(event.price).toLocaleString("fa-IR")} تومان`
-              : "رایگان"}
-          </Text>
-        </div>
+            <div
+              className="
+                mt-1
+                flex
+                h-6
+                w-6
+                shrink-0
+                items-center
+                justify-center
+                text-[16px]
+                text-[#ff6a3d]
+              "
+            >
+              {icon}
+            </div>
 
-        <div
-          className="
-            grid
-            grid-cols-2
-            gap-2
-            sm:min-w-[210px]
-          "
-        >
-          <CounterCard
-            icon={<FiBookmark />}
-            value={event._count.savedBy}
-            label="ذخیره"
-          />
-
-          <CounterCard
-            icon={<FiMessageCircle />}
-            value={event._count.comments}
-            label="نظر"
-          />
-        </div>
+            <Text
+              className="
+                text-[14px]
+                leading-8
+                text-[#3f4650]
+              "
+            >
+              {item}
+            </Text>
+          </div>
+        ))}
       </div>
     </section>
   );
@@ -336,210 +495,50 @@ function EventSummary({ event }: { event: EventData }) {
 
 function EventPlans({ plans }: { plans: EventData["plans"] }) {
   return (
-    <section
-      className="
-        rounded-[30px]
-        bg-white
-        p-5
-        shadow-[0_8px_30px_rgba(0,0,0,0.04)]
-        sm:p-7
-      "
-    >
-      <div>
-        <Text variant="heading-md">برنامه ایونت</Text>
+    <section>
+      <SectionTitle>برنامه ایونت :</SectionTitle>
 
-        <Text tone="secondary" className="mt-1">
-          زمان‌بندی برنامه‌های این رویداد
-        </Text>
-      </div>
-
-      <div
-        className="
-          relative
-          mt-6
-          space-y-4
-        "
-      >
-        {plans.map((plan, index) => (
+      <div className="mt-4 space-y-3">
+        {plans.map((plan) => (
           <div
             key={plan.id}
             className="
-                relative
-                flex
-                items-start
-                gap-4
-              "
-          >
-            <div
-              className="
-                  relative
-                  z-10
-                  flex
-                  h-10
-                  w-10
-                  shrink-0
-                  items-center
-                  justify-center
-                  rounded-full
-                  bg-(--color-brand-500)
-                  text-sm
-                  font-bold
-                  text-white
-                  shadow-sm
-                "
-            >
-              {index + 1}
-            </div>
-
-            <div
-              className="
-                  min-w-0
-                  flex-1
-                  rounded-[20px]
-                  bg-[#f8f8f8]
-                  p-4
-                "
-            >
-              {plan.hour && (
-                <div
-                  className="
-                      mb-2
-                      inline-flex
-                      items-center
-                      gap-1.5
-                      rounded-full
-                      bg-white
-                      px-2.5
-                      py-1
-                      text-xs
-                      text-(--color-text-secondary)
-                    "
-                >
-                  <FiClock />
-
-                  {plan.hour}
-                </div>
-              )}
-
-              <Text
-                className="
-                    whitespace-pre-wrap
-                    leading-7
-                  "
-              >
-                {plan.plan}
-              </Text>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function EventLocation({ event }: { event: EventData }) {
-  const location = event.place.location;
-
-  return (
-    <section
-      className="
-        rounded-[30px]
-        bg-white
-        p-5
-        shadow-[0_8px_30px_rgba(0,0,0,0.04)]
-        sm:p-7
-      "
-    >
-      <div
-        className="
-          flex
-          items-center
-          gap-3
-        "
-      >
-        <div
-          className="
-            flex
-            h-11
-            w-11
-            shrink-0
-            items-center
-            justify-center
-            rounded-2xl
-            bg-(--color-brand-50)
-            text-lg
-            text-(--color-brand-600)
-          "
-        >
-          <FiMapPin />
-        </div>
-
-        <div>
-          <Text variant="heading-md">محل برگزاری</Text>
-
-          <Text variant="caption" tone="secondary" className="mt-0.5">
-            {event.place.placeName}
-          </Text>
-        </div>
-      </div>
-
-      <div
-        className="
-          mt-5
-          rounded-[22px]
-          bg-[#f8f8f8]
-          p-4
-        "
-      >
-        <Text
-          className="
-            leading-7
-          "
-        >
-          {location?.address ||
-            [event.place.placeProvince, event.place.placeCity]
-              .filter(Boolean)
-              .join("، ") ||
-            "آدرس ثبت نشده است."}
-        </Text>
-
-        {location?.title && (
-          <Text variant="caption" tone="secondary" className="mt-2">
-            {location.title}
-          </Text>
-        )}
-
-        {location && (
-          <div
-            className="
-              mt-4
-              rounded-[18px]
-              border
-              border-dashed
-              border-(--color-border)
+              flex
+              items-center
+              justify-between
+              gap-3
+              rounded-full
               bg-white
-              p-4
+              px-5
+              py-3
             "
           >
-            <Text variant="caption" tone="secondary">
-              مختصات
-            </Text>
-
             <Text
-              dir="ltr"
               className="
-                mt-1
-                text-left
+                text-[14px]
+                font-medium
+                text-[#202734]
               "
             >
-              {location.latitude}, {location.longitude}
+              {plan.plan}
             </Text>
 
-            <Text variant="caption" tone="secondary" className="mt-3">
-              نقشه تعاملی را در مرحله نهایی پروژه اضافه می‌کنیم.
-            </Text>
+            <span
+              className="
+                shrink-0
+                rounded-full
+                bg-[#f6f6f6]
+                px-3
+                py-1
+                text-[13px]
+                font-bold
+                text-[#2a3140]
+              "
+            >
+              {plan.hour || "--:--"}
+            </span>
           </div>
-        )}
+        ))}
       </div>
     </section>
   );
@@ -547,28 +546,19 @@ function EventLocation({ event }: { event: EventData }) {
 
 function SimilarEvents({
   events,
-  canSave,
   onChanged,
 }: {
   events: EventData["similarEvents"];
-
-  canSave: boolean;
-
   onChanged: () => void | Promise<unknown>;
 }) {
   const save = trpc.visitor.events.save.useMutation();
-
   const unsave = trpc.visitor.events.unsave.useMutation();
 
   async function handleSaveChange(eventId: string, nextSaved: boolean) {
     if (nextSaved) {
-      await save.mutateAsync({
-        eventId,
-      });
+      await save.mutateAsync({ eventId });
     } else {
-      await unsave.mutateAsync({
-        eventId,
-      });
+      await unsave.mutateAsync({ eventId });
     }
 
     await onChanged();
@@ -576,29 +566,21 @@ function SimilarEvents({
 
   return (
     <section>
-      <div>
-        <Text as="h2" variant="heading-md">
-          ایونت‌های مشابه
-        </Text>
-
-        <Text tone="secondary" className="mt-1">
-          شاید این ایونت‌ها هم برات جذاب باشند
-        </Text>
-      </div>
+      <SectionTitle>ایونت های مشابه :</SectionTitle>
 
       <div
         className="
           mt-4
           grid
+          grid-cols-2
           gap-4
-          sm:grid-cols-2
         "
       >
         {events.map((event) => (
-          <EventCard
+          <SimilarEventCard
             key={event.id}
             event={event}
-            onSaveChange={canSave ? handleSaveChange : undefined}
+            onSaveChange={handleSaveChange}
           />
         ))}
       </div>
@@ -606,224 +588,199 @@ function SimilarEvents({
   );
 }
 
-function ContentCard({
-  icon,
-  title,
-  children,
+function SimilarEventCard({
+  event,
+  onSaveChange,
 }: {
-  icon: React.ReactNode;
-
-  title: string;
-
-  children: React.ReactNode;
+  event: EventData["similarEvents"][number];
+  onSaveChange: (
+    eventId: string,
+    nextSaved: boolean,
+  ) => void | Promise<unknown>;
 }) {
+  const router = useRouter();
+
+  const image = event.images[0]?.url ?? null;
+
   return (
-    <section
-      className="
-        rounded-[30px]
-        bg-white
-        p-5
-        shadow-[0_8px_30px_rgba(0,0,0,0.04)]
-        sm:p-7
-      "
-    >
+    <article className="min-w-0">
       <div
+        role="link"
+        tabIndex={0}
+        onClick={() => router.push(`/events/${event.id}`)}
+        onKeyDown={(keyboardEvent) => {
+          if (keyboardEvent.key === "Enter" || keyboardEvent.key === " ") {
+            keyboardEvent.preventDefault();
+            router.push(`/events/${event.id}`);
+          }
+        }}
         className="
-          flex
-          items-center
-          gap-3
+          group
+          relative
+          cursor-pointer
+          overflow-hidden
+          rounded-[24px]
+          bg-white
         "
       >
-        <div
+        <div className="relative aspect-[0.88/1] bg-gray-100">
+          {image ? (
+            <Image
+              src={image}
+              alt={event.eventName}
+              fill
+              sizes="(max-width:768px) 45vw, 220px"
+              className="
+                object-cover
+                transition-transform
+                duration-300
+                group-hover:scale-[1.02]
+              "
+            />
+          ) : (
+            <div
+              className="
+                flex
+                h-full
+                items-center
+                justify-center
+                text-[#ff6a3d]
+              "
+            >
+              <FiCalendar size={34} />
+            </div>
+          )}
+
+          <div
+            className="
+              absolute
+              right-3
+              top-3
+            "
+          >
+            <FavoriteButton
+              saved={event.isSaved}
+              size="sm"
+              onToggle={(nextSaved) => onSaveChange(event.id, nextSaved)}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="pt-3 text-center">
+        <Text
           className="
-            flex
-            h-11
-            w-11
-            shrink-0
-            items-center
-            justify-center
-            rounded-2xl
-            bg-(--color-brand-50)
-            text-lg
-            text-(--color-brand-600)
+            line-clamp-1
+            text-[15px]
+            font-bold
+            text-[#111827]
           "
         >
-          {icon}
-        </div>
-
-        <Text variant="heading-md">{title}</Text>
-      </div>
-
-      <Text
-        tone="secondary"
-        className="
-          mt-5
-          whitespace-pre-wrap
-          leading-8
-        "
-      >
-        {children}
-      </Text>
-    </section>
-  );
-}
-
-function MetaCard({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-
-  label: string;
-
-  value: string;
-}) {
-  return (
-    <div
-      className="
-        flex
-        items-center
-        gap-3
-        rounded-[20px]
-        bg-[#f8f8f8]
-        p-4
-      "
-    >
-      <div
-        className="
-          flex
-          h-10
-          w-10
-          shrink-0
-          items-center
-          justify-center
-          rounded-[14px]
-          bg-white
-          text-(--color-brand-500)
-        "
-      >
-        {icon}
-      </div>
-
-      <div className="min-w-0">
-        <Text variant="caption" tone="secondary">
-          {label}
+          {event.place.placeName}
         </Text>
 
         <Text
-          variant="label-md"
+          tone="secondary"
           className="
-            mt-0.5
-            line-clamp-2
+            mt-1
+            line-clamp-1
+            text-[13px]
           "
         >
-          {value}
+          {[event.place.placeCity, event.place.placeProvince]
+            .filter(Boolean)
+            .join(" - ")}
         </Text>
       </div>
+    </article>
+  );
+}
+
+function InfoRow({ icon, value }: { icon: React.ReactNode; value: string }) {
+  return (
+    <div
+      className="
+        flex
+        items-start
+        gap-3
+      "
+    >
+      <div
+        className="
+          mt-0.5
+          flex
+          h-8
+          w-8
+          shrink-0
+          items-center
+          justify-center
+          text-[18px]
+          text-[#ff6a3d]
+        "
+      >
+        {icon}
+      </div>
+
+      <Text
+        className="
+          text-[14px]
+          leading-8
+          text-[#3f4650]
+        "
+      >
+        {value}
+      </Text>
     </div>
   );
 }
 
-function CounterCard({
+function StatItem({
   icon,
   value,
   label,
 }: {
   icon: React.ReactNode;
-
-  value: number;
-
+  value: string;
   label: string;
 }) {
   return (
     <div
       className="
-        flex
-        min-h-20
+        inline-flex
         items-center
-        justify-center
         gap-2
-        rounded-[20px]
-        bg-[#f8f8f8]
-        p-3
       "
     >
-      <span
-        className="
-          text-(--color-brand-500)
-        "
-      >
-        {icon}
+      <span className="text-[#ff6a3d]">{icon}</span>
+
+      <span>
+        {value} {label}
       </span>
-
-      <div>
-        <Text variant="label-lg">{value.toLocaleString("fa-IR")}</Text>
-
-        <Text variant="caption" tone="secondary">
-          {label}
-        </Text>
-      </div>
     </div>
   );
 }
 
-function PlaceAvatar({
-  image,
-  name,
-}: {
-  image: string | null;
-
-  name: string;
-}) {
-  if (image) {
-    return (
-      <div
-        className="
-          relative
-          h-11
-          w-11
-          shrink-0
-          overflow-hidden
-          rounded-full
-        "
-      >
-        <Image
-          src={image}
-          alt={name}
-          fill
-          sizes="44px"
-          className="object-cover"
-        />
-      </div>
-    );
-  }
-
+function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <div
+    <Text
+      as="h2"
       className="
-        flex
-        h-11
-        w-11
-        shrink-0
-        items-center
-        justify-center
-        rounded-full
-        bg-(--color-brand-50)
-        font-bold
-        text-(--color-brand-600)
+        text-[18px]
+        font-black
+        leading-8
+        text-[#111827]
       "
     >
-      {name.trim().charAt(0) || "؟"}
-    </div>
+      {children}
+    </Text>
   );
 }
 
-function BackButton({ onClick }: { onClick: () => void }) {
+function BackActionButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       type="button"
-      aria-label="بازگشت به ایونت‌ها"
+      aria-label="بازگشت"
       onClick={onClick}
       className="
         flex
@@ -832,11 +789,13 @@ function BackButton({ onClick }: { onClick: () => void }) {
         items-center
         justify-center
         rounded-full
-        bg-white
+        bg-white/95
         text-xl
+        text-[#1b2230]
         shadow-sm
+        backdrop-blur-sm
         transition-colors
-        hover:bg-gray-50
+        hover:bg-white
       "
     >
       <FiArrowRight />
@@ -846,91 +805,103 @@ function BackButton({ onClick }: { onClick: () => void }) {
 
 function EventPageLoading() {
   return (
-    <div
-      className="
-        space-y-5
-      "
-    >
+    <div>
       <div
         className="
-          h-11
-          w-11
-          animate-pulse
-          rounded-full
-          bg-white
-        "
-      />
-
-      <div
-        className="
-          aspect-4/3
+          aspect-[1.08/1]
           animate-pulse
           rounded-[28px]
-          bg-gray-100
-          sm:aspect-16/8
+          bg-gray-200
+          sm:aspect-[16/8]
         "
       />
 
-      <div
-        className="
-          rounded-[30px]
-          bg-white
-          p-5
-        "
-      >
+      <div className="mt-7 flex flex-col items-center">
         <div
           className="
             h-8
             w-2/3
             animate-pulse
             rounded-lg
-            bg-gray-100
+            bg-gray-200
           "
         />
 
         <div
           className="
-            mt-5
-            grid
-            gap-3
-            sm:grid-cols-3
+            mt-3
+            h-4
+            w-40
+            animate-pulse
+            rounded
+            bg-gray-200
           "
-        >
-          {[1, 2, 3].map((item) => (
-            <div
-              key={item}
-              className="
-                  h-20
-                  animate-pulse
-                  rounded-[20px]
-                  bg-gray-100
-                "
-            />
-          ))}
-        </div>
+        />
+
+        <div
+          className="
+            mt-6
+            h-4
+            w-32
+            animate-pulse
+            rounded
+            bg-gray-200
+          "
+        />
       </div>
+
+      <div
+        className="
+          mx-auto
+          mt-7
+          h-12
+          max-w-[340px]
+          animate-pulse
+          rounded-full
+          bg-white
+        "
+      />
+
+      <div className="mt-9 space-y-3">
+        {[1, 2, 3, 4].map((item) => (
+          <div
+            key={item}
+            className="
+              h-8
+              animate-pulse
+              rounded
+              bg-transparent
+            "
+          >
+            <div className="h-full w-full rounded-lg bg-gray-200" />
+          </div>
+        ))}
+      </div>
+
+      <div
+        className="
+          mt-9
+          h-40
+          animate-pulse
+          rounded-[22px]
+          bg-white
+        "
+      />
     </div>
   );
 }
 
 function formatDate(value: Date | string) {
   return new Intl.DateTimeFormat("fa-IR", {
-    year: "numeric",
-
+    weekday: "long",
+    day: "numeric",
     month: "long",
-
-    day: "numeric",
   }).format(new Date(value));
 }
 
-function formatDay(value: Date | string) {
-  return new Intl.DateTimeFormat("fa-IR", {
-    day: "numeric",
-  }).format(new Date(value));
-}
-
-function formatMonth(value: Date | string) {
-  return new Intl.DateTimeFormat("fa-IR", {
-    month: "short",
-  }).format(new Date(value));
+function toBulletItems(value: string) {
+  return value
+    .split(/\n|•|●|▪|◦|،(?=\s*[-•●▪◦])/g)
+    .map((item) => item.replace(/^[-•●▪◦\s]+/, "").trim())
+    .filter(Boolean);
 }

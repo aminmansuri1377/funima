@@ -75,7 +75,7 @@ html {
 
 body {
   margin: 0;
-  background: var(--color-page);
+  background: #ededed;
   color: var(--color-text-primary);
   font-family: var(--font-abar), Tahoma, Arial, sans-serif;
 }

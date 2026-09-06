@@ -10,13 +10,7 @@ type AuthShellProps = {
 export function AuthShell({ children, className }: AuthShellProps) {
   return (
     <main
-      className={cn(
-        "min-h-dvh",
-        "bg-(--color-page)",
-        "px-4 py-8",
-        "sm:px-6 sm:py-12",
-        className,
-      )}
+      className={cn("min-h-dvh", "px-4 py-8", "sm:px-6 sm:py-12", className)}
     >
       <div
         className="

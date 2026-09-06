@@ -131,9 +131,9 @@ export default function OtpPage() {
     <AuthShell>
       <div className="flex flex-col gap-6">
         {/* Logo */}
-        <div className="flex justify-center">
+        {/* <div className="flex justify-center">
           <FunimaLogo priority />
-        </div>
+        </div> */}
 
         {/* Auth Card */}
         <AuthCard>

@@ -17,7 +17,7 @@ export default async function VisitorAuthPage() {
     <AuthShell>
       <div className="flex flex-col gap-6">
         <div className="flex justify-center">
-          <FunimaLogo priority />
+          {/* <FunimaLogo priority /> */}
         </div>
 
         <AuthCard>

@@ -37,7 +37,7 @@ export default async function AuthPage() {
             <BackButton />
           </div>
 
-          <FunimaLogo priority />
+          {/* <FunimaLogo priority /> */}
         </div>
 
         <AuthCard>

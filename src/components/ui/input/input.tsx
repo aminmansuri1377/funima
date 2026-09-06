@@ -14,7 +14,7 @@ export type InputProps = InputHTMLAttributes<HTMLInputElement> & {
 
 const stateClasses: Record<InputState, string> = {
   default: cn(
-    "border-[var(--color-border-strong)]",
+    "border-gray-300",
     "focus-within:border-[var(--color-brand-500)]",
   ),
 
@@ -36,26 +36,26 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   return (
     <div
       className={cn(
-        "flex h-14 w-full items-center gap-3",
-        "rounded-[var(--radius-full)]",
+        "flex h-12 w-full items-center gap-3",
+        "rounded-(--radius-full)",
         "border",
-        "bg-[var(--color-surface)]",
+        "bg-(--color-surface)",
         "px-5",
 
         "transition-[border-color,box-shadow,background-color]",
-        "duration-[var(--duration-normal)]",
+        "duration-(--duration-normal)",
 
         "focus-within:ring-2",
-        "focus-within:ring-[var(--color-brand-100)]",
+        "focus-within:ring-(--color-brand-100)",
 
         stateClasses[state],
 
         disabled &&
           cn(
             "cursor-not-allowed",
-            "border-[var(--color-border)]",
-            "bg-[var(--color-gray-100)]",
-            "text-[var(--color-text-disabled)]",
+            "border-(--color-border)",
+            "bg-gray-100",
+            "text-(--color-text-disabled)",
           ),
 
         className,

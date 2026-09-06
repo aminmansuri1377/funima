@@ -1,17 +1,14 @@
 "use client";
 
-import Image from "next/image";
-
 import { useMemo, useState } from "react";
 
-import { FaFire } from "react-icons/fa";
 import { FiSearch } from "react-icons/fi";
+import { FaFire } from "react-icons/fa";
 
 import { useEventSave } from "@/hooks/visitor/use-event-save";
 
 import {
   InlineMessage,
-  Pagination,
   SearchInput,
   SearchSelect,
   Text,
@@ -25,34 +22,23 @@ import {
   VisitorPageShell,
 } from "@/components/visitor";
 
-type Props = {
-  canSave: boolean;
-};
-
-export function VisitorEventsPage({ canSave }: Props) {
+export function VisitorEventsPage() {
   const [search, setSearch] = useState("");
-
   const [debouncedSearch, setDebouncedSearch] = useState("");
-
   const [city, setCity] = useState("");
-
-  const [page, setPage] = useState(1);
-
-  const [pageSize, setPageSize] = useState(10);
-
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  /*
+   * از همان API شهرهای Home استفاده می‌کنیم
+   * چون منبع اصلی شهرها Placeها هستند.
+   */
   const cities = trpc.visitor.home.getCities.useQuery();
 
   const events = trpc.visitor.events.list.useQuery({
-    page,
-
-    pageSize,
-
+    page: 1,
+    pageSize: 24,
     search: debouncedSearch.trim() || undefined,
-
     city: city || undefined,
-
     upcomingOnly: true,
   });
 
@@ -62,17 +48,12 @@ export function VisitorEventsPage({ canSave }: Props) {
     return (
       cities.data?.map((item) => ({
         value: item.city,
-
         label: item.province ? `${item.city}، ${item.province}` : item.city,
       })) ?? []
     );
   }, [cities.data]);
 
   async function handleSaveChange(eventId: string, nextSaved: boolean) {
-    if (!canSave) {
-      return;
-    }
-
     setSaveError(null);
 
     try {
@@ -88,94 +69,104 @@ export function VisitorEventsPage({ canSave }: Props) {
     }
   }
 
-  const saveHandler = canSave ? handleSaveChange : undefined;
-
   return (
     <VisitorPageShell maxWidth="wide">
-      <div className="space-y-8">
-        <EventsHeader />
+      <div className="pb-2">
+        <EventsIntro />
 
-        <section
-          className="
-            rounded-[28px]
-            bg-white
-            p-4
-            shadow-[0_8px_30px_rgba(0,0,0,0.035)]
-            sm:p-5
-          "
-        >
+        <section className="mt-8">
           <div
             className="
               grid
+              grid-cols-[175px_minmax(0,1fr)]
               gap-3
-              md:grid-cols-[1fr_280px]
+
+              sm:grid-cols-[85px_minmax(0,1fr)]
+              sm:gap-4
             "
           >
-            <SearchInput
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-
-                setPage(1);
-              }}
-              onDebouncedChange={(value) => {
-                setDebouncedSearch(value);
-
-                setPage(1);
-              }}
-              onClear={() => {
-                setSearch("");
-
-                setDebouncedSearch("");
-
-                setPage(1);
-              }}
-              placeholder="دنبال چه ایونتی می‌گردی؟"
-            />
-
-            <SearchSelect
-              value={city}
-              options={cityOptions}
-              onChange={(value) => {
-                setCity(value);
-
-                setPage(1);
-              }}
-              placeholder="انتخاب شهر"
-              searchPlaceholder="جستجوی شهر..."
-              emptyMessage="شهری پیدا نشد."
-              disabled={cities.isPending}
-              clearable
-            />
+            <div
+              className="
+                min-w-0
+                rounded-full
+                bg-white
+              "
+            >
+              <SearchInput
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                }}
+                onDebouncedChange={(value) => {
+                  setDebouncedSearch(value);
+                }}
+                onClear={() => {
+                  setSearch("");
+                  setDebouncedSearch("");
+                }}
+                placeholder="جستجو"
+              />
+            </div>
+            <div
+              className="
+                min-w-0
+                rounded-full
+                bg-white
+              "
+            >
+              <SearchSelect
+                value={city}
+                options={cityOptions}
+                onChange={setCity}
+                placeholder="شهر"
+                searchPlaceholder="جستجوی شهر..."
+                emptyMessage="شهری پیدا نشد."
+                disabled={cities.isPending}
+                clearable
+              />
+            </div>
           </div>
         </section>
 
-        {canSave && saveError && (
-          <InlineMessage variant="error">{saveError}</InlineMessage>
+        {saveError && (
+          <div className="mt-5">
+            <InlineMessage variant="error">{saveError}</InlineMessage>
+          </div>
         )}
 
-        {events.isPending && <EventsLoading />}
+        <div className="mt-12">
+          {events.isPending && <EventsLoading />}
 
-        {events.error && (
-          <InlineMessage variant="error">
-            دریافت ایونت‌ها انجام نشد.
-          </InlineMessage>
-        )}
+          {events.error && (
+            <InlineMessage variant="error">
+              دریافت ایونت‌ها انجام نشد.
+            </InlineMessage>
+          )}
 
-        {events.data && events.data.items.length === 0 && <EmptyEvents />}
+          {events.data && events.data.items.length === 0 && <EmptyEvents />}
 
-        {events.data && events.data.items.length > 0 && (
-          <section>
-            <div
+          {events.data && events.data.items.length > 0 && (
+            <section
               className="
-                flex
-                items-end
-                justify-between
-                gap-4
+                mx-auto
+                w-full
+                max-w-[760px]
               "
             >
-              <div>
-                <Text as="h2" variant="heading-md">
+              <div className="mb-5">
+                <Text
+                  as="h2"
+                  variant="heading-md"
+                  className="
+                    text-[22px]
+                    font-black
+                    leading-[1.4]
+                    tracking-[-0.25px]
+                    text-[#080d16]
+
+                    sm:text-[24px]
+                  "
+                >
                   ایونت‌ها
                 </Text>
 
@@ -184,113 +175,67 @@ export function VisitorEventsPage({ canSave }: Props) {
                   پیدا شد
                 </Text>
               </div>
-            </div>
 
-            <div
-              className="
-                mt-5
-                grid
-                gap-4
-                sm:grid-cols-2
-                lg:grid-cols-3
-              "
-            >
-              {events.data.items.map((event) => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  onSaveChange={saveHandler}
-                />
-              ))}
-            </div>
-
-            {events.data.pagination.totalPages > 1 && (
               <div
                 className="
-                  mt-8
-                  rounded-3xl
-                  bg-white
-                  p-4
-                  shadow-sm
+                  flex
+                  flex-col
+                  gap-9
                 "
               >
-                <Pagination
-                  page={events.data.pagination.page}
-                  pageSize={events.data.pagination.pageSize}
-                  totalItems={events.data.pagination.total}
-                  totalPages={events.data.pagination.totalPages}
-                  disabled={events.isFetching}
-                  onPageChange={setPage}
-                  onPageSizeChange={(size) => {
-                    setPageSize(size);
-
-                    setPage(1);
-                  }}
-                />
+                {events.data.items.map((event) => (
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    onSaveChange={handleSaveChange}
+                  />
+                ))}
               </div>
-            )}
-          </section>
-        )}
+            </section>
+          )}
+        </div>
 
-        <VisitorFooter />
+        <div className="mt-20">
+          <VisitorFooter />
+        </div>
       </div>
     </VisitorPageShell>
   );
 }
 
-function EventsHeader() {
+function EventsIntro() {
   return (
-    <header
+    <div
       className="
-        flex
-        items-center
-        justify-between
-        gap-4
         pt-1
+        text-center
       "
     >
-      <div>
-        <div
-          className="
-            flex
-            items-center
-            gap-2
-          "
-        >
-          <FaFire
-            className="
-              text-2xl
-              text-(--color-brand-500)
-            "
-          />
-
-          <Text as="h1" variant="heading-xl">
-            جذاب‌ترین ایونت‌ها
-          </Text>
-        </div>
-
-        <Text tone="secondary" className="mt-2">
-          رویدادهای نزدیک و جذاب فونیما رو پیدا کن
-        </Text>
-      </div>
-
       <div
         className="
-          relative
-          h-14
-          w-14
-          shrink-0
+          inline-flex
+          items-center
+          justify-center
+          gap-2
         "
       >
-        <Image
-          src="/images/logo.png"
-          alt="فونیما"
-          fill
-          sizes="56px"
-          className="object-contain"
-        />
+        <Text
+          as="h1"
+          variant="heading-xl"
+          className="
+            text-[27px]
+            font-black
+            leading-[1.35]
+            tracking-[-0.4px]
+            text-[#07111f]
+
+            sm:text-[31px]
+          "
+        >
+          جذاب ترین ایونت های این ماه !
+        </Text>
       </div>
-    </header>
+    </div>
   );
 }
 
@@ -303,27 +248,26 @@ function EmptyEvents() {
         px-5
         py-14
         text-center
-        shadow-[0_8px_30px_rgba(0,0,0,0.03)]
       "
     >
       <div
         className="
           mx-auto
           flex
-          h-16
-          w-16
+          h-14
+          w-14
           items-center
           justify-center
-          rounded-[22px]
+          rounded-[20px]
           bg-(--color-brand-50)
-          text-2xl
+          text-xl
           text-(--color-brand-500)
         "
       >
         <FiSearch />
       </div>
 
-      <Text variant="heading-md" className="mt-5">
+      <Text variant="heading-md" className="mt-4">
         ایونتی پیدا نشد
       </Text>
 
@@ -336,76 +280,59 @@ function EmptyEvents() {
 
 function EventsLoading() {
   return (
-    <div>
-      <div
-        className="
-          h-7
-          w-32
-          animate-pulse
-          rounded-lg
-          bg-gray-200
-        "
-      />
-
-      <div
-        className="
-          mt-5
-          grid
-          gap-4
-          sm:grid-cols-2
-          lg:grid-cols-3
-        "
-      >
-        {[1, 2, 3, 4, 5, 6].map((item) => (
+    <div
+      className="
+        mx-auto
+        w-full
+        max-w-[760px]
+        space-y-9
+      "
+    >
+      {[1, 2, 3].map((item) => (
+        <div key={item}>
           <div
-            key={item}
             className="
-              overflow-hidden
-              rounded-[26px]
-              bg-white
+              aspect-[1.68/1]
+              w-full
+              animate-pulse
+              rounded-[28px]
+              bg-gray-200
             "
-          >
+          />
+
+          <div className="mt-4 space-y-3">
             <div
               className="
-                aspect-[16/10]
+                h-6
+                w-2/3
                 animate-pulse
-                bg-gray-100
+                rounded
+                bg-gray-200
               "
             />
 
-            <div className="space-y-3 p-5">
-              <div
-                className="
-                  h-6
-                  w-2/3
-                  animate-pulse
-                  rounded
-                  bg-gray-100
-                "
-              />
+            <div
+              className="
+                h-4
+                w-1/2
+                animate-pulse
+                rounded
+                bg-gray-200
+              "
+            />
 
-              <div
-                className="
-                  h-4
-                  w-1/2
-                  animate-pulse
-                  rounded
-                  bg-gray-100
-                "
-              />
-
-              <div
-                className="
-                  h-12
-                  animate-pulse
-                  rounded-xl
-                  bg-gray-100
-                "
-              />
-            </div>
+            <div
+              className="
+                h-4
+                w-5/6
+                animate-pulse
+                rounded
+                bg-gray-200
+              "
+            />
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
   );
 }

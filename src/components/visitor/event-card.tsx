@@ -84,8 +84,7 @@ export function EventCard({ event, onSaveChange, className = "" }: Props) {
         group
         cursor-pointer
         overflow-hidden
-        rounded-[26px]
-        bg-white
+        rounded-3xl
         shadow-[0_6px_24px_rgba(0,0,0,0.04)]
         transition-transform
         duration-200
@@ -112,6 +111,7 @@ export function EventCard({ event, onSaveChange, className = "" }: Props) {
               object-cover
               transition-transform
               duration-300
+              rounded-3xl
               group-hover:scale-[1.02]
             "
           />
@@ -141,28 +141,6 @@ export function EventCard({ event, onSaveChange, className = "" }: Props) {
             onToggle={(nextSaved) => onSaveChange(event.id, nextSaved)}
           />
         )}
-
-        <div
-          className="
-            absolute
-            right-3
-            top-3
-            min-w-14
-            rounded-2xl
-            bg-white/95
-            px-3
-            py-2
-            text-center
-            shadow-sm
-            backdrop-blur
-          "
-        >
-          <Text variant="label-lg">{formatDay(event.date)}</Text>
-
-          <Text variant="caption" tone="secondary">
-            {formatMonth(event.date)}
-          </Text>
-        </div>
       </div>
 
       <div className="p-4.5 sm:p-5">
@@ -208,7 +186,7 @@ export function EventCard({ event, onSaveChange, className = "" }: Props) {
             {event.description}
           </Text>
         )}
-
+        {/* 
         <Text
           variant="label-lg"
           className="
@@ -219,7 +197,7 @@ export function EventCard({ event, onSaveChange, className = "" }: Props) {
           {event.price
             ? `${Number(event.price).toLocaleString("fa-IR")} تومان`
             : "رایگان"}
-        </Text>
+        </Text> */}
       </div>
     </article>
   );

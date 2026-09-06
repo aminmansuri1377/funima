@@ -117,14 +117,14 @@ export function SearchSelect({
           }
         }}
         className="
-          flex h-14
+          flex h-12
           w-full
           items-center
           justify-between
           gap-3
           rounded-(--radius-full)
           border
-          border-(--color-border-strong)
+          border-gray-300
           bg-(--color-surface)
           px-5
           text-right

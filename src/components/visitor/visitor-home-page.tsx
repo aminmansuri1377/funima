@@ -1,13 +1,15 @@
 "use client";
 
-import Image from "next/image";
-
 import { useMemo, useState } from "react";
 
-import { FiMapPin, FiSearch } from "react-icons/fi";
+import { FiMapPin, FiSearch, FiTag } from "react-icons/fi";
+
+import { FaGamepad, FaHeart, FaUsers } from "react-icons/fa";
+
 import type { inferRouterOutputs } from "@trpc/server";
 
 import { usePlaceSave } from "@/hooks/visitor/use-place-save";
+
 import type { AppRouter } from "@/server/trpc/root";
 
 import {
@@ -16,11 +18,6 @@ import {
   SearchSelect,
   Text,
 } from "@/components/ui";
-
-import {
-  PLACE_TYPE_OPTIONS,
-  type PlaceTypeValue,
-} from "@/lib/place/place-type";
 
 import { trpc } from "@/trpc/client";
 
@@ -39,6 +36,12 @@ type Props = {
   canSave: boolean;
 };
 
+type CategoryOption = {
+  id: string;
+  name: string;
+  groupName: string;
+};
+
 export function VisitorHomePage({ canSave }: Props) {
   const [search, setSearch] = useState("");
 
@@ -46,15 +49,88 @@ export function VisitorHomePage({ canSave }: Props) {
 
   const [city, setCity] = useState("");
 
-  const [placeType, setPlaceType] = useState<PlaceTypeValue | "">("");
+  /*
+   * این دیگر PlaceType نیست.
+   *
+   * مقدار انتخاب‌شده یکی از FilterValueهای
+   * ساخته‌شده در پنل مدیریت است.
+   */
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
 
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  /*
+   * ========================================
+   * HOME DATA
+   * ========================================
+   */
 
   const sections = trpc.visitor.home.getSections.useQuery();
 
   const cities = trpc.visitor.home.getCities.useQuery();
 
-  const hasActiveSearch = Boolean(debouncedSearch.trim() || city || placeType);
+  const filters = trpc.visitor.home.getFilters.useQuery();
+
+  /*
+   * ========================================
+   * CITY OPTIONS
+   * ========================================
+   */
+
+  const cityOptions = useMemo(() => {
+    const data = cities.data ?? [];
+
+    return data.map((item) => ({
+      value: item.city,
+
+      label: item.province ? `${item.city}، ${item.province}` : item.city,
+    }));
+  }, [cities.data]);
+
+  /*
+   * ========================================
+   * CATEGORY OPTIONS
+   * ========================================
+   *
+   * همه FilterValueها را به یک لیست
+   * افقی تبدیل می‌کنیم.
+   *
+   * در نتیجه Admin هر گزینه‌ای مثل:
+   *
+   * دو نفره
+   * دورهمی
+   * گیم و سرگرمی
+   *
+   * بسازد، خودکار در Home ظاهر می‌شود.
+   */
+
+  const categoryOptions = useMemo<CategoryOption[]>(() => {
+    const data = filters.data ?? [];
+
+    return data.flatMap((filter) =>
+      filter.values.map((value) => ({
+        id: value.id,
+        name: value.name,
+        groupName: filter.name,
+      })),
+    );
+  }, [filters.data]);
+
+  /*
+   * ========================================
+   * ACTIVE SEARCH
+   * ========================================
+   */
+
+  const hasActiveSearch = Boolean(
+    debouncedSearch.trim() || city || selectedCategoryId,
+  );
+
+  /*
+   * ========================================
+   * SEARCH RESULTS
+   * ========================================
+   */
 
   const searchResults = trpc.visitor.places.list.useQuery(
     {
@@ -66,24 +142,20 @@ export function VisitorHomePage({ canSave }: Props) {
 
       city: city || undefined,
 
-      placeType: placeType || undefined,
+      filterValueIds: selectedCategoryId ? [selectedCategoryId] : undefined,
     },
     {
       enabled: hasActiveSearch,
     },
   );
 
+  /*
+   * ========================================
+   * SAVE
+   * ========================================
+   */
+
   const placeSave = usePlaceSave();
-
-  const cityOptions = useMemo(() => {
-    const data = cities.data ?? [];
-
-    return data.map((item) => ({
-      value: item.city,
-
-      label: item.province ? `${item.city}، ${item.province}` : item.city,
-    }));
-  }, [cities.data]);
 
   async function handleSaveChange(placeId: string, nextSaved: boolean) {
     if (!canSave) {
@@ -107,209 +179,401 @@ export function VisitorHomePage({ canSave }: Props) {
 
   return (
     <VisitorPageShell maxWidth="wide">
-      <div className="space-y-8">
-        <HomeHeader />
+      <div className="pb-2">
+        {/*
+         * ========================================
+         * TITLE
+         * ========================================
+         */}
 
-        <section
-          className="
-            rounded-[28px]
-            bg-white
-            p-4
-            shadow-[0_8px_30px_rgba(0,0,0,0.035)]
-            sm:p-5
-          "
-        >
+        <HomeIntro />
+
+        {/*
+         * ========================================
+         * SEARCH + CITY
+         * ========================================
+         */}
+
+        <section className="mt-8">
           <div
             className="
               grid
+              grid-cols-[minmax(0,1fr)_105px]
               gap-3
-              md:grid-cols-[1fr_280px]
+
+              sm:grid-cols-[minmax(0,1fr)_150px]
+              sm:gap-4
             "
           >
-            <SearchInput
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              onDebouncedChange={(value) => setDebouncedSearch(value)}
-              onClear={() => {
-                setSearch("");
+            <div
+              className="
+                min-w-0
+                rounded-full
+                bg-white
+              "
+            >
+              <SearchInput
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                onDebouncedChange={(value) => setDebouncedSearch(value)}
+                onClear={() => {
+                  setSearch("");
 
-                setDebouncedSearch("");
-              }}
-              placeholder="دنبال کجا می‌گردی؟"
-            />
+                  setDebouncedSearch("");
+                }}
+                placeholder="جستجو"
+              />
+            </div>
 
-            <SearchSelect
-              value={city}
-              options={cityOptions}
-              onChange={setCity}
-              placeholder="انتخاب شهر"
-              searchPlaceholder="جستجوی شهر..."
-              emptyMessage="شهری پیدا نشد."
-              disabled={cities.isPending}
-              clearable
-            />
+            <div
+              className="
+                min-w-0
+                rounded-full
+                bg-white
+              "
+            >
+              <SearchSelect
+                value={city}
+                options={cityOptions}
+                onChange={setCity}
+                placeholder="شهر"
+                searchPlaceholder="جستجوی شهر..."
+                emptyMessage="شهری پیدا نشد."
+                disabled={cities.isPending}
+                clearable
+              />
+            </div>
           </div>
 
-          <PlaceTypeFilters value={placeType} onChange={setPlaceType} />
+          {/*
+           * ========================================
+           * CATEGORY FILTERS
+           * ========================================
+           */}
+
+          <CategoryFilters
+            options={categoryOptions}
+            value={selectedCategoryId}
+            loading={filters.isPending}
+            onChange={setSelectedCategoryId}
+          />
         </section>
 
+        {/*
+         * ========================================
+         * SAVE ERROR
+         * ========================================
+         */}
+
         {canSave && saveError && (
-          <InlineMessage variant="error">{saveError}</InlineMessage>
+          <div className="mt-5">
+            <InlineMessage variant="error">{saveError}</InlineMessage>
+          </div>
         )}
 
-        {hasActiveSearch ? (
-          <SearchResults
-            query={debouncedSearch}
-            city={city}
-            placeType={placeType}
-            data={searchResults.data}
-            pending={searchResults.isPending}
-            error={Boolean(searchResults.error)}
-            onSaveChange={saveHandler}
-          />
-        ) : (
-          <HomeSections
-            data={sections.data}
-            pending={sections.isPending}
-            error={Boolean(sections.error)}
-            onSaveChange={saveHandler}
-          />
-        )}
+        {/*
+         * ========================================
+         * CONTENT
+         * ========================================
+         */}
 
-        <VisitorFooter />
+        <div className="mt-12">
+          {hasActiveSearch ? (
+            <SearchResults
+              data={searchResults.data}
+              pending={searchResults.isPending}
+              error={Boolean(searchResults.error)}
+              onSaveChange={saveHandler}
+            />
+          ) : (
+            <HomeSections
+              data={sections.data}
+              pending={sections.isPending}
+              error={Boolean(sections.error)}
+              onSaveChange={saveHandler}
+            />
+          )}
+        </div>
+
+        {/*
+         * ========================================
+         * FOOTER
+         * ========================================
+         */}
+
+        <div className="mt-20">
+          <VisitorFooter />
+        </div>
       </div>
     </VisitorPageShell>
   );
 }
 
-function HomeHeader() {
-  return (
-    <header
-      className="
-        flex
-        items-center
-        justify-between
-        gap-4
-        pt-1
-      "
-    >
-      <div>
-        <Text as="h1" variant="heading-xl">
-          کجا بریم؟
-        </Text>
+/* =====================================================
+ * INTRO
+ * ===================================================== */
 
-        <Text tone="secondary" className="mt-1">
-          بهترین مکان‌های اطرافت رو پیدا کن
-        </Text>
-      </div>
-
-      <div
-        className="
-          relative
-          h-14
-          w-14
-          shrink-0
-        "
-      >
-        <Image
-          src="/images/logo.png"
-          alt="فونیما"
-          fill
-          priority
-          sizes="56px"
-          className="object-contain"
-        />
-      </div>
-    </header>
-  );
-}
-
-function PlaceTypeFilters({
-  value,
-  onChange,
-}: {
-  value: PlaceTypeValue | "";
-
-  onChange: (value: PlaceTypeValue | "") => void;
-}) {
+function HomeIntro() {
   return (
     <div
       className="
-        -mx-1
-        mt-4
-        flex
-        gap-2
-        overflow-x-auto
-        px-1
-        pb-1
-        scrollbar-none
-        [&::-webkit-scrollbar]:hidden
+        pt-1
+        text-center
       "
     >
-      <FilterChip active={value === ""} onClick={() => onChange("")}>
-        همه
-      </FilterChip>
+      <Text
+        as="h1"
+        variant="heading-xl"
+        className="
+          text-[27px]
+          font-black
+          leading-[1.35]
+          tracking-[-0.4px]
+          text-[#07111f]
 
-      {PLACE_TYPE_OPTIONS.map((option) => (
-        <FilterChip
-          key={option.value}
-          active={value === option.value}
-          onClick={() => onChange(option.value)}
-        >
-          {option.label}
-        </FilterChip>
-      ))}
+          sm:text-[31px]
+        "
+      >
+        ماجراجویی رو شروع کن !
+      </Text>
     </div>
   );
 }
 
-function FilterChip({
+/* =====================================================
+ * CATEGORY FILTERS
+ * ===================================================== */
+
+function CategoryFilters({
+  options,
+  value,
+  loading,
+  onChange,
+}: {
+  options: CategoryOption[];
+
+  value: string;
+
+  loading: boolean;
+
+  onChange: (value: string) => void;
+}) {
+  if (loading) {
+    return (
+      <div
+        className="
+          -mx-3
+          mt-7
+          flex
+          gap-3
+          overflow-hidden
+          px-3
+        "
+      >
+        {[1, 2, 3].map((item) => (
+          <div
+            key={item}
+            className="
+                h-[56px]
+                min-w-[145px]
+                animate-pulse
+                rounded-full
+                bg-white/70
+              "
+          />
+        ))}
+      </div>
+    );
+  }
+
+  if (options.length === 0) {
+    return null;
+  }
+
+  return (
+    <div
+      className="
+        -mx-3
+        mt-7
+        flex
+        gap-3
+        overflow-x-auto
+        px-3
+        pb-1
+
+        sm:-mx-0
+        sm:px-0
+
+        [&::-webkit-scrollbar]:hidden
+        [scrollbar-width:none]
+      "
+    >
+      {options.map((option) => {
+        const active = value === option.id;
+
+        return (
+          <CategoryChip
+            key={option.id}
+            name={option.name}
+            active={active}
+            onClick={() => {
+              /*
+               * اگر روی گزینه فعال دوباره
+               * کلیک شود، فیلتر پاک می‌شود.
+               */
+              onChange(active ? "" : option.id);
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+/* =====================================================
+ * CATEGORY CHIP
+ * ===================================================== */
+
+function CategoryChip({
+  name,
   active,
-  children,
   onClick,
 }: {
-  active: boolean;
+  name: string;
 
-  children: React.ReactNode;
+  active: boolean;
 
   onClick: () => void;
 }) {
+  const categoryStyle = getCategoryVisual(name);
+
   return (
     <button
       type="button"
       aria-pressed={active}
       onClick={onClick}
       className={`
+        flex
+        h-10
+        min-w-[145px]
         shrink-0
+        items-center
+        justify-center
+        gap-3
         rounded-full
         border
-        px-4
-        py-2.5
-        text-sm
+        px-5
+        text-[16px]
         font-semibold
-        transition-colors
+        transition-all
+        duration-200
+
+        sm:h-[58px]
+        sm:min-w-[185px]
 
         ${
           active
             ? `
-              border-(--color-brand-500)
-              bg-(--color-brand-500)
+              border-transparent
+              bg-[#FF693B]
               text-white
             `
             : `
-              border-(--color-border)
+              border-transparent
               bg-white
-              text-(--color-text-secondary)
-              hover:border-(--color-brand-300)
-              hover:text-(--color-brand-600)
+              text-[#0B1728]
+
+              hover:bg-white/80
             `
         }
       `}
     >
-      {children}
+      <span
+        aria-hidden="true"
+        className={`
+          flex
+          items-center
+          justify-center
+          text-[23px]
+
+          ${active ? "text-white" : categoryStyle.color}
+        `}
+      >
+        {/* {categoryStyle.icon} */}
+      </span>
+
+      <span className="whitespace-nowrap">{name}</span>
     </button>
   );
 }
+
+/* =====================================================
+ * CATEGORY ICON
+ * ===================================================== */
+
+function getCategoryVisual(name: string): {
+  icon: React.ReactNode;
+  color: string;
+} {
+  const normalized = name.trim().toLowerCase().replace(/\s+/g, " ");
+
+  /*
+   * دو نفره / دیت / قرار
+   */
+  if (
+    normalized.includes("دو نفر") ||
+    normalized.includes("دونفر") ||
+    normalized.includes("دیت") ||
+    normalized.includes("قرار")
+  ) {
+    return {
+      icon: <FaHeart />,
+      color: "text-[#EB4B4B]",
+    };
+  }
+
+  /*
+   * دورهمی / دوستانه / گروهی
+   */
+  if (
+    normalized.includes("دورهم") ||
+    normalized.includes("دوست") ||
+    normalized.includes("گروه")
+  ) {
+    return {
+      icon: <FaUsers />,
+      color: "text-[#367DF5]",
+    };
+  }
+
+  /*
+   * گیم / بازی / سرگرمی
+   */
+  if (
+    normalized.includes("گیم") ||
+    normalized.includes("بازی") ||
+    normalized.includes("سرگرمی") ||
+    normalized.includes("game")
+  ) {
+    return {
+      icon: <FaGamepad />,
+      color: "text-[#FF7A1A]",
+    };
+  }
+
+  /*
+   * fallback برای گزینه‌هایی که
+   * بعداً Admin اضافه می‌کند.
+   */
+  return {
+    icon: <FiTag />,
+    color: "text-(--color-brand-500)",
+  };
+}
+
+/* =====================================================
+ * HOME SECTIONS
+ * ===================================================== */
 
 function HomeSections({
   data,
@@ -346,7 +610,12 @@ function HomeSections({
   }
 
   return (
-    <div className="space-y-10">
+    <div
+      className="
+        space-y-11
+        sm:space-y-14
+      "
+    >
       {sections.map((section) => (
         <section key={section.id}>
           <SectionTitle>{section.title}</SectionTitle>
@@ -354,7 +623,7 @@ function HomeSections({
           <PlaceCardSlider
             places={section.places}
             onSaveChange={onSaveChange}
-            className="mt-4"
+            className="mt-5 mr-5"
           />
         </section>
       ))}
@@ -362,13 +631,33 @@ function HomeSections({
   );
 }
 
+/* =====================================================
+ * SECTION TITLE
+ * ===================================================== */
+
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <Text as="h2" variant="heading-md">
+    <Text
+      as="h2"
+      variant="heading-md"
+      className="
+        text-[22px]
+        font-black
+        leading-[1.4]
+        tracking-[-0.25px]
+        text-[#080d16]
+
+        sm:text-[24px]
+      "
+    >
       {children}
     </Text>
   );
 }
+
+/* =====================================================
+ * EMPTY HOME
+ * ===================================================== */
 
 function EmptyHome() {
   return (
@@ -379,7 +668,6 @@ function EmptyHome() {
         px-5
         py-14
         text-center
-        shadow-[0_8px_30px_rgba(0,0,0,0.03)]
       "
     >
       <div
@@ -418,15 +706,24 @@ function EmptyHome() {
   );
 }
 
+/* =====================================================
+ * HOME SECTIONS LOADING
+ * ===================================================== */
+
 function HomeSectionsLoading() {
   return (
-    <div className="space-y-10">
+    <div
+      className="
+        space-y-11
+        sm:space-y-14
+      "
+    >
       {[1, 2, 3].map((section) => (
         <div key={section}>
           <div
             className="
                 h-7
-                w-44
+                w-48
                 animate-pulse
                 rounded-lg
                 bg-gray-200
@@ -435,9 +732,9 @@ function HomeSectionsLoading() {
 
           <div
             className="
-                mt-4
+                mt-5
                 flex
-                gap-3
+                gap-4
                 overflow-hidden
               "
           >
@@ -445,39 +742,44 @@ function HomeSectionsLoading() {
               <div
                 key={item}
                 className="
-                      w-[260px]
+                      w-[64vw]
+                      min-w-[250px]
+                      max-w-[310px]
                       shrink-0
-                      overflow-hidden
-                      rounded-3xl
-                      bg-white
                     "
               >
                 <div
                   className="
-                        aspect-4/3
+                        aspect-[1.45/1]
                         animate-pulse
-                        bg-gray-100
+                        rounded-[22px]
+                        bg-gray-200
                       "
                 />
 
-                <div className="space-y-3 p-4">
+                <div
+                  className="
+                        mt-4
+                        space-y-2
+                      "
+                >
                   <div
                     className="
                           h-5
                           w-2/3
                           animate-pulse
                           rounded
-                          bg-gray-100
+                          bg-gray-200
                         "
                   />
 
                   <div
                     className="
                           h-4
-                          w-1/2
+                          w-4/5
                           animate-pulse
                           rounded
-                          bg-gray-100
+                          bg-gray-200
                         "
                   />
                 </div>
@@ -490,127 +792,74 @@ function HomeSectionsLoading() {
   );
 }
 
+/* =====================================================
+ * SEARCH LOADING
+ * ===================================================== */
+
 function SearchLoading() {
   return (
-    <div>
-      <div
-        className="
-          h-7
-          w-28
-          animate-pulse
-          rounded
-          bg-gray-200
-        "
-      />
-
-      <div
-        className="
-          mt-5
-          grid
-          gap-4
-          sm:grid-cols-2
-          lg:grid-cols-3
-        "
-      >
-        {[1, 2, 3].map((item) => (
+    <div
+      className="
+        mx-auto
+        w-full
+        max-w-[640px]
+        space-y-8
+      "
+    >
+      {[1, 2, 3].map((item) => (
+        <div key={item}>
           <div
-            key={item}
             className="
-                overflow-hidden
-                rounded-[26px]
-                bg-white
+                aspect-[1.55/1]
+                w-full
+                animate-pulse
+                rounded-[22px]
+                bg-gray-200
+              "
+          />
+
+          <div
+            className="
+                mt-4
+                space-y-2
               "
           >
             <div
               className="
-                  aspect-16/11
+                  h-5
+                  w-2/3
                   animate-pulse
-                  bg-gray-100
+                  rounded
+                  bg-gray-200
                 "
             />
 
-            <div className="space-y-3 p-4">
-              <div
-                className="
-                    h-5
-                    w-2/3
-                    animate-pulse
-                    rounded
-                    bg-gray-100
-                  "
-              />
-
-              <div
-                className="
-                    h-4
-                    w-1/2
-                    animate-pulse
-                    rounded
-                    bg-gray-100
-                  "
-              />
-            </div>
+            <div
+              className="
+                  h-4
+                  w-1/2
+                  animate-pulse
+                  rounded
+                  bg-gray-200
+                "
+            />
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
   );
 }
 
-function buildSearchDescription({
-  query,
-  city,
-  placeType,
-  total,
-}: {
-  query: string;
-
-  city: string;
-
-  placeType: PlaceTypeValue | "";
-
-  total: number;
-}) {
-  const parts: string[] = [];
-
-  if (query.trim()) {
-    parts.push(`«${query.trim()}»`);
-  }
-
-  if (city) {
-    parts.push(city);
-  }
-
-  if (placeType) {
-    const label = PLACE_TYPE_OPTIONS.find(
-      (item) => item.value === placeType,
-    )?.label;
-
-    if (label) {
-      parts.push(label);
-    }
-  }
-
-  const suffix = parts.length > 0 ? ` برای ${parts.join("، ")}` : "";
-
-  return `${total.toLocaleString("fa-IR")} مکان پیدا شد${suffix}`;
-}
+/* =====================================================
+ * SEARCH RESULTS
+ * ===================================================== */
 
 function SearchResults({
-  query,
-  city,
-  placeType,
   data,
   pending,
   error,
   onSaveChange,
 }: {
-  query: string;
-
-  city: string;
-
-  placeType: PlaceTypeValue | "";
-
   data: SearchResultsData | undefined;
 
   pending: boolean;
@@ -633,89 +882,72 @@ function SearchResults({
 
   const items = data?.items ?? [];
 
+  if (items.length === 0) {
+    return (
+      <div
+        className="
+          rounded-[30px]
+          bg-white
+          px-5
+          py-14
+          text-center
+        "
+      >
+        <div
+          className="
+            mx-auto
+            flex
+            h-14
+            w-14
+            items-center
+            justify-center
+            rounded-[20px]
+            bg-(--color-brand-50)
+            text-xl
+            text-(--color-brand-500)
+          "
+        >
+          <FiSearch />
+        </div>
+
+        <Text variant="heading-md" className="mt-4">
+          نتیجه‌ای پیدا نشد
+        </Text>
+
+        <Text tone="secondary" className="mt-2">
+          عبارت جستجو یا فیلترها را تغییر بده.
+        </Text>
+      </div>
+    );
+  }
+
   return (
-    <section>
+    <section
+      className="
+        mx-auto
+        w-full
+        max-w-[640px]
+      "
+    >
+      {/*
+       * دقیقاً مثل Figma:
+       *
+       * در هر ردیف فقط یک کارت.
+       *
+       * grid دو یا سه ستونه نداریم.
+       */}
+
       <div
         className="
           flex
-          items-end
-          justify-between
-          gap-4
+          flex-col
+          gap-9
         "
       >
-        <div>
-          <SectionTitle>نتایج</SectionTitle>
-
-          <Text variant="body-sm" tone="secondary" className="mt-1">
-            {buildSearchDescription({
-              query,
-
-              city,
-
-              placeType,
-
-              total: data?.pagination.total ?? 0,
-            })}
-          </Text>
-        </div>
+        {items.map((place) => (
+          <PlaceCard key={place.id} place={place} onSaveChange={onSaveChange} />
+        ))}
       </div>
-
-      {items.length === 0 ? (
-        <div
-          className="
-            mt-5
-            rounded-[28px]
-            bg-white
-            px-5
-            py-14
-            text-center
-            shadow-[0_8px_30px_rgba(0,0,0,0.03)]
-          "
-        >
-          <div
-            className="
-              mx-auto
-              flex
-              h-14
-              w-14
-              items-center
-              justify-center
-              rounded-[20px]
-              bg-(--color-brand-50)
-              text-xl
-              text-(--color-brand-500)
-            "
-          >
-            <FiSearch />
-          </div>
-
-          <Text variant="heading-md" className="mt-4">
-            نتیجه‌ای پیدا نشد
-          </Text>
-
-          <Text tone="secondary" className="mt-2">
-            عبارت جستجو یا فیلترها را تغییر بده.
-          </Text>
-        </div>
-      ) : (
-        <div
-          className="
-            mt-5
-            grid
-            gap-4
-            sm:grid-cols-2
-            lg:grid-cols-3
-          "
-        >
-          {items.map((place) => (
-            <PlaceCard
-              key={place.id}
-              place={place}
-              onSaveChange={onSaveChange}
-            />
-          ))}
-        </div>
-      )}
     </section>
   );
 }

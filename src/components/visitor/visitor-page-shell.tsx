@@ -27,7 +27,6 @@ export function VisitorPageShell({
       <main
         className={`
           min-h-screen
-          bg-[#f7f7f7]
           px-3
           pt-4
           sm:px-5

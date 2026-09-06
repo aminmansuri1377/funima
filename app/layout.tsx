@@ -1,3 +1,4 @@
+import { AppHeader } from "@/components/layout/app-header";
 import "./globals.css";
 
 import { abar } from "@/lib/fonts";
@@ -16,6 +17,7 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl" className={abar.variable}>
       <body>
+        <AppHeader />
         <AppProvider>{children}</AppProvider>
       </body>
     </html>

@@ -103,33 +103,15 @@ function ProfileHeader({ profile }: { profile: ProfileData }) {
   return (
     <section
       className="
-        rounded-[30px]
-        bg-white
         p-5
-        shadow-[0_8px_30px_rgba(0,0,0,0.04)]
         sm:p-7
       "
     >
-      <div
-        className="
-          flex
-          flex-col
-          gap-5
-          sm:flex-row
-          sm:items-center
-          sm:justify-between
-        "
-      >
-        <div
-          className="
-            flex
-            items-center
-            gap-4
-          "
-        >
+      <div>
+        <div className="text-center mx-auto">
           <ProfileAvatar name={profile.fullName} image={profile.profileImage} />
 
-          <div className="min-w-0">
+          <div className="">
             <Text as="h1" variant="heading-xl" className="truncate">
               {profile.fullName}
             </Text>
@@ -139,20 +121,19 @@ function ProfileHeader({ profile }: { profile: ProfileData }) {
               tone="secondary"
               className="
                 mt-1
-                text-right
               "
             >
               {profile.phoneNumber}
             </Text>
 
-            <Text variant="caption" tone="secondary" className="mt-1">
+            {/* <Text variant="caption" tone="secondary" className="mt-1">
               عضو فونیما از {formatJoinDate(profile.createdAt)}
-            </Text>
-          </div>
-        </div>
+            </Text> */}
 
-        <div className="shrink-0">
-          <LogoutButton />
+            <div className="shrink-0 text-red-500">
+              <LogoutButton />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -292,11 +273,11 @@ function ProfileTabButton({
         }
       `}
     >
-      <span className="text-lg">{icon}</span>
+      {/* <span className="text-lg">{icon}</span> */}
 
       <span>{children}</span>
 
-      <span
+      {/* <span
         className={`
           flex
           min-w-6
@@ -315,7 +296,7 @@ function ProfileTabButton({
         `}
       >
         {count.toLocaleString("fa-IR")}
-      </span>
+      </span> */}
     </button>
   );
 }
@@ -1066,9 +1047,9 @@ function SectionHeader({
 }) {
   return (
     <div>
-      <Text as="h2" variant="heading-xl">
+      {/* <Text as="h2" variant="heading-xl">
         {title}
-      </Text>
+      </Text> */}
 
       <Text tone="secondary" className="mt-1">
         {description}
