@@ -1,20 +1,29 @@
 "use client";
 
-import Image from "next/image";
-
 import { useState } from "react";
 
 import {
-  FiBookmark,
-  FiCalendar,
+  FiBookOpen,
+  FiBriefcase,
+  FiCoffee,
   FiEdit2,
+  FiHeart,
   FiInstagram,
   FiMapPin,
-  FiMessageCircle,
+  FiMonitor,
   FiPhone,
+  FiSmile,
+  FiStar,
+  FiTag,
+  FiUsers,
+  FiZap,
 } from "react-icons/fi";
+
+import { FaGamepad, FaGem } from "react-icons/fa";
+
 import { LocationPreview } from "@/components/map";
-import { Button, Text, ImageSlider } from "@/components/ui";
+
+import { ImageSlider, Text } from "@/components/ui";
 
 import { PLACE_TYPE_LABELS, type PlaceTypeValue } from "@/lib/place/place-type";
 
@@ -96,38 +105,17 @@ export function HostAccountView({ place, onChanged }: Props) {
 
   const groupedFilters = groupFilters(place.filterValues);
 
+  const locationText = [place.placeProvince, place.placeCity]
+    .filter(Boolean)
+    .join(" - ");
+
   return (
-    <div className="space-y-4 sm:space-y-5">
-      <section
-        className="
-          flex
-          items-center
-          justify-between
-          gap-4
-          px-1
-          py-1
-        "
-      >
-        <div>
-          <Text as="h1" variant="heading-xl">
-            حساب شما
-          </Text>
-
-          <Text tone="secondary" className="mt-1">
-            اطلاعات و وضعیت کسب‌وکار
-          </Text>
-        </div>
-
-        <Button
-          type="button"
-          size="sm"
-          variant="secondary"
-          startIcon={<FiEdit2 />}
-          onClick={() => setEditing(true)}
-        >
-          ویرایش
-        </Button>
-      </section>
+    <div>
+      {/*
+       * ========================================
+       * IMAGE
+       * ========================================
+       */}
 
       <ImageSlider
         images={place.images.map((image) => ({
@@ -139,210 +127,249 @@ export function HostAccountView({ place, onChanged }: Props) {
         }))}
         alt={place.placeName}
         priority
-        aspectClassName="aspect-[4/3] sm:aspect-[16/8]"
+        aspectClassName="
+          aspect-[1.05/1]
+          sm:aspect-[16/9]
+        "
         fallback={<FiMapPin size={46} />}
       />
-      <section
+
+      {/*
+       * ========================================
+       * EDIT BUTTON
+       * ========================================
+       */}
+
+      <div
         className="
-          overflow-hidden
-          rounded-[28px]
-          bg-white
-          shadow-[0_8px_30px_rgba(0,0,0,0.04)]
+          mt-5
+          flex
+          justify-center
         "
       >
-        <div className="p-5 sm:p-7">
-          <div
-            className="
-              flex
-              flex-col
-              gap-5
-              lg:flex-row
-              lg:items-start
-              lg:justify-between
-            "
-          >
-            <div className="min-w-0">
-              <Text as="h2" variant="heading-xl" className="leading-10">
-                {place.placeName}
-              </Text>
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="
+            inline-flex
+            min-h-11
+            min-w-[170px]
+            items-center
+            justify-center
+            gap-2
+            rounded-full
+            border
+            border-[#ff6437]
+            bg-transparent
+            px-6
+            text-[14px]
+            font-semibold
+            text-[#ff6437]
+            transition-colors
 
-              <div
-                className="
-                  mt-3
-                  flex
-                  flex-wrap
-                  items-center
-                  gap-2
-                "
-              >
-                <Pill>{PLACE_TYPE_LABELS[place.placeType]}</Pill>
+            hover:bg-[#fff4ef]
+          "
+        >
+          <FiEdit2 />
+          ویرایش مکان
+        </button>
+      </div>
 
-                {(place.placeProvince || place.placeCity) && (
-                  <Pill icon={<FiMapPin />}>
-                    {[place.placeProvince, place.placeCity]
-                      .filter(Boolean)
-                      .join("، ")}
-                  </Pill>
-                )}
-              </div>
-            </div>
+      {/*
+       * ========================================
+       * TITLE
+       * ========================================
+       */}
 
-            <div
-              className="
-                grid
-                grid-cols-3
-                gap-2
-                lg:min-w-[310px]
-              "
-            >
-              <Stat
-                icon={<FiCalendar />}
-                value={place._count.events}
-                label="ایونت"
-              />
+      <section
+        className="
+          mt-7
+          text-center
+        "
+      >
+        <Text
+          as="h1"
+          className="
+            text-[25px]
+            font-black
+            leading-9
+            text-[#07111f]
 
-              <Stat
-                icon={<FiMessageCircle />}
-                value={place._count.comments}
-                label="نظر"
-              />
+            sm:text-[29px]
+          "
+        >
+          {place.placeName}
+        </Text>
 
-              <Stat
-                icon={<FiBookmark />}
-                value={place._count.savedBy}
-                label="ذخیره"
-              />
-            </div>
-          </div>
+        <div
+          className="
+            mt-3
+            flex
+            flex-wrap
+            items-center
+            justify-center
+            gap-x-2
+            gap-y-1
+            text-[13px]
+            text-[#707781]
+          "
+        >
+          <span>{PLACE_TYPE_LABELS[place.placeType]}</span>
 
-          {place.description && (
-            <div
-              className="
-                mt-7
-                border-t
-                border-(--color-border)
-                pt-6
-              "
-            >
-              <Text variant="heading-md">درباره مجموعه</Text>
+          {locationText && (
+            <>
+              <span>•</span>
 
-              <Text
-                tone="secondary"
-                className="
-                  mt-3
-                  whitespace-pre-wrap
-                  leading-8
-                "
-              >
-                {place.description}
-              </Text>
-            </div>
+              <span>{locationText}</span>
+            </>
           )}
         </div>
       </section>
 
-      <section
-        className="
-          grid
-          gap-3
-          sm:grid-cols-2
-        "
-      >
-        <InfoCard
-          icon={<FiPhone />}
-          label="شماره تماس"
-          dir="ltr"
-          value={place.placePhone ?? "ثبت نشده"}
-        />
+      {/*
+       * ========================================
+       * PLACE INFORMATION
+       * ========================================
+       */}
 
-        <InfoCard
-          icon={<FiInstagram />}
-          label="اینستاگرام"
-          dir="ltr"
-          value={place.instagramId ?? "ثبت نشده"}
-        />
-      </section>
+      <section className="mt-10">
+        <SectionTitle>اطلاعات مکان :</SectionTitle>
 
-      <section
-        className="
-    rounded-[28px]
-    bg-white
-    p-5
-    shadow-sm
-    sm:p-7
-  "
-      >
         <div
           className="
-      flex
-      items-start
-      gap-3
-    "
+            mt-4
+            space-y-4
+          "
         >
+          <InformationRow icon={<FiMapPin />}>
+            {place.location?.address || locationText || "آدرس ثبت نشده است."}
+          </InformationRow>
+
+          <InformationRow icon={<FiTag />}>
+            {PLACE_TYPE_LABELS[place.placeType]}
+          </InformationRow>
+
+          {place.placePhone && (
+            <InformationRow icon={<FiPhone />} dir="ltr">
+              {place.placePhone}
+            </InformationRow>
+          )}
+
+          {place.instagramId && (
+            <InformationRow icon={<FiInstagram />} dir="ltr">
+              {formatInstagram(place.instagramId)}
+            </InformationRow>
+          )}
+        </div>
+      </section>
+
+      {/*
+       * ========================================
+       * FILTER GROUPS
+       * ========================================
+       */}
+
+      {groupedFilters.length > 0 && (
+        <section
+          className="
+            mt-10
+            space-y-8
+          "
+        >
+          {groupedFilters.map((group) => (
+            <div key={group.id}>
+              <SectionTitle>
+                {group.name}
+                {group.name.trim().endsWith(":") ? "" : " :"}
+              </SectionTitle>
+
+              <div
+                className="
+                    mt-4
+                    flex
+                    flex-wrap
+                    gap-3
+                  "
+              >
+                {group.values.map((value) => (
+                  <FilterChip key={value.id} name={value.name} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {/*
+       * ========================================
+       * ABOUT
+       * ========================================
+       */}
+
+      {place.description && (
+        <section className="mt-10">
+          <SectionTitle>چرا {place.placeName} !</SectionTitle>
+
           <div
             className="
-        flex
-        h-11
-        w-11
-        shrink-0
-        items-center
-        justify-center
-        rounded-full
-        bg-(--color-brand-50)
-        text-(--color-brand-600)
-      "
+              mt-4
+              rounded-[22px]
+              bg-white
+              px-5
+              py-5
+            "
           >
-            <FiMapPin />
-          </div>
-
-          <div className="min-w-0">
-            <Text variant="heading-md">آدرس مکان</Text>
-
             <Text
-              tone="secondary"
               className="
-          mt-1
-          leading-7
-        "
+                whitespace-pre-wrap
+                text-[14px]
+                leading-8
+                text-[#444b55]
+              "
             >
-              {place.location?.address || "آدرسی ثبت نشده است."}
+              {place.description}
             </Text>
-
-            {place.location?.title && (
-              <Text variant="caption" tone="secondary" className="mt-1">
-                {place.location.title}
-              </Text>
-            )}
           </div>
-        </div>
+        </section>
+      )}
+
+      {/*
+       * ========================================
+       * MAP
+       * ========================================
+       */}
+
+      <section className="mt-10">
+        <SectionTitle>لوکیشن دقیق :</SectionTitle>
 
         {place.location ? (
-          <div className="mt-5">
+          <div className="mt-4">
             <LocationPreview
               latitude={place.location.latitude}
               longitude={place.location.longitude}
               className="
-          h-[220px]
-          sm:h-[300px]
-        "
+                h-[230px]
+                sm:h-[310px]
+              "
+              showNavigation
+              showOpenInMaps={false}
             />
           </div>
         ) : (
           <div
             className="
-        mt-5
-        flex
-        min-h-36
-        items-center
-        justify-center
-        rounded-[22px]
-        border
-        border-dashed
-        border-(--color-border)
-        bg-gray-50
-        px-4
-        text-center
-      "
+              mt-4
+              flex
+              min-h-36
+              items-center
+              justify-center
+              rounded-[22px]
+              border
+              border-dashed
+              border-[#cfcfcf]
+              px-4
+              text-center
+            "
           >
             <Text variant="body-sm" tone="secondary">
               موقعیت مکانی هنوز ثبت نشده است.
@@ -350,313 +377,207 @@ export function HostAccountView({ place, onChanged }: Props) {
           </div>
         )}
       </section>
-
-      {groupedFilters.length > 0 && (
-        <section
-          className="
-            rounded-[28px]
-            bg-white
-            p-5
-            shadow-[0_8px_30px_rgba(0,0,0,0.04)]
-            sm:p-7
-          "
-        >
-          <Text variant="heading-md">امکانات و ویژگی‌ها</Text>
-
-          <Text tone="secondary" className="mt-1">
-            ویژگی‌هایی که برای این مکان ثبت کرده‌اید
-          </Text>
-
-          <div className="mt-7 space-y-7">
-            {groupedFilters.map((group) => (
-              <div key={group.id}>
-                <Text variant="label-lg">{group.name}</Text>
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {group.values.map((value) => (
-                    <Pill key={value.id}>{value.name}</Pill>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <Button
-        type="button"
-        size="xl"
-        fullWidth
-        variant="secondary"
-        startIcon={<FiEdit2 />}
-        onClick={() => setEditing(true)}
-      >
-        ویرایش اطلاعات کسب‌وکار
-      </Button>
     </div>
   );
 }
 
-function PlaceGallery({
-  placeName,
-  images,
-}: {
-  placeName: string;
-  images: HostPlaceData["images"];
-}) {
-  if (images.length === 0) {
-    return (
-      <div
-        className="
-          flex
-          aspect-video
-          items-center
-          justify-center
-          rounded-[28px]
-          bg-(--color-brand-50)
-          text-(--color-brand-500)
-        "
-      >
-        <FiMapPin size={42} />
-      </div>
-    );
-  }
+/* =====================================================
+ * SECTION TITLE
+ * ===================================================== */
 
-  const mainImage = images[0];
-
+function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <section
+    <Text
+      as="h2"
       className="
-        overflow-hidden
-        rounded-[30px]
-        bg-white
-        p-2
-        shadow-[0_8px_30px_rgba(0,0,0,0.05)]
+        text-[16px]
+        font-black
+        leading-7
+        text-[#111827]
+
+        sm:text-[18px]
       "
     >
-      <div
-        className="
-          relative
-          aspect-4/3
-          overflow-hidden
-          rounded-3xl
-          sm:aspect-16/8
-        "
-      >
-        <Image
-          src={mainImage.url}
-          alt={placeName}
-          fill
-          priority
-          sizes="(max-width: 768px) 100vw, 1100px"
-          className="object-cover"
-        />
-
-        <div
-          className="
-            pointer-events-none
-            absolute
-            inset-x-0
-            bottom-0
-            h-28
-            bg-linear-to-t
-            from-black/35
-            to-transparent
-          "
-        />
-      </div>
-
-      {images.length > 1 && (
-        <div
-          className="
-            mt-2
-            grid
-            grid-cols-4
-            gap-2
-          "
-        >
-          {images.slice(1, 5).map((image, index) => (
-            <div
-              key={image.id}
-              className="
-                relative
-                aspect-square
-                overflow-hidden
-                rounded-[18px]
-              "
-            >
-              <Image
-                src={image.url}
-                alt={`${placeName} - تصویر ${index + 2}`}
-                fill
-                sizes="25vw"
-                className="object-cover"
-              />
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-function Pill({
-  children,
-  icon,
-}: {
-  children: React.ReactNode;
-  icon?: React.ReactNode;
-}) {
-  return (
-    <span
-      className="
-        inline-flex
-        items-center
-        gap-1.5
-        rounded-full
-        bg-(--color-brand-50)
-        px-3.5
-        py-2
-        text-sm
-        font-medium
-        text-(--color-brand-700)
-      "
-    >
-      {icon}
-
       {children}
-    </span>
+    </Text>
   );
 }
 
-function Stat({
-  value,
-  label,
+/* =====================================================
+ * INFORMATION ROW
+ * ===================================================== */
+
+function InformationRow({
   icon,
+  children,
+  dir,
 }: {
-  value: number;
-  label: string;
   icon: React.ReactNode;
+
+  children: React.ReactNode;
+
+  dir?: "rtl" | "ltr";
 }) {
   return (
     <div
       className="
         flex
-        min-h-24
-        flex-col
-        items-center
-        justify-center
-        rounded-[20px]
-        bg-[#f8f8f8]
-        p-3
-        text-center
+        items-start
+        gap-3
       "
     >
-      <span className="mb-1 text-(--color-brand-500)">{icon}</span>
+      <span
+        className="
+          flex
+          h-8
+          w-8
+          shrink-0
+          items-center
+          justify-center
+          rounded-full
+          bg-white
+          text-[17px]
+          text-[#ff6437]
+        "
+      >
+        {icon}
+      </span>
 
-      <Text variant="heading-md">{value.toLocaleString("fa-IR")}</Text>
-
-      <Text variant="caption" tone="secondary" className="mt-0.5">
-        {label}
+      <Text
+        dir={dir}
+        className="
+          pt-1
+          text-[14px]
+          leading-7
+          text-[#414852]
+        "
+      >
+        {children}
       </Text>
     </div>
   );
 }
 
-function InfoCard({
-  icon,
-  label,
-  value,
-  dir,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  dir?: "ltr" | "rtl";
-}) {
+/* =====================================================
+ * FILTER CHIP
+ * ===================================================== */
+
+function FilterChip({ name }: { name: string }) {
   return (
     <div
       className="
-        flex
-        min-h-24
+        inline-flex
+        min-h-[46px]
         items-center
-        gap-4
-        rounded-3xl
+        justify-center
+        gap-2.5
+        rounded-full
         bg-white
-        p-5
-        shadow-[0_8px_30px_rgba(0,0,0,0.04)]
+        px-4
+        py-2
+        text-[14px]
+        font-medium
+        text-[#242b35]
       "
     >
-      <div
+      <span
         className="
           flex
-          h-12
-          w-12
           shrink-0
           items-center
           justify-center
-          rounded-2xl
-          bg-(--color-brand-50)
-          text-xl
-          text-(--color-brand-600)
+          text-[20px]
+          text-[#ff6437]
         "
       >
-        {icon}
-      </div>
+        {getFilterIcon(name)}
+      </span>
 
-      <div className="min-w-0">
-        <Text variant="caption" tone="secondary">
-          {label}
-        </Text>
-
-        <Text variant="label-lg" className="mt-1 truncate" dir={dir}>
-          {value}
-        </Text>
-      </div>
+      <span className="whitespace-nowrap">{name}</span>
     </div>
   );
 }
 
-function SectionHeader({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description?: string;
-}) {
-  return (
-    <div className="flex items-center gap-3">
-      <div
-        className="
-          flex
-          h-11
-          w-11
-          shrink-0
-          items-center
-          justify-center
-          rounded-2xl
-          bg-(--color-brand-50)
-          text-lg
-          text-(--color-brand-600)
-        "
-      >
-        {icon}
-      </div>
+/* =====================================================
+ * FILTER ICONS
+ * ===================================================== */
 
-      <div>
-        <Text variant="heading-md">{title}</Text>
+function getFilterIcon(value: string): React.ReactNode {
+  const name = value.trim().toLowerCase().replace(/\s+/g, " ");
 
-        {description && (
-          <Text tone="secondary" variant="caption" className="mt-0.5">
-            {description}
-          </Text>
-        )}
-      </div>
-    </div>
-  );
+  if (
+    name.includes("کار کردن") ||
+    name.includes("کارکردن") ||
+    name.includes("لپ تاپ") ||
+    name.includes("لپ‌تاپ")
+  ) {
+    return <FiMonitor />;
+  }
+
+  if (name.includes("قرار کاری") || name.includes("جلسه")) {
+    return <FiBriefcase />;
+  }
+
+  if (
+    name.includes("مطالعه") ||
+    name.includes("کتاب") ||
+    name.includes("درس")
+  ) {
+    return <FiBookOpen />;
+  }
+
+  if (
+    name.includes("عاشقانه") ||
+    name.includes("رمانتیک") ||
+    name.includes("دیت") ||
+    name.includes("دو نفره") ||
+    name.includes("دونفره")
+  ) {
+    return <FiHeart />;
+  }
+
+  if (
+    name.includes("دورهم") ||
+    name.includes("دوستان") ||
+    name.includes("گروهی")
+  ) {
+    return <FiUsers />;
+  }
+
+  if (
+    name.includes("گیم") ||
+    name.includes("بازی") ||
+    name.includes("سرگرمی")
+  ) {
+    return <FaGamepad />;
+  }
+
+  if (name.includes("لوکس") || name.includes("لاکچری")) {
+    return <FaGem />;
+  }
+
+  if (name.includes("دنج") || name.includes("گرم")) {
+    return <FiCoffee />;
+  }
+
+  if (name.includes("آرامش") || name.includes("آرام")) {
+    return <FiSmile />;
+  }
+
+  if (name.includes("ویژه") || name.includes("خاص")) {
+    return <FiStar />;
+  }
+
+  if (name.includes("برق") || name.includes("شارژ")) {
+    return <FiZap />;
+  }
+
+  return <FiTag />;
 }
+
+/* =====================================================
+ * FILTER GROUPING
+ * ===================================================== */
 
 function groupFilters(values: HostPlaceData["filterValues"]) {
   const map = new Map<
@@ -688,6 +609,7 @@ function groupFilters(values: HostPlaceData["filterValues"]) {
 
     map.set(filter.id, {
       id: filter.id,
+
       name: filter.name,
 
       values: [
@@ -700,4 +622,14 @@ function groupFilters(values: HostPlaceData["filterValues"]) {
   }
 
   return Array.from(map.values());
+}
+
+/* =====================================================
+ * HELPERS
+ * ===================================================== */
+
+function formatInstagram(value: string) {
+  const normalized = value.trim().replace(/^@/, "");
+
+  return `@${normalized}`;
 }

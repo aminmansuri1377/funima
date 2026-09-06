@@ -6,17 +6,15 @@ import { useState } from "react";
 
 import { useRouter } from "next/navigation";
 
-import { FiCalendar, FiMapPin, FiPlus, FiUser } from "react-icons/fi";
+import { FiCamera, FiMapPin, FiPlus } from "react-icons/fi";
 
 import { Button, InlineMessage, Text } from "@/components/ui";
-
-import { LogoutButton } from "@/components/auth/logout-button";
 
 import { trpc } from "@/trpc/client";
 
 import { HostAccountView } from "./host-account-view";
-
 import { HostLatestEvent } from "./host-latest-event";
+import { LogoutButton } from "../auth/logout-button";
 
 type HostTab = "account" | "event";
 
@@ -54,17 +52,16 @@ export function HostDashboard() {
   }
 
   /*
-   * مهم:
-   * اگر Host مکان ندارد دیگر
-   * onboarding را مستقیم نشان نمی‌دهیم.
-   *
-   * Host ابتدا Dashboard را می‌بیند.
+   * ========================================
+   * HOST WITHOUT PLACE
+   * ========================================
    */
+
   if (!place.data) {
     return (
       <HostShell>
-        <div className="space-y-5">
-          <HostHeader />
+        <div className="space-y-8">
+          <HostProfileHeader fullName="میزبان فانیما" profileImage={null} />
 
           <WelcomeHost />
 
@@ -78,17 +75,19 @@ export function HostDashboard() {
     Boolean(place.data.location) && place.data.images.length >= 3;
 
   /*
-   * حتی Place ناقص هم دیگر مستقیم
-   * Step 2 را نمایش نمی‌دهد.
-   *
-   * Host داشبورد را می‌بیند و خودش
-   * روی ادامه تکمیل کلیک می‌کند.
+   * ========================================
+   * INCOMPLETE PLACE
+   * ========================================
    */
+
   if (!onboardingComplete) {
     return (
       <HostShell>
-        <div className="space-y-5">
-          <HostHeader placeName={place.data.placeName} />
+        <div className="space-y-8">
+          <HostProfileHeader
+            fullName={place.data.host.user.fullName}
+            profileImage={place.data.host.user.profileImage}
+          />
 
           <IncompletePlaceDashboard
             placeName={place.data.placeName}
@@ -101,74 +100,289 @@ export function HostDashboard() {
     );
   }
 
+  /*
+   * ========================================
+   * COMPLETE DASHBOARD
+   * ========================================
+   */
+
   return (
     <HostShell>
-      <div
-        className="
-          space-y-5
-          sm:space-y-7
-        "
-      >
-        <HostHeader placeName={place.data.placeName} />
-
+      <div>
+        <HostProfileHeader
+          fullName={place.data.host.user.fullName}
+          profileImage={place.data.host.user.profileImage}
+        />
         <HostNavigation tab={tab} onChange={setTab} />
 
-        {tab === "account" ? (
-          <HostAccountView
-            place={place.data}
-            onChanged={() => place.refetch()}
-          />
-        ) : (
-          <HostLatestEvent />
-        )}
+        <div className="mt-7">
+          {tab === "account" ? (
+            <HostAccountView
+              place={place.data}
+              onChanged={() => place.refetch()}
+            />
+          ) : (
+            <HostLatestEvent />
+          )}
+        </div>
       </div>
     </HostShell>
   );
 }
 
+/* =====================================================
+ * PROFILE HEADER
+ * ===================================================== */
+
+function HostProfileHeader({
+  fullName,
+  profileImage,
+}: {
+  fullName: string;
+
+  profileImage: string | null;
+}) {
+  return (
+    <section
+      className="
+        flex
+        flex-col
+        items-center
+        justify-center
+        pb-1
+        text-center
+      "
+    >
+      <div
+        className="
+          relative
+          h-[76px]
+          w-[76px]
+        "
+      >
+        <div
+          className="
+            relative
+            h-full
+            w-full
+            overflow-hidden
+            rounded-full
+            bg-white
+          "
+        >
+          {profileImage ? (
+            <Image
+              src={profileImage}
+              alt={fullName}
+              fill
+              sizes="76px"
+              className="object-cover"
+            />
+          ) : (
+            <div
+              className="
+                flex
+                h-full
+                w-full
+                items-center
+                justify-center
+                bg-white
+                text-[26px]
+                font-black
+                text-[#ff6437]
+              "
+            >
+              {fullName.trim().charAt(0) || "ف"}
+            </div>
+          )}
+        </div>
+
+        <span
+          aria-hidden="true"
+          className="
+            absolute
+            -bottom-1
+            -left-1
+            flex
+            h-7
+            w-7
+            items-center
+            justify-center
+            rounded-full
+            border-2
+            border-[#EDEDED]
+            bg-white
+            text-[14px]
+            text-[#ff6437]
+          "
+        >
+          <FiCamera />
+        </span>
+      </div>
+
+      <Text
+        as="h1"
+        className="
+          mt-4
+          text-[19px]
+          font-black
+          leading-8
+          text-[#0b1422]
+
+          sm:text-[21px]
+        "
+      >
+        {fullName}
+      </Text>
+      <LogoutButton />
+    </section>
+  );
+}
+
+/* =====================================================
+ * NAVIGATION
+ * ===================================================== */
+
+function HostNavigation({
+  tab,
+  onChange,
+}: {
+  tab: HostTab;
+
+  onChange: (tab: HostTab) => void;
+}) {
+  return (
+    <nav
+      aria-label="بخش‌های پنل میزبان"
+      className="
+        mt-6
+        flex
+        items-end
+        justify-center
+        gap-12
+      "
+    >
+      <HostTabButton
+        active={tab === "account"}
+        onClick={() => onChange("account")}
+      >
+        حساب شما
+      </HostTabButton>
+
+      <HostTabButton active={tab === "event"} onClick={() => onChange("event")}>
+        ایونت های شما
+      </HostTabButton>
+    </nav>
+  );
+}
+
+function HostTabButton({
+  active,
+  children,
+  onClick,
+}: {
+  active: boolean;
+
+  children: React.ReactNode;
+
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={`
+        relative
+        min-h-11
+        px-1
+        pb-3
+        text-[14px]
+        font-semibold
+        transition-colors
+
+        sm:text-[15px]
+
+        ${
+          active
+            ? `
+              text-[#ff6437]
+            `
+            : `
+              text-[#8e939a]
+              hover:text-[#555b63]
+            `
+        }
+      `}
+    >
+      {children}
+
+      {active && (
+        <span
+          className="
+            absolute
+            inset-x-0
+            bottom-0
+            h-[2px]
+            rounded-full
+            bg-[#ff6437]
+          "
+        />
+      )}
+    </button>
+  );
+}
+
+/* =====================================================
+ * WELCOME
+ * ===================================================== */
+
 function WelcomeHost() {
   return (
     <section
       className="
-        rounded-[30px]
-        bg-(--color-brand-500)
+        rounded-[28px]
+        bg-white
         px-5
         py-7
-        text-white
-        shadow-[0_12px_35px_rgba(0,0,0,0.08)]
+        text-center
         sm:px-8
         sm:py-9
       "
     >
-      <Text as="h1" variant="heading-xl" className="text-white">
-        به پنل میزبان فونیما خوش آمدید
+      <Text as="h1" variant="heading-xl">
+        به پنل میزبان فانیما خوش آمدید
       </Text>
 
-      <p
+      <Text
+        tone="secondary"
         className="
+          mx-auto
           mt-3
           max-w-xl
           leading-8
-          text-white/80
         "
       >
         از اینجا می‌توانید مکان خود را ثبت کنید، ایونت بسازید و اطلاعات مجموعه
         را مدیریت کنید.
-      </p>
+      </Text>
     </section>
   );
 }
+
+/* =====================================================
+ * NO PLACE
+ * ===================================================== */
 
 function NoPlaceDashboard({ onCreate }: { onCreate: () => void }) {
   return (
     <section
       className="
-        rounded-[30px]
+        rounded-[28px]
         bg-white
         px-5
         py-12
         text-center
-        shadow-[0_8px_30px_rgba(0,0,0,0.04)]
         sm:px-8
       "
     >
@@ -180,10 +394,10 @@ function NoPlaceDashboard({ onCreate }: { onCreate: () => void }) {
           w-16
           items-center
           justify-center
-          rounded-[22px]
-          bg-(--color-brand-50)
+          rounded-full
+          bg-[#fff4ef]
           text-2xl
-          text-(--color-brand-600)
+          text-[#ff6437]
         "
       >
         <FiMapPin />
@@ -202,8 +416,7 @@ function NoPlaceDashboard({ onCreate }: { onCreate: () => void }) {
           leading-7
         "
       >
-        برای شروع فعالیت در فونیما، اطلاعات کسب‌وکار خود را ثبت کنید. بعد از
-        تکمیل مکان می‌توانید ایونت‌های خود را نیز ایجاد کنید.
+        برای شروع فعالیت در فانیما، اطلاعات کسب‌وکار خود را ثبت کنید.
       </Text>
 
       <Button
@@ -218,6 +431,10 @@ function NoPlaceDashboard({ onCreate }: { onCreate: () => void }) {
     </section>
   );
 }
+
+/* =====================================================
+ * INCOMPLETE PLACE
+ * ===================================================== */
 
 function IncompletePlaceDashboard({
   placeName,
@@ -234,81 +451,78 @@ function IncompletePlaceDashboard({
   onContinue: () => void;
 }) {
   return (
-    <div className="space-y-5">
-      <section
+    <section
+      className="
+        rounded-[28px]
+        bg-white
+        p-5
+        sm:p-7
+      "
+    >
+      <div
         className="
-          rounded-[30px]
-          bg-white
-          p-5
-          shadow-[0_8px_30px_rgba(0,0,0,0.04)]
-          sm:p-7
+          flex
+          items-start
+          gap-4
         "
       >
         <div
           className="
             flex
-            items-start
-            gap-4
+            h-14
+            w-14
+            shrink-0
+            items-center
+            justify-center
+            rounded-full
+            bg-[#fff4ef]
+            text-xl
+            text-[#ff6437]
           "
         >
-          <div
-            className="
-              flex
-              h-14
-              w-14
-              shrink-0
-              items-center
-              justify-center
-              rounded-[20px]
-              bg-(--color-brand-50)
-              text-xl
-              text-(--color-brand-600)
-            "
-          >
-            <FiMapPin />
-          </div>
-
-          <div>
-            <Text variant="heading-md">{placeName}</Text>
-
-            <Text tone="secondary" className="mt-1">
-              ثبت مکان هنوز کامل نشده است.
-            </Text>
-          </div>
+          <FiMapPin />
         </div>
 
-        <div
-          className="
-            mt-6
-            grid
-            grid-cols-2
-            gap-3
-          "
-        >
-          <ProgressItem
-            done={imageCount >= 3}
-            label="تصاویر"
-            detail={`${imageCount.toLocaleString("fa-IR")} از ۳`}
-          />
+        <div>
+          <Text variant="heading-md">{placeName}</Text>
 
-          <ProgressItem
-            done={hasLocation}
-            label="موقعیت"
-            detail={hasLocation ? "تکمیل شده" : "ثبت نشده"}
-          />
+          <Text tone="secondary" className="mt-1">
+            ثبت مکان هنوز کامل نشده است.
+          </Text>
         </div>
+      </div>
 
-        <Button
-          type="button"
-          size="xl"
-          fullWidth
-          className="mt-6"
-          onClick={onContinue}
-        >
-          ادامه تکمیل مکان
-        </Button>
-      </section>
-    </div>
+      <div
+        className="
+          mt-6
+          grid
+          grid-cols-2
+          gap-3
+        "
+      >
+        <ProgressItem
+          done={imageCount >= 3}
+          label="تصاویر"
+          detail={`${imageCount.toLocaleString("fa-IR")} از ۳`}
+        />
+
+        <ProgressItem
+          done={hasLocation}
+          label="موقعیت"
+          detail={hasLocation ? "تکمیل شده" : "ثبت نشده"}
+        />
+      </div>
+
+      <Button
+        type="button"
+        size="xl"
+        fullWidth
+        className="mt-6"
+        onClick={onContinue}
+      >
+        ادامه تکمیل مکان
+      </Button>
+    </section>
   );
 }
 
@@ -327,7 +541,7 @@ function ProgressItem({
     <div
       className="
         rounded-[20px]
-        bg-[#f8f8f8]
+        bg-[#f7f7f7]
         p-4
       "
     >
@@ -358,192 +572,29 @@ function ProgressItem({
   );
 }
 
-function HostHeader({ placeName }: { placeName?: string }) {
-  return (
-    <header
-      className="
-        flex
-        items-center
-        justify-between
-        gap-4
-        rounded-[28px]
-        bg-white
-        px-4
-        py-4
-        shadow-[0_8px_30px_rgba(0,0,0,0.04)]
-        sm:px-6
-      "
-    >
-      <div
-        className="
-          flex
-          min-w-0
-          items-center
-          gap-3
-        "
-      >
-        <div
-          className="
-            relative
-            h-11
-            w-11
-            shrink-0
-            overflow-hidden
-            rounded-2xl
-            bg-(--color-brand-50)
-          "
-        >
-          <Image
-            src="/images/logo.png"
-            alt="فونیما"
-            fill
-            sizes="44px"
-            priority
-            className="object-contain p-1.5"
-          />
-        </div>
-
-        <div className="min-w-0">
-          <Text variant="label-lg">پنل میزبان</Text>
-
-          {placeName && (
-            <Text
-              variant="caption"
-              tone="secondary"
-              className="
-                mt-0.5
-                truncate
-              "
-            >
-              {placeName}
-            </Text>
-          )}
-        </div>
-      </div>
-
-      <div className="shrink-0">
-        <LogoutButton />
-      </div>
-    </header>
-  );
-}
-
-function HostNavigation({
-  tab,
-  onChange,
-}: {
-  tab: HostTab;
-
-  onChange: (tab: HostTab) => void;
-}) {
-  return (
-    <nav
-      className="
-        sticky
-        top-3
-        z-30
-        rounded-[22px]
-        border
-        border-white/80
-        bg-white/90
-        p-1.5
-        shadow-[0_8px_30px_rgba(0,0,0,0.05)]
-        backdrop-blur-xl
-      "
-    >
-      <div
-        className="
-          grid
-          grid-cols-2
-          gap-1.5
-        "
-      >
-        <HostTabButton
-          active={tab === "account"}
-          icon={<FiUser />}
-          onClick={() => onChange("account")}
-        >
-          حساب شما
-        </HostTabButton>
-
-        <HostTabButton
-          active={tab === "event"}
-          icon={<FiCalendar />}
-          onClick={() => onChange("event")}
-        >
-          ایونت شما
-        </HostTabButton>
-      </div>
-    </nav>
-  );
-}
-
-function HostTabButton({
-  active,
-  icon,
-  children,
-  onClick,
-}: {
-  active: boolean;
-
-  icon: React.ReactNode;
-
-  children: React.ReactNode;
-
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      className={`
-        flex
-        min-h-12
-        items-center
-        justify-center
-        gap-2
-        rounded-[18px]
-        px-3
-        text-sm
-        font-semibold
-        transition-all
-        duration-200
-        sm:min-h-13
-        sm:text-base
-
-        ${
-          active
-            ? "bg-(--color-brand-500) text-white shadow-sm"
-            : "text-(--color-text-secondary) hover:bg-gray-50 hover:text-(--color-text-primary)"
-        }
-      `}
-    >
-      <span className="text-lg">{icon}</span>
-
-      {children}
-    </button>
-  );
-}
+/* =====================================================
+ * SHELL
+ * ===================================================== */
 
 function HostShell({ children }: { children: React.ReactNode }) {
   return (
     <main
       className="
         min-h-screen
-        bg-[#f5f5f5]
-        px-3
-        py-3
+        bg-[#EDEDED]
+        px-4
+        pb-20
+        pt-1
+
         sm:px-6
-        sm:py-6
-        lg:px-8
+        sm:pb-24
       "
     >
       <div
         className="
           mx-auto
           w-full
-          max-w-6xl
+          max-w-[620px]
         "
       >
         {children}
@@ -552,28 +603,70 @@ function HostShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+/* =====================================================
+ * LOADING
+ * ===================================================== */
+
 function HostLoading() {
   return (
-    <div className="space-y-4">
+    <div
+      className="
+        flex
+        flex-col
+        items-center
+        pt-3
+      "
+    >
       <div
         className="
-          h-20
+          h-[76px]
+          w-[76px]
           animate-pulse
-          rounded-[28px]
+          rounded-full
           bg-white
         "
       />
 
       <div
         className="
-          h-52
+          mt-4
+          h-6
+          w-28
           animate-pulse
-          rounded-[30px]
-          bg-white
+          rounded
+          bg-gray-200
         "
       />
 
-      <Text tone="secondary" className="text-center">
+      <div
+        className="
+          mt-7
+          flex
+          gap-10
+        "
+      >
+        <div
+          className="
+            h-8
+            w-20
+            animate-pulse
+            rounded
+            bg-gray-200
+          "
+        />
+
+        <div
+          className="
+            h-8
+            w-24
+            animate-pulse
+            rounded
+            bg-gray-200
+          "
+        />
+      </div>
+
+      <Text tone="secondary" className="mt-7">
         در حال دریافت اطلاعات حساب...
       </Text>
     </div>

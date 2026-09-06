@@ -1,20 +1,21 @@
 "use client";
 
-import Image from "next/image";
-
 import { useRouter } from "next/navigation";
 
 import {
   FiBookmark,
   FiCalendar,
   FiClock,
-  FiEye,
+  FiEdit2,
   FiList,
+  FiMapPin,
   FiMessageCircle,
   FiPlus,
+  FiShield,
+  FiUsers,
 } from "react-icons/fi";
 
-import { Button, ImageSlider, InlineMessage, Text } from "@/components/ui";
+import { ImageSlider, InlineMessage, Text } from "@/components/ui";
 
 import { trpc } from "@/trpc/client";
 
@@ -24,7 +25,7 @@ export function HostLatestEvent() {
   const latest = trpc.host.dashboard.latestEvent.useQuery();
 
   if (latest.isPending) {
-    return <Text tone="secondary">در حال دریافت آخرین ایونت...</Text>;
+    return <EventLoading />;
   }
 
   if (latest.error) {
@@ -46,158 +47,557 @@ export function HostLatestEvent() {
 
   const event = latest.data;
 
-  /*
-   * فقط تصویر Event.
-   * هیچ fallback به Place نداریم.
-   */
-  const image = event.images[0]?.url ?? null;
-
   return (
-    <div className="space-y-4">
+    <div>
+      {/*
+       * ========================================
+       * EVENT IMAGE
+       * ========================================
+       */}
+
+      <ImageSlider
+        images={event.images.map((image) => ({
+          id: image.id,
+
+          url: image.url,
+
+          alt: event.eventName,
+        }))}
+        alt={event.eventName}
+        priority
+        aspectClassName="
+          aspect-[1.05/1]
+          sm:aspect-[16/9]
+        "
+        fallback={<FiCalendar size={50} />}
+      />
+
+      {/*
+       * ========================================
+       * EDIT BUTTON
+       * ========================================
+       */}
+
       <div
         className="
-          flex flex-col gap-4
-          sm:flex-row
-          sm:items-end
-          sm:justify-between
+          mt-5
+          flex
+          justify-center
         "
       >
-        <div>
-          <Text as="h1" variant="heading-xl">
-            آخرین ایونت شما
-          </Text>
-
-          <Text tone="secondary" className="mt-1">
-            آخرین رویدادی که ثبت کرده‌اید
-          </Text>
-        </div>
-
-        <Button
+        <button
           type="button"
-          variant="secondary"
-          startIcon={<FiList />}
-          onClick={() => router.push("/host/events")}
+          onClick={() => router.push(`/host/events/${event.id}`)}
+          className="
+            inline-flex
+            min-h-11
+            min-w-[175px]
+            items-center
+            justify-center
+            gap-2
+            rounded-full
+            border
+            border-[#ff6437]
+            px-6
+            text-[14px]
+            font-semibold
+            text-[#ff6437]
+            transition-colors
+
+            hover:bg-[#fff4ef]
+          "
         >
-          مشاهده همه ایونت‌ها
-        </Button>
+          <FiEdit2 />
+          ویرایش ایونت
+        </button>
       </div>
 
-      <article
+      {/*
+       * ========================================
+       * SUMMARY
+       * ========================================
+       */}
+
+      <section
         className="
-          overflow-hidden
-          rounded-[30px]
-          bg-white
-          shadow-sm
+          mt-7
+          text-center
         "
       >
-        <ImageSlider
-          images={event.images.map((image) => ({
-            id: image.id,
+        <Text
+          as="h1"
+          className="
+            text-[25px]
+            font-black
+            leading-10
+            text-[#07111f]
 
-            url: image.url,
+            sm:text-[29px]
+          "
+        >
+          {event.eventName}
+        </Text>
 
-            alt: event.eventName,
-          }))}
-          alt={event.eventName}
-          priority
-          aspectClassName="aspect-[4/3] sm:aspect-[16/7]"
-          fallback={<FiCalendar size={50} />}
-        />
+        <Text
+          className="
+            mt-2
+            text-[13px]
+            font-semibold
+            text-[#444b55]
+          "
+        >
+          برگزارکننده : {event.place.placeName}
+        </Text>
 
-        <div className="p-5 sm:p-7">
-          <Text as="h2" variant="heading-xl">
-            {event.eventName}
+        {event.description && (
+          <Text
+            tone="secondary"
+            className="
+              mx-auto
+              mt-4
+              max-w-lg
+              text-[14px]
+              leading-7
+            "
+          >
+            {event.description}
           </Text>
+        )}
 
-          <Text tone="secondary" className="mt-2">
-            {event.place.placeName}
-          </Text>
+        <div
+          className="
+            mt-5
+            flex
+            items-center
+            justify-center
+            gap-5
+            text-[12px]
+            text-[#707781]
+          "
+        >
+          <span
+            className="
+              inline-flex
+              items-center
+              gap-1.5
+            "
+          >
+            <FiBookmark />
 
-          <div className="mt-5 flex flex-wrap gap-2">
-            <MetaPill icon={<FiCalendar />}>{formatDate(event.date)}</MetaPill>
+            {event._count.savedBy.toLocaleString("fa-IR")}
+          </span>
 
-            {event.hour && <MetaPill icon={<FiClock />}>{event.hour}</MetaPill>}
+          <span
+            className="
+              inline-flex
+              items-center
+              gap-1.5
+            "
+          >
+            <FiMessageCircle />
 
-            <MetaPill>
-              {event.price
-                ? `${Number(event.price).toLocaleString("fa-IR")} تومان`
-                : "رایگان"}
-            </MetaPill>
-          </div>
+            {event._count.comments.toLocaleString("fa-IR")}
+          </span>
+        </div>
+      </section>
 
-          <div className="mt-5 flex gap-4 text-sm text-(--color-text-secondary)">
-            <span>{event._count.plans} برنامه</span>
+      {/*
+       * ========================================
+       * PRICE
+       * ========================================
+       */}
 
-            <span className="flex items-center gap-1">
-              <FiMessageCircle />
-              {event._count.comments}
-            </span>
+      <div
+        className="
+          mx-auto
+          mt-7
+          flex
+          min-h-[48px]
+          max-w-[360px]
+          items-center
+          justify-center
+          rounded-full
+          bg-white
+          px-5
+          text-center
+        "
+      >
+        <Text
+          className="
+            text-[15px]
+            font-black
+            text-[#202733]
+          "
+        >
+          قیمت بلیط ها :{" "}
+          {event.price
+            ? `${Number(event.price).toLocaleString("fa-IR")} تومان`
+            : "رایگان"}
+        </Text>
+      </div>
 
-            <span className="flex items-center gap-1">
-              <FiBookmark />
-              {event._count.savedBy}
-            </span>
-          </div>
+      {/*
+       * ========================================
+       * EVENT INFO
+       * ========================================
+       */}
 
-          {event.description && (
+      <section className="mt-9">
+        <SectionTitle>اطلاعات ایونت :</SectionTitle>
+
+        <div
+          className="
+            mt-4
+            space-y-3
+          "
+        >
+          <InformationRow icon={<FiCalendar />}>
+            {formatDate(event.date)}
+          </InformationRow>
+
+          <InformationRow icon={<FiClock />}>
+            {event.hour ? `ساعت ${event.hour}` : "ساعت ثبت نشده"}
+          </InformationRow>
+
+          <InformationRow icon={<FiMapPin />}>
+            {[
+              event.place.placeProvince,
+
+              event.place.placeCity,
+
+              event.place.placeName,
+            ]
+              .filter(Boolean)
+              .join(" - ")}
+          </InformationRow>
+        </div>
+      </section>
+
+      {/*
+       * ========================================
+       * ABOUT
+       * ========================================
+       */}
+
+      {event.info && (
+        <section className="mt-9">
+          <SectionTitle>درباره ایونت :</SectionTitle>
+
+          <div
+            className="
+              mt-4
+              rounded-[22px]
+              bg-white
+              px-5
+              py-5
+            "
+          >
             <Text
-              tone="secondary"
               className="
-                mt-5
-                line-clamp-3
+                whitespace-pre-wrap
+                text-[14px]
                 leading-8
+                text-[#444b55]
               "
             >
-              {event.description}
+              {event.info}
             </Text>
-          )}
-
-          <div className="mt-6 flex flex-col gap-2 sm:flex-row">
-            <Button
-              type="button"
-              startIcon={<FiEye />}
-              onClick={() => router.push(`/host/events/${event.id}`)}
-            >
-              مشاهده ایونت
-            </Button>
-
-            <Button
-              type="button"
-              variant="secondary"
-              startIcon={<FiPlus />}
-              onClick={() => router.push("/host/events/new")}
-            >
-              افزودن ایونت جدید
-            </Button>
           </div>
-        </div>
-      </article>
+        </section>
+      )}
+
+      {/*
+       * ========================================
+       * SUITABLE
+       * ========================================
+       */}
+
+      {event.suitable && (
+        <section className="mt-9">
+          <SectionTitle>مناسب برای :</SectionTitle>
+
+          <BulletList values={toListItems(event.suitable)} icon={<FiUsers />} />
+        </section>
+      )}
+
+      {/*
+       * ========================================
+       * PROGRAM COUNT
+       * ========================================
+       */}
+
+      {event._count.plans > 0 && (
+        <section className="mt-9">
+          <SectionTitle>برنامه ایونت :</SectionTitle>
+
+          <button
+            type="button"
+            onClick={() => router.push(`/host/events/${event.id}`)}
+            className="
+              mt-4
+              flex
+              min-h-[48px]
+              w-full
+              items-center
+              justify-between
+              rounded-full
+              bg-white
+              px-5
+              text-[14px]
+              text-[#303640]
+            "
+          >
+            <span>مشاهده برنامه کامل ایونت</span>
+
+            <span
+              className="
+                text-[13px]
+                font-bold
+                text-[#ff6437]
+              "
+            >
+              {event._count.plans.toLocaleString("fa-IR")} برنامه
+            </span>
+          </button>
+        </section>
+      )}
+
+      {/*
+       * ========================================
+       * RULES
+       * ========================================
+       */}
+
+      {event.rule && (
+        <section className="mt-9">
+          <SectionTitle>قوانین :</SectionTitle>
+
+          <BulletList values={toListItems(event.rule)} icon={<FiShield />} />
+        </section>
+      )}
+
+      {/*
+       * ========================================
+       * SECONDARY ACTIONS
+       * ========================================
+       */}
+
+      <div
+        className="
+          mt-12
+          flex
+          flex-col
+          items-center
+          justify-center
+          gap-3
+
+          sm:flex-row
+        "
+      >
+        <button
+          type="button"
+          onClick={() => router.push("/host/events")}
+          className="
+            inline-flex
+            min-h-11
+            items-center
+            justify-center
+            gap-2
+            rounded-full
+            border
+            border-[#d1d1d1]
+            px-5
+            text-[13px]
+            font-semibold
+            text-[#565d66]
+          "
+        >
+          <FiList />
+          مشاهده همه ایونت ها
+        </button>
+
+        <button
+          type="button"
+          onClick={() => router.push("/host/events/new")}
+          className="
+            inline-flex
+            min-h-11
+            items-center
+            justify-center
+            gap-2
+            rounded-full
+            border
+            border-[#ff6437]
+            px-5
+            text-[13px]
+            font-semibold
+            text-[#ff6437]
+          "
+        >
+          <FiPlus />
+          ایونت جدید
+        </button>
+      </div>
     </div>
   );
 }
+
+/* =====================================================
+ * SECTION TITLE
+ * ===================================================== */
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <Text
+      as="h2"
+      className="
+        text-[16px]
+        font-black
+        leading-7
+        text-[#111827]
+
+        sm:text-[18px]
+      "
+    >
+      {children}
+    </Text>
+  );
+}
+
+/* =====================================================
+ * INFORMATION ROW
+ * ===================================================== */
+
+function InformationRow({
+  icon,
+  children,
+}: {
+  icon: React.ReactNode;
+
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="
+        flex
+        items-start
+        gap-3
+      "
+    >
+      <span
+        className="
+          flex
+          h-8
+          w-8
+          shrink-0
+          items-center
+          justify-center
+          rounded-full
+          bg-white
+          text-[17px]
+          text-[#ff6437]
+        "
+      >
+        {icon}
+      </span>
+
+      <Text
+        className="
+          pt-1
+          text-[14px]
+          leading-7
+          text-[#414852]
+        "
+      >
+        {children}
+      </Text>
+    </div>
+  );
+}
+
+/* =====================================================
+ * BULLET LIST
+ * ===================================================== */
+
+function BulletList({
+  values,
+  icon,
+}: {
+  values: string[];
+
+  icon: React.ReactNode;
+}) {
+  return (
+    <div
+      className="
+        mt-4
+        space-y-2
+      "
+    >
+      {values.map((value, index) => (
+        <div
+          key={`${value}-${index}`}
+          className="
+              flex
+              items-start
+              gap-2.5
+            "
+        >
+          <span
+            className="
+                mt-[9px]
+                h-[7px]
+                w-[7px]
+                shrink-0
+                rounded-full
+                bg-[#ff6437]
+              "
+          />
+
+          <Text
+            className="
+                text-[14px]
+                leading-7
+                text-[#3f4650]
+              "
+          >
+            {value}
+          </Text>
+
+          <span className="sr-only">{icon}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* =====================================================
+ * EMPTY
+ * ===================================================== */
 
 function EmptyLatestEvent({
   onCreate,
   onAll,
 }: {
   onCreate: () => void;
+
   onAll: () => void;
 }) {
   return (
     <div
       className="
-        rounded-[30px]
+        rounded-[28px]
         bg-white
-        px-5 py-14
+        px-5
+        py-14
         text-center
-        shadow-sm
       "
     >
       <FiCalendar
         size={38}
         className="
           mx-auto
-          text-(--color-brand-500)
+          text-[#ff6437]
         "
       />
 
@@ -209,55 +609,138 @@ function EmptyLatestEvent({
         اولین ایونت مجموعه خود را بسازید.
       </Text>
 
-      <div className="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
-        <Button type="button" startIcon={<FiPlus />} onClick={onCreate}>
-          ساخت ایونت
-        </Button>
+      <div
+        className="
+          mt-6
+          flex
+          flex-col
+          justify-center
+          gap-2
 
-        <Button
+          sm:flex-row
+        "
+      >
+        <button
           type="button"
-          variant="secondary"
-          startIcon={<FiList />}
-          onClick={onAll}
+          onClick={onCreate}
+          className="
+            inline-flex
+            min-h-11
+            items-center
+            justify-center
+            gap-2
+            rounded-full
+            bg-[#ff6437]
+            px-5
+            font-semibold
+            text-white
+          "
         >
-          صفحه ایونت‌ها
-        </Button>
+          <FiPlus />
+          ساخت ایونت
+        </button>
+
+        <button
+          type="button"
+          onClick={onAll}
+          className="
+            inline-flex
+            min-h-11
+            items-center
+            justify-center
+            gap-2
+            rounded-full
+            border
+            border-[#d2d2d2]
+            px-5
+            font-semibold
+            text-[#565d66]
+          "
+        >
+          <FiList />
+          صفحه ایونت ها
+        </button>
       </div>
     </div>
   );
 }
 
-function MetaPill({
-  icon,
-  children,
-}: {
-  icon?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <span
-      className="
-        inline-flex
-        items-center
-        gap-1.5
-        rounded-full
-        bg-gray-50
-        px-3 py-2
-        text-sm
-        text-(--color-text-secondary)
-      "
-    >
-      {icon}
+/* =====================================================
+ * LOADING
+ * ===================================================== */
 
-      {children}
-    </span>
+function EventLoading() {
+  return (
+    <div>
+      <div
+        className="
+          aspect-[1.05/1]
+          animate-pulse
+          rounded-[26px]
+          bg-gray-200
+
+          sm:aspect-[16/9]
+        "
+      />
+
+      <div
+        className="
+          mx-auto
+          mt-5
+          h-11
+          w-44
+          animate-pulse
+          rounded-full
+          bg-gray-200
+        "
+      />
+
+      <div
+        className="
+          mx-auto
+          mt-7
+          h-8
+          w-2/3
+          animate-pulse
+          rounded
+          bg-gray-200
+        "
+      />
+
+      <div
+        className="
+          mx-auto
+          mt-3
+          h-4
+          w-1/3
+          animate-pulse
+          rounded
+          bg-gray-200
+        "
+      />
+    </div>
   );
 }
 
+/* =====================================================
+ * HELPERS
+ * ===================================================== */
+
 function formatDate(value: Date | string) {
   return new Intl.DateTimeFormat("fa-IR", {
+    weekday: "long",
+
     year: "numeric",
+
     month: "long",
+
     day: "numeric",
   }).format(new Date(value));
+}
+
+function toListItems(value: string) {
+  return value
+    .split(/\r?\n/)
+    .map((item) => item.replace(/^[-•●▪◦\s]+/, "").trim())
+    .filter(Boolean);
 }
